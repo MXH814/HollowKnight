@@ -1,0 +1,639 @@
+/**
+ * @file TheKnightMovement.cpp
+ * @brief 小骑士（TheKnight）角色类 - 移动相关实现
+ */
+
+#include "TheKnight.h"
+
+void TheKnight::startJump()
+{
+    if (!_isOnGround) return;
+    
+    _isOnGround = false;
+    _velocityY = _minJumpForce;
+    _jumpKeyHoldTime = 0.0f;
+    _hasDoubleJumped = false;  // 起跳时重置二段跳
+    changeState(KnightState::JUMPING);
+}
+
+void TheKnight::updateJump(float dt)
+{
+    // 如果还在按住跳跃键且未超过最大时间，持续增加上升速度
+    if (_isJumpKeyPressed && _jumpKeyHoldTime < _maxJumpHoldTime)
+    {
+        _jumpKeyHoldTime += dt;
+        float holdRatio = _jumpKeyHoldTime / _maxJumpHoldTime;
+        _velocityY = _minJumpForce + (_jumpForce - _minJumpForce) * holdRatio;
+    }
+    
+    // 应用重力
+    _velocityY -= _gravity * dt;
+    
+    // 获取当前位置
+    Vec2 pos = this->getPosition();
+    Vec2 newPos = pos;
+    
+    // 计算新的垂直位置
+    newPos.y += _velocityY * dt;
+    
+    // 计算新的水平位置
+    if (_isMovingLeft)
+    {
+        newPos.x -= _moveSpeed * dt;
+    }
+    if (_isMovingRight)
+    {
+        newPos.x += _moveSpeed * dt;
+    }
+    
+    // 先更新位置用于碰撞检测
+    this->setPosition(newPos);
+    
+    // 检查天花板碰撞
+    float ceilingY;
+    if (checkCeilingCollision(ceilingY))
+    {
+        newPos.y = ceilingY;
+        _velocityY = 0;
+        this->setPosition(newPos);
+        changeState(KnightState::FALLING);
+        return;
+    }
+    
+    // 检查地面碰撞（优先级高于墙壁）
+    float groundY;
+    if (checkGroundCollision(groundY))
+    {
+        newPos.y = groundY;
+        _velocityY = 0;
+        _isOnGround = true;
+        this->setPosition(newPos);
+        changeState(KnightState::LANDING);
+        return;
+    }
+    
+    // 检查墙壁碰撞和贴墙
+    float correctedX;
+    if (_isMovingRight && checkWallCollision(correctedX, true))
+    {
+        newPos.x = correctedX;
+        this->setPosition(newPos);
+        if (checkWallSlideCollision(true))
+        {
+            startWallSlide(true);
+            return;
+        }
+    }
+    else if (_isMovingLeft && checkWallCollision(correctedX, false))
+    {
+        newPos.x = correctedX;
+        this->setPosition(newPos);
+        if (checkWallSlideCollision(false))
+        {
+            startWallSlide(false);
+            return;
+        }
+    }
+    
+    // 空中转向
+    if (_isMovingLeft && _facingRight)
+    {
+        _facingRight = false;
+        this->setFlippedX(false);
+    }
+    else if (_isMovingRight && !_facingRight)
+    {
+        _facingRight = true;
+        this->setFlippedX(true);
+    }
+    
+    // 如果速度变为负数，切换到下落状态
+    if (_velocityY < 0)
+    {
+        changeState(KnightState::FALLING);
+    }
+}
+
+void TheKnight::updateFall(float dt)
+{
+    // 应用重力
+    _velocityY -= _gravity * dt;
+    
+    // 限制最大下落速度
+    if (_velocityY < -1600.0f)
+    {
+        _velocityY = -1600.0f;
+    }
+    
+    // 获取当前位置
+    Vec2 pos = this->getPosition();
+    Vec2 newPos = pos;
+    
+    // 计算新的垂直位置
+    newPos.y += _velocityY * dt;
+    
+    // 计算新的水平位置
+    if (_isMovingLeft)
+    {
+        newPos.x -= _moveSpeed * dt;
+    }
+    if (_isMovingRight)
+    {
+        newPos.x += _moveSpeed * dt;
+    }
+    
+    // 先更新位置用于碰撞检测
+    this->setPosition(newPos);
+    
+    // 检查地面碰撞（最高优先级）
+    float groundY;
+    if (checkGroundCollision(groundY))
+    {
+        newPos.y = groundY;
+        _velocityY = 0;
+        _isOnGround = true;
+        this->setPosition(newPos);
+        changeState(KnightState::LANDING);
+        return;
+    }
+    
+    // 检查墙壁碰撞和贴墙
+    float correctedX;
+    if (_isMovingRight && checkWallCollision(correctedX, true))
+    {
+        newPos.x = correctedX;
+        this->setPosition(newPos);
+        if (checkWallSlideCollision(true))
+        {
+            startWallSlide(true);
+            return;
+        }
+    }
+    else if (_isMovingLeft && checkWallCollision(correctedX, false))
+    {
+        newPos.x = correctedX;
+        this->setPosition(newPos);
+        if (checkWallSlideCollision(false))
+        {
+            startWallSlide(false);
+            return;
+        }
+    }
+    
+    // 空中转向
+    if (_isMovingLeft && _facingRight)
+    {
+        _facingRight = false;
+        this->setFlippedX(false);
+    }
+    else if (_isMovingRight && !_facingRight)
+    {
+        _facingRight = true;
+        this->setFlippedX(true);
+    }
+}
+
+void TheKnight::startDoubleJump()
+{
+    _hasDoubleJumped = true;
+    _velocityY = _doubleJumpForce;
+    _jumpKeyHoldTime = _maxJumpHoldTime;  // 设置为最大值，防止长按增加跳跃力度
+    _isJumpKeyPressed = false;  // 重置跳跃键状态，防止后续误判
+    changeState(KnightState::DOUBLE_JUMPING);
+}
+
+void TheKnight::updateDoubleJump(float dt)
+{
+    // 应用重力
+    _velocityY -= _gravity * dt;
+    
+    // 获取当前位置
+    Vec2 pos = this->getPosition();
+    Vec2 newPos = pos;
+    
+    // 计算新的垂直位置
+    newPos.y += _velocityY * dt;
+    
+    // 计算新的水平位置
+    if (_isMovingLeft)
+    {
+        newPos.x -= _moveSpeed * dt;
+    }
+    if (_isMovingRight)
+    {
+        newPos.x += _moveSpeed * dt;
+    }
+    
+    // 先更新位置用于碰撞检测
+    this->setPosition(newPos);
+    
+    // 检查天花板碰撞
+    float ceilingY;
+    if (checkCeilingCollision(ceilingY))
+    {
+        newPos.y = ceilingY;
+        _velocityY = 0;
+        this->setPosition(newPos);
+        changeState(KnightState::FALLING);
+        return;
+    }
+    
+    // 检查地面碰撞
+    float groundY;
+    if (checkGroundCollision(groundY))
+    {
+        newPos.y = groundY;
+        _velocityY = 0;
+        _isOnGround = true;
+        this->setPosition(newPos);
+        changeState(KnightState::LANDING);
+        return;
+    }
+    
+    // 检查墙壁碰撞和贴墙
+    float correctedX;
+    if (_isMovingRight && checkWallCollision(correctedX, true))
+    {
+        newPos.x = correctedX;
+        this->setPosition(newPos);
+        if (checkWallSlideCollision(true))
+        {
+            startWallSlide(true);
+            return;
+        }
+    }
+    else if (_isMovingLeft && checkWallCollision(correctedX, false))
+    {
+        newPos.x = correctedX;
+        this->setPosition(newPos);
+        if (checkWallSlideCollision(false))
+        {
+            startWallSlide(false);
+            return;
+        }
+    }
+    
+    // 空中转向
+    if (_isMovingLeft && _facingRight)
+    {
+        _facingRight = false;
+        this->setFlippedX(false);
+    }
+    else if (_isMovingRight && !_facingRight)
+    {
+        _facingRight = true;
+        this->setFlippedX(true);
+    }
+}
+
+void TheKnight::startWallSlide(bool wallOnRight)
+{
+    _isOnWall = true;
+    _wallOnRight = wallOnRight;
+    _velocityY = 0.0f;
+    _isOnGround = false;
+    _hasDoubleJumped = false;  // 贴墙时重置二段跳
+    
+    // 素材是角色右侧为墙（角色面向左），所以：
+    // 如果墙在右侧，不翻转（素材原样，角色面向左）
+    // 如果墙在左侧，翻转（角色面向右）
+    this->setFlippedX(!wallOnRight);
+    
+    changeState(KnightState::WALL_SLIDING);
+}
+
+void TheKnight::updateWallSlide(float dt)
+{
+    // 保持贴墙时的翻转状态不变
+    this->setFlippedX(!_wallOnRight);
+    
+    // 检查玩家是否主动想离开墙壁（按反方向键）
+    // 只有按离开墙壁的方向键才会离开，朝向墙壁的方向键被忽略
+    // 墙在右侧时，只有按左键才能离开；墙在左侧时，只有按右键才能离开
+    bool wantLeaveWall = (_wallOnRight && _isMovingLeft) || (!_wallOnRight && _isMovingRight);
+    
+    if (wantLeaveWall)
+    {
+        _isOnWall = false;
+        this->setFlippedX(_facingRight);
+        changeState(KnightState::FALLING);
+        return;
+    }
+    
+    // 获取当前位置
+    Vec2 pos = this->getPosition();
+    Vec2 newPos = pos;
+    
+    // 计算下滑后的位置
+    float slideDistance = _wallSlideSpeed * dt;
+    newPos.y -= slideDistance;
+    
+    // 设置临时的垂直速度用于地面碰撞检测
+    float savedVelocityY = _velocityY;
+    _velocityY = -_wallSlideSpeed;
+    
+    // 先更新位置用于碰撞检测
+    this->setPosition(newPos);
+    
+    // 检查地面碰撞
+    float groundY;
+    if (checkGroundCollision(groundY))
+    {
+        newPos.y = groundY;
+        _velocityY = 0;
+        _isOnGround = true;
+        _isOnWall = false;
+        this->setPosition(newPos);
+        this->setFlippedX(_facingRight);
+        changeState(KnightState::LANDING);
+        return;
+    }
+    
+    // 恢复速度
+    _velocityY = savedVelocityY;
+    
+    // 检查是否还在贴着墙（使用墙壁碰撞检测）
+    float correctedX;
+    bool stillOnWall = false;
+    
+    if (_wallOnRight)
+    {
+        Vec2 testPos = newPos;
+        testPos.x += 5.0f;
+        this->setPosition(testPos);
+        stillOnWall = checkWallCollision(correctedX, true);
+        this->setPosition(newPos);
+    }
+    else
+    {
+        Vec2 testPos = newPos;
+        testPos.x -= 5.0f;
+        this->setPosition(testPos);
+        stillOnWall = checkWallCollision(correctedX, false);
+        this->setPosition(newPos);
+    }
+    
+    if (!stillOnWall)
+    {
+        _isOnWall = false;
+        this->setFlippedX(_facingRight);
+        changeState(KnightState::FALLING);
+        return;
+    }
+}
+
+void TheKnight::startWallJump()
+{
+    _isOnWall = false;
+    _wallJumpTimer = 0.0f;
+    
+    // 蹬墙跳方向：离开墙壁
+    // 如果墙在右侧，向左跳，面向左（_facingRight = false）
+    // 如果墙在左侧，向右跳，面向右（_facingRight = true）
+    _facingRight = !_wallOnRight;
+    this->setFlippedX(_facingRight);
+    
+    _velocityY = _wallJumpForceY;
+    
+    changeState(KnightState::WALL_JUMPING);
+}
+
+void TheKnight::updateWallJump(float dt)
+{
+    _wallJumpTimer += dt;
+    
+    // 应用重力
+    _velocityY -= _gravity * dt;
+    
+    // 获取当前位置
+    Vec2 pos = this->getPosition();
+    Vec2 newPos = pos;
+    
+    // 计算新的垂直位置
+    newPos.y += _velocityY * dt;
+    
+    // 蹬墙跳期间强制水平移动（离开墙壁方向）
+    bool inForcedMovement = _wallJumpTimer < _wallJumpDuration;
+    if (inForcedMovement)
+    {
+        float jumpDir = _wallOnRight ? -1.0f : 1.0f;
+        newPos.x += jumpDir * _wallJumpForceX * dt;
+    }
+    else
+    {
+        if (_isMovingLeft)
+        {
+            newPos.x -= _moveSpeed * dt;
+        }
+        if (_isMovingRight)
+        {
+            newPos.x += _moveSpeed * dt;
+        }
+    }
+    
+    // 先更新位置用于碰撞检测
+    this->setPosition(newPos);
+    
+    // 检查天花板碰撞
+    float ceilingY;
+    if (checkCeilingCollision(ceilingY))
+    {
+        newPos.y = ceilingY;
+        _velocityY = 0;
+        this->setPosition(newPos);
+        changeState(KnightState::FALLING);
+        return;
+    }
+    
+    // 检查地面碰撞
+    float groundY;
+    if (checkGroundCollision(groundY))
+    {
+        newPos.y = groundY;
+        _velocityY = 0;
+        _isOnGround = true;
+        this->setPosition(newPos);
+        changeState(KnightState::LANDING);
+        return;
+    }
+    
+    // 检查墙壁碰撞（只在强制移动结束后才检查贴墙）
+    float correctedX;
+    if (_isMovingRight && checkWallCollision(correctedX, true))
+    {
+        newPos.x = correctedX;
+        this->setPosition(newPos);
+        // 只有在强制移动结束后才能贴墙
+        if (!inForcedMovement && checkWallSlideCollision(true))
+        {
+            startWallSlide(true);
+            return;
+        }
+    }
+    else if (_isMovingLeft && checkWallCollision(correctedX, false))
+    {
+        newPos.x = correctedX;
+        this->setPosition(newPos);
+        // 只有在强制移动结束后才能贴墙
+        if (!inForcedMovement && checkWallSlideCollision(false))
+        {
+            startWallSlide(false);
+            return;
+        }
+    }
+    
+    // 如果开始下落，切换到下落状态
+    if (_velocityY <= 0)
+    {
+        changeState(KnightState::FALLING);
+    }
+}
+
+void TheKnight::startDash()
+{
+    _canDash = false;
+    _dashCooldownTimer = 0.0f;
+    _velocityY = 0.0f;  // 冲刺时停止垂直运动
+    _dashEffectFrame = 0;
+    _dashEffectTimer = 0.0f;
+    createDashEffect();
+    changeState(KnightState::DASHING);
+}
+
+void TheKnight::updateDash(float dt)
+{
+    _dashTimer += dt;
+    
+    // 更新冲刺特效
+    updateDashEffect(dt);
+    
+    // 获取当前位置
+    Vec2 pos = this->getPosition();
+    Vec2 newPos = pos;
+    
+    // 冲刺移动
+    float dashDirection = _facingRight ? 1.0f : -1.0f;
+    newPos.x += dashDirection * _dashSpeed * dt;
+    
+    // 先更新位置用于碰撞检测
+    this->setPosition(newPos);
+    
+    // 检查墙壁碰撞
+    float correctedX;
+    if (_facingRight && checkWallCollision(correctedX, true))
+    {
+        newPos.x = correctedX;
+        this->setPosition(newPos);
+        onDashFinished();
+        return;
+    }
+    else if (!_facingRight && checkWallCollision(correctedX, false))
+    {
+        newPos.x = correctedX;
+        this->setPosition(newPos);
+        onDashFinished();
+        return;
+    }
+    
+    // 冲刺时间结束
+    if (_dashTimer >= _dashDuration)
+    {
+        onDashFinished();
+    }
+}
+
+void TheKnight::onDashFinished()
+{
+    // 移除冲刺特效
+    if (_dashEffect)
+    {
+        _dashEffect->removeFromParent();
+        _dashEffect = nullptr;
+    }
+    
+    // 检查是否在空中
+    if (!_isOnGround)
+    {
+        changeState(KnightState::FALLING);
+    }
+    else
+    {
+        changeState(KnightState::DASH_TO_IDLE);
+    }
+}
+
+void TheKnight::createDashEffect()
+{
+    // 如果已有特效，先移除
+    if (_dashEffect)
+    {
+        _dashEffect->removeFromParent();
+        _dashEffect = nullptr;
+    }
+    
+    // 创建特效精灵
+    _dashEffect = Sprite::create("TheKnight/Dash/DashEffect1.png");
+    if (_dashEffect)
+    {
+        // 特效锚点设置为中心
+        _dashEffect->setAnchorPoint(Vec2(0.5f, 0.5f));
+        // 特效放在人物身后（z-order更低）
+        if (this->getParent())
+        {
+            this->getParent()->addChild(_dashEffect, this->getLocalZOrder() - 5);
+        }
+        // 设置特效位置和翻转
+        _dashEffect->setFlippedX(_facingRight);
+        updateDashEffect(0);
+    }
+}
+
+void TheKnight::updateDashEffect(float dt)
+{
+    if (!_dashEffect) return;
+    
+    // 获取人物尺寸和位置
+    Vec2 pos = this->getPosition();
+    auto knightSize = this->getContentSize();
+    auto effectSize = _dashEffect->getContentSize();
+    
+    // 计算特效位置：垂直中心对齐
+    // 人物锚点在底部中心(0.5, 0)，所以垂直中心是 pos.y + knightSize.height / 2
+    float centerY = pos.y + knightSize.height / 2;
+    
+    // 水平位置：特效与人物后方部分重叠
+    float overlapCenter = knightSize.width / 1.0f;  
+    float offsetX = (knightSize.width / 2.0f - overlapCenter + effectSize.width / 2.0f) * (_facingRight ? -1.0f : 1.0f);
+    
+    _dashEffect->setPosition(Vec2(pos.x + offsetX, centerY));
+    _dashEffect->setFlippedX(_facingRight);
+    
+    // 更新特效帧
+    _dashEffectTimer += dt;
+    if (_dashEffectTimer >= 0.03f)
+    {
+        _dashEffectTimer = 0.0f;
+        _dashEffectFrame++;
+        
+        if (_dashEffectFrame <= 8)
+        {
+            std::string filename = "TheKnight/Dash/DashEffect" + std::to_string(_dashEffectFrame) + ".png";
+            auto texture = Director::getInstance()->getTextureCache()->addImage(filename);
+            if (texture)
+            {
+                auto size = texture->getContentSize();
+                auto frame = SpriteFrame::createWithTexture(texture, Rect(0, 0, size.width, size.height));
+                if (frame)
+                {
+                    _dashEffect->setSpriteFrame(frame);
+                }
+            }
+        }
+        else
+        {
+            // 特效播放完毕，移除
+            _dashEffect->removeFromParent();
+            _dashEffect = nullptr;
+        }
+    }
+}
