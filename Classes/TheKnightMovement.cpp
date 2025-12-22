@@ -387,9 +387,14 @@ void TheKnight::startWallJump()
     _isOnWall = false;
     _wallJumpTimer = 0.0f;
     
-    // 蹬墙跳方向：离开墙壁
-    // 如果墙在右侧，向左跳，面向左（_facingRight = false）
-    // 如果墙在左侧，向右跳，面向右（_facingRight = true）
+    // 记录起跳位置用于烟雾特效
+    _wallJumpPuffPos = this->getPosition();
+    // 创建蹬墙跳烟雾特效
+    createWallJumpPuffEffect();
+    
+    // 蹬墙跳方向离开墙壁
+    // 如果墙在右侧，跳向左侧（_facingRight = false）
+    // 如果墙在左侧，跳向右侧（_facingRight = true）
     _facingRight = !_wallOnRight;
     this->setFlippedX(_facingRight);
     
@@ -457,7 +462,7 @@ void TheKnight::updateWallJump(float dt)
         return;
     }
     
-    // 检查墙壁碰撞（只在强制移动结束后才检查贴墙）
+    // 检查墙壁碰撞（只有强制移动结束后才检测贴墙）
     float correctedX;
     if (_isMovingRight && checkWallCollision(correctedX, true))
     {
@@ -482,10 +487,87 @@ void TheKnight::updateWallJump(float dt)
         }
     }
     
-    // 如果开始下落，切换到下落状态
+    // 开始下落后，切换到下落状态
     if (_velocityY <= 0)
     {
         changeState(KnightState::FALLING);
+    }
+}
+
+// ========== 蹬墙跳烟雾特效相关 ==========
+
+void TheKnight::createWallJumpPuffEffect()
+{
+    // 移除旧特效
+    removeWallJumpPuffEffect();
+    
+    // 创建烟雾特效
+    _wallJumpPuffEffect = Sprite::create("TheKnight/Wall/WallJump/WallJumpPuff1.png");
+    if (_wallJumpPuffEffect && this->getParent())
+    {
+        _wallJumpPuffEffect->setAnchorPoint(Vec2(0.5f, 0.5f));
+        
+        // 设置位置在起跳点
+        Vec2 pos = _wallJumpPuffPos;
+        auto knightSize = this->getContentSize();
+        
+        // 烟雾在角色中心位置
+        pos.y += knightSize.height / 2 + 50;
+        pos.x += knightSize.width / 2;
+        
+        _wallJumpPuffEffect->setPosition(pos);
+        
+        // 根据墙的位置翻转（墙在右边时不翻转，墙在左边时翻转）
+        _wallJumpPuffEffect->setFlippedX(!_wallOnRight);
+        
+        this->getParent()->addChild(_wallJumpPuffEffect, this->getLocalZOrder() - 1);
+        
+        // 初始化帧动画参数
+        _wallJumpPuffTimer = 0.0f;
+        _wallJumpPuffFrame = 1;
+    }
+}
+
+void TheKnight::updateWallJumpPuffEffect(float dt)
+{
+    if (!_wallJumpPuffEffect) return;
+    
+    _wallJumpPuffTimer += dt;
+    
+    // 每0.05秒切换一帧
+    if (_wallJumpPuffTimer >= 0.05f)
+    {
+        _wallJumpPuffTimer = 0.0f;
+        _wallJumpPuffFrame++;
+        
+        if (_wallJumpPuffFrame <= 6)
+        {
+            std::string filename = "TheKnight/Wall/WallJump/WallJumpPuff" + std::to_string(_wallJumpPuffFrame) + ".png";
+            auto texture = Director::getInstance()->getTextureCache()->addImage(filename);
+            if (texture)
+            {
+                auto size = texture->getContentSize();
+                auto frame = SpriteFrame::createWithTexture(texture, Rect(0, 0, size.width, size.height));
+                if (frame)
+                {
+                    _wallJumpPuffEffect->setSpriteFrame(frame);
+                }
+            }
+        }
+        else
+        {
+            // 动画播放完毕，移除特效
+            removeWallJumpPuffEffect();
+        }
+    }
+}
+
+void TheKnight::removeWallJumpPuffEffect()
+{
+    if (_wallJumpPuffEffect)
+    {
+        _wallJumpPuffEffect->removeFromParent();
+        _wallJumpPuffEffect = nullptr;
     }
 }
 

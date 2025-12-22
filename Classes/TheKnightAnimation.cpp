@@ -172,12 +172,28 @@ void TheKnight::loadAnimations()
         AnimationCache::getInstance()->addAnimation(_wallSlideAnim, "wallSlide");
     }
     
+    // ÌùÇ½¹¥»÷¶¯»­ - 5Ö¡
+    _wallSlashAnim = createAnimation("TheKnight/Wall/WallSlash/", "WallSlash", 1, 5, 0.03f);
+    if (_wallSlashAnim)
+    {
+        _wallSlashAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_wallSlashAnim, "wallSlash");
+    }
+    
     // µÅÇ½Ìø¶¯»­ - 9Ö¡
     _wallJumpAnim = createAnimation("TheKnight/Wall/WallJump/", "WallJump", 1, 9, 0.04f);
     if (_wallJumpAnim)
     {
         _wallJumpAnim->retain();
         AnimationCache::getInstance()->addAnimation(_wallJumpAnim, "wallJump");
+    }
+    
+    // µÅÇ½ÌøÑÌÎíÌØÐ§¶¯»­ - 6Ö¡
+    _wallJumpPuffAnim = createAnimation("TheKnight/Wall/WallJump/", "WallJumpPuff", 1, 6, 0.05f);
+    if (_wallJumpPuffAnim)
+    {
+        _wallJumpPuffAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_wallJumpPuffAnim, "wallJumpPuff");
     }
     
     // ¶þ¶ÎÌø¶¯»­ - 8Ö¡
@@ -289,10 +305,12 @@ void TheKnight::changeState(KnightState newState)
     // Èç¹û´Ó¹¥»÷×´Ì¬ÇÐ»»³öÈ¥£¬ÇåÀí¹¥»÷ÌØÐ§
     if ((_state == KnightState::SLASHING || 
          _state == KnightState::UP_SLASHING || 
-         _state == KnightState::DOWN_SLASHING) &&
+         _state == KnightState::DOWN_SLASHING ||
+         _state == KnightState::WALL_SLASHING) &&
         newState != KnightState::SLASHING &&
         newState != KnightState::UP_SLASHING &&
-        newState != KnightState::DOWN_SLASHING)
+        newState != KnightState::DOWN_SLASHING &&
+        newState != KnightState::WALL_SLASHING)
     {
         _isAttacking = false;
         removeSlashEffect();
@@ -504,6 +522,23 @@ void TheKnight::changeState(KnightState newState)
             {
                 auto animate = Animate::create(animation);
                 this->runAction(RepeatForever::create(animate));
+            }
+            break;
+        }
+        
+        case KnightState::WALL_SLASHING:
+        {
+            this->stopAllActions();
+            auto animation = AnimationCache::getInstance()->getAnimation("wallSlash");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onWallSlashAnimFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onWallSlashAnimFinished();
             }
             break;
         }

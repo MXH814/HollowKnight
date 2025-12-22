@@ -27,6 +27,7 @@ enum class KnightState
     LOOKING_DOWN, // 向下看状态
     LOOK_DOWN_END, // 向下看结束状态
     WALL_SLIDING,  // 贴墙下滑状态
+    WALL_SLASHING, // 贴墙攻击状态（新增）
     WALL_JUMPING,  // 蹬墙跳状态
     DOUBLE_JUMPING, // 二段跳状态
     SLASHING,      // 水平攻击状态
@@ -191,6 +192,18 @@ private:
     void onRecoverAnimFinished();
     void cancelRecover();
     
+    // 贴墙攻击相关
+    void startWallSlash();
+    void updateWallSlash(float dt);
+    void onWallSlashAnimFinished();
+    void createWallSlashEffect(int effectNum);
+    void updateWallSlashEffectPosition();
+    
+    // 蹬墙跳烟雾特效
+    void createWallJumpPuffEffect();
+    void updateWallJumpPuffEffect(float dt);
+    void removeWallJumpPuffEffect();
+    
 private:
     KnightState _state;          // 当前状态
     bool _facingRight;           // 是否面向右边
@@ -245,6 +258,16 @@ private:
     float _wallJumpForceY;       // 蹬墙跳垂直力度
     float _wallJumpTimer;        // 蹬墙跳计时器
     float _wallJumpDuration;     // 蹬墙跳持续时间（控制不住方向的时间）
+    
+    // 贴墙攻击相关
+    float _wallSlashEffectTimer;     // 贴墙攻击特效计时器
+    int _wallSlashEffectPhase;       // 贴墙攻击特效阶段
+    
+    // 蹬墙跳烟雾特效
+    Sprite* _wallJumpPuffEffect;     // 蹬墙跳烟雾特效精灵
+    float _wallJumpPuffTimer;        // 烟雾特效计时器
+    int _wallJumpPuffFrame;          // 当前烟雾特效帧
+    Vec2 _wallJumpPuffPos;           // 烟雾特效位置
     
     // 冲刺相关
     float _dashSpeed;            // 冲刺速度
@@ -305,6 +328,7 @@ private:
     Animation* _lookDownAnim;    // 向下看动画
     Animation* _lookDownEndAnim; // 向下看结束动画
     Animation* _wallSlideAnim;   // 贴墙下滑动画
+    Animation* _wallSlashAnim;   // 贴墙攻击动画
     Animation* _wallJumpAnim;    // 蹬墙跳动画
     Animation* _doubleJumpAnim;  // 二段跳动画
     Animation* _slashAnim;       // 水平攻击动画
@@ -315,6 +339,7 @@ private:
     Animation* _vengefulSpiritAnim;      // 法术释放动画
     Animation* _vengefulSpiritEffectAnim; // 法术特效动画
     Animation* _recoverAnim;     // 回复动画
+    Animation* _wallJumpPuffAnim; // 蹬墙跳烟雾动画
 };
 
 #endif // __THE_KNIGHT_H__

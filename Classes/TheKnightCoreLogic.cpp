@@ -96,6 +96,16 @@ bool TheKnight::init()
     _wallJumpTimer = 0.0f;
     _wallJumpDuration = 0.15f;      // 蹬墙跳控制不住方向的时间
     
+    // 贴墙攻击相关初始化
+    _wallSlashEffectTimer = 0.0f;
+    _wallSlashEffectPhase = 0;
+    
+    // 蹬墙跳烟雾特效初始化
+    _wallJumpPuffEffect = nullptr;
+    _wallJumpPuffTimer = 0.0f;
+    _wallJumpPuffFrame = 0;
+    _wallJumpPuffPos = Vec2::ZERO;
+    
     // 攻击相关初始化
     _isAttacking = false;
     _stateBeforeAttack = KnightState::IDLE;
@@ -466,11 +476,16 @@ void TheKnight::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
         // 不在攻击状态且不在冲刺状态时可以攻击
         if (!_isAttacking && _state != KnightState::DASHING)
         {
+            // 贴墙时攻击 -> 贴墙攻击
+            if (_state == KnightState::WALL_SLIDING)
+            {
+                startWallSlash();
+            }
             // 判断攻击方向
             // 同时按上下或都不按-> 水平攻击
             // 只按上 -> 向上攻击
             // 只按下且在空中 -> 向下攻击
-            if (_isLookingUp && !_isLookingDown)
+            else if (_isLookingUp && !_isLookingDown)
             {
                 startUpSlash();
             }
@@ -612,6 +627,12 @@ void TheKnight::update(float dt)
         }
     }
     
+    // 更新蹬墙跳烟雾特效
+    if (_wallJumpPuffEffect)
+    {
+        updateWallJumpPuffEffect(dt);
+    }
+    
     // 更新法术特效
     if (_vengefulSpiritEffect)
     {
@@ -673,6 +694,12 @@ void TheKnight::update(float dt)
     else if (_state == KnightState::DOWN_SLASHING)
     {
         updateDownSlash(dt);
+        return;
+    }
+    // 处理贴墙攻击状态
+    else if (_state == KnightState::WALL_SLASHING)
+    {
+        updateWallSlash(dt);
         return;
     }
     // 处理法术释放状态

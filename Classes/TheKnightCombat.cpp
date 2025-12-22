@@ -480,6 +480,141 @@ void TheKnight::onDownSlashAnimFinished()
     }
 }
 
+// ========== 贴墙攻击相关 ==========
+
+void TheKnight::startWallSlash()
+{
+    _isAttacking = true;
+    _currentSlashType = 0;  // 使用水平攻击的特效
+    _wallSlashEffectTimer = 0.0f;
+    _wallSlashEffectPhase = 1;
+    createWallSlashEffect(1);
+    
+    changeState(KnightState::WALL_SLASHING);
+}
+
+void TheKnight::updateWallSlash(float dt)
+{
+    _wallSlashEffectTimer += dt;
+    
+    // 切换特效阶段
+    if (_wallSlashEffectPhase == 1 && _wallSlashEffectTimer >= 0.09f)
+    {
+        _wallSlashEffectPhase = 2;
+        createWallSlashEffect(2);
+    }
+    
+    updateWallSlashEffectPosition();
+    
+    // 贴墙攻击时继续下滑
+    Vec2 pos = this->getPosition();
+    float slideDistance = _wallSlideSpeed * dt;
+    pos.y -= slideDistance;
+    this->setPosition(pos);
+    
+    // 检查地面碰撞
+    float groundY;
+    if (checkGroundCollision(groundY))
+    {
+        pos.y = groundY;
+        _velocityY = 0;
+        _isOnGround = true;
+        _isOnWall = false;
+        this->setPosition(pos);
+        // 落地后继续攻击动画，结束后会处理状态
+    }
+}
+
+void TheKnight::onWallSlashAnimFinished()
+{
+    _isAttacking = false;
+    removeSlashEffect();
+    
+    // 如果已经落地
+    if (_isOnGround)
+    {
+        _facingRight = !_wallOnRight;  // 恢复朝向
+        this->setFlippedX(_facingRight);
+        
+        if (_isMovingLeft || _isMovingRight)
+        {
+            if ((_isMovingLeft && _facingRight) || (_isMovingRight && !_facingRight))
+            {
+                changeState(KnightState::TURNING);
+            }
+            else
+            {
+                changeState(KnightState::RUNNING);
+            }
+        }
+        else
+        {
+            changeState(KnightState::IDLE);
+        }
+    }
+    // 还在墙上
+    else if (checkWallSlideCollision(_wallOnRight))
+    {
+        changeState(KnightState::WALL_SLIDING);
+    }
+    // 不在墙上也不在地面
+    else
+    {
+        _isOnWall = false;
+        _facingRight = !_wallOnRight;
+        this->setFlippedX(_facingRight);
+        changeState(KnightState::FALLING);
+    }
+}
+
+void TheKnight::createWallSlashEffect(int effectNum)
+{
+    // 移除旧特效
+    removeSlashEffect();
+    
+    // 使用水平攻击的特效（SlashEffect）
+    std::string effectPath = "TheKnight/Slash/SlashEffect/SlashEffect" + std::to_string(effectNum) + ".png";
+    
+    _slashEffect = Sprite::create(effectPath);
+    if (_slashEffect && this->getParent())
+    {
+        _slashEffect->setAnchorPoint(Vec2(0.5f, 0.5f));
+        _slashEffectPhase = effectNum;  // 同步阶段给通用特效位置更新使用
+        this->getParent()->addChild(_slashEffect, this->getLocalZOrder() + 1);
+        updateWallSlashEffectPosition();
+    }
+}
+
+void TheKnight::updateWallSlashEffectPosition()
+{
+    if (!_slashEffect) return;
+    
+    Vec2 pos = this->getPosition();
+    auto knightSize = this->getContentSize();
+    auto effectSize = _slashEffect->getContentSize();
+    
+    // 贴墙时角色面向与墙相反方向（素材图片在右墙上Slide面朝左）
+    // 所以攻击特效应该在离墙的那一侧
+    float offsetX = (knightSize.width * 0.1f + effectSize.width / 2);
+    float effectX, effectY;
+    
+    // 墙在右边时角色面朝左，特效在左边
+    // 墙在左边时角色面朝右，特效在右边
+    if (_wallOnRight)
+    {
+        effectX = pos.x - offsetX;  // 特效在左边
+        _slashEffect->setFlippedX(false);  // 面朝左
+    }
+    else
+    {
+        effectX = pos.x + offsetX;  // 特效在右边
+        _slashEffect->setFlippedX(true);   // 面朝右
+    }
+    effectY = pos.y + knightSize.height / 2;
+    
+    _slashEffect->setPosition(Vec2(effectX, effectY));
+}
+
 bool TheKnight::getSlashEffectBoundingBox(Rect& outRect) const
 {
     if (!_slashEffect || !_isAttacking)
