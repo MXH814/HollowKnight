@@ -1,4 +1,4 @@
-#include "MainMenuScene.h"
+ï»¿#include "MainMenuScene.h"
 #include "LoadingScene.h" 
 #include <GameScene.h>
 #include <BossScene.h>
@@ -7,7 +7,7 @@
 USING_NS_CC;
 using namespace CocosDenshion;
 
-// È«¾Ö Charm ×´Ì¬£¨0 = Î´×°±¸£¬1 = ÒÑ×°±¸£©
+// å…¨å±€ Charm çŠ¶æ€ï¼ˆ0 = æœªè£…å¤‡ï¼Œ1 = å·²è£…å¤‡ï¼‰
 static int _charmWaywardCompass = 0;
 static int _charmShamanStone = 0;
 static int _charmStalwartShell = 0;
@@ -15,9 +15,9 @@ static int _charmSteadyBody = 0;
 static int _charmSoulCatcher = 0;
 static int _charmSprintMaster = 0;
 
-// °¼²ÛÏµÍ³
-static const int MAX_NOTCHES = 6;  // °¼²ÛÉÏÏŞ
-static int usedNotches = 0;        // ÒÑÊ¹ÓÃ°¼²ÛÊı
+// å‡¹æ§½ç³»ç»Ÿ
+static const int MAX_NOTCHES = 6;  // å‡¹æ§½ä¸Šé™
+static int usedNotches = 0;        // å·²ä½¿ç”¨å‡¹æ§½æ•°
 
 Scene* MainMenuScene::createScene()
 {
@@ -32,23 +32,23 @@ bool MainMenuScene::init()
     auto visibleSize = Director::getInstance()->getVisibleSize();
     auto origin = Director::getInstance()->getVisibleOrigin();
 
-    // ±³¾°Í¼Æ¬
+    // èƒŒæ™¯å›¾ç‰‡
     auto bg = Sprite::create("Menu/Voidheart_menu_BG.png");
     bg->setPosition(Vec2(origin.x + visibleSize.width / 2,
         origin.y + visibleSize.height / 2));
     bg->setScale(0.85f);
     this->addChild(bg, 0);
 
-    // ±êÌâÍ¼Æ¬
+    // æ ‡é¢˜å›¾ç‰‡
     auto title = Sprite::create("Menu/title.png");
     title->setPosition(Vec2(origin.x + visibleSize.width / 2,
         origin.y + visibleSize.height - 270));
     title->setScale(0.85f);
     this->addChild(title, 1);
 
-    // ²Ëµ¥ÎÄ×Ö°´Å¥
+    // èœå•æ–‡å­—æŒ‰é’®
     auto startlabel = Label::createWithTTF(
-        u8"¿ªÊ¼ÓÎÏ·",
+        u8"å¼€å§‹æ¸¸æˆ",
         "fonts/ZCOOLXiaoWei-Regular.ttf",
         48
     );
@@ -61,7 +61,7 @@ bool MainMenuScene::init()
     startItem->setPosition(Vec2(visibleSize.width / 2,visibleSize.height / 2));
 
     auto setlabel = Label::createWithTTF(
-        u8"ÓÎÏ·ÉèÖÃ",
+        u8"æ¸¸æˆè®¾ç½®",
         "fonts/ZCOOLXiaoWei-Regular.ttf",
         48
     );
@@ -74,7 +74,7 @@ bool MainMenuScene::init()
     setItem->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 - 100));
 
     auto extrallabel = Label::createWithTTF(
-        u8"¶îÍâÑ¡Ïî",
+        u8"é¢å¤–é€‰é¡¹",
         "fonts/ZCOOLXiaoWei-Regular.ttf",
         48
     );
@@ -87,7 +87,7 @@ bool MainMenuScene::init()
     extralItem->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 - 200));
 
     auto exitlabel = Label::createWithTTF(
-        u8"ÍË³öÓÎÏ·",
+        u8"é€€å‡ºæ¸¸æˆ",
         "fonts/ZCOOLXiaoWei-Regular.ttf",
         48
     );
@@ -104,15 +104,15 @@ bool MainMenuScene::init()
     menu->setPosition(Vec2::ZERO);
     this->addChild(menu);
 
-    // ²¥·Å²Ëµ¥±³¾°ÒôÀÖ£¨Ñ­»·£©
-    // ×ÊÔ´Â·¾¶Ê¾Àı£ºResources/Audio/menu_bgm.mp3
+    // æ’­æ”¾èœå•èƒŒæ™¯éŸ³ä¹ï¼ˆå¾ªç¯ï¼‰
+    // èµ„æºè·¯å¾„ç¤ºä¾‹ï¼šResources/Audio/menu_bgm.mp3
     SimpleAudioEngine::getInstance()->playBackgroundMusic("Music/Title.wav", true);
 
-    // ===== ÑªÁ¿³õÊ¼»¯ =====
+    // ===== è¡€é‡åˆå§‹åŒ– =====
     int maxHp = 5;
     int currentHp = 5;
 
-    // ÑªÌõ±³¾°
+    // è¡€æ¡èƒŒæ™¯
     auto hpBg = Sprite::create("Hp/hpbg.png");
     hpBg->setPosition(Vec2(200, 950));
     this->addChild(hpBg);
@@ -125,7 +125,7 @@ bool MainMenuScene::init()
     this->addChild(soulbg);
 
 
-    // ´´½¨Áé»ê¶¯»­Ö¡
+    // åˆ›å»ºçµé­‚åŠ¨ç”»å¸§
     Vector<SpriteFrame*> soulFrames;
     for (int i = 0; i <= 2; i++) {
         std::string frameName = "Hp/soul_"+ std::to_string(soul) + "_" + std::to_string(i) + ".png";
@@ -136,13 +136,13 @@ bool MainMenuScene::init()
         }
     }
 
-    // ´´½¨²¢²¥·ÅÑ­»·¶¯»­
+    // åˆ›å»ºå¹¶æ’­æ”¾å¾ªç¯åŠ¨ç”»
     auto soulAnimation = Animation::createWithSpriteFrames(soulFrames, 0.25f);
     auto soulAnimate = Animate::create(soulAnimation);
     auto repeatForever = RepeatForever::create(soulAnimate);
     soulbg->runAction(repeatForever);
 
-    // µ±Ç°ÑªÁ¿Ìõ
+    // å½“å‰è¡€é‡æ¡
     float startX = 20;
     float gap = 50;
 
@@ -181,7 +181,7 @@ bool MainMenuScene::init()
     coinsnum->setPosition(Vec2(350, 900));
     this->addChild(coinsnum);
 
-    // Ìí¼Ó¼üÅÌÊÂ¼ş¼àÌı
+    // æ·»åŠ é”®ç›˜äº‹ä»¶ç›‘å¬
     auto listener = EventListenerKeyboard::create();
     listener->onKeyPressed = [=](EventKeyboard::KeyCode keyCode, Event* event) {
         if (keyCode == EventKeyboard::KeyCode::KEY_Q) {
@@ -195,25 +195,25 @@ bool MainMenuScene::init()
 
 void MainMenuScene::startGame(Ref* sender)
 {
-    // ²¥·Åµã»÷ÒôĞ§
+    // æ’­æ”¾ç‚¹å‡»éŸ³æ•ˆ
     SimpleAudioEngine::getInstance()->playEffect("Music/click.wav");
 
     if (this->getChildByName("SelectLayer") != nullptr) {
-        return; // Èç¹û´æÔÚ£¬Ö±½Ó·µ»Ø£¬±ÜÃâÖØ¸´´´½¨
+        return; // å¦‚æœå­˜åœ¨ï¼Œç›´æ¥è¿”å›ï¼Œé¿å…é‡å¤åˆ›å»º
     }
-    // ´´½¨Ò»¸öÈ«ºÚÕÚÕÖ²ã
+    // åˆ›å»ºä¸€ä¸ªå…¨é»‘é®ç½©å±‚
     auto layer = LayerColor::create(Color4B(0, 0, 0, 255));
     this->addChild(layer, 10, "SelectLayer");
 
     auto visibleSize = Director::getInstance()->getVisibleSize();
 
-    // ÌáÊ¾ÎÄ×Ö
-    auto label = Label::createWithTTF(u8"Ñ¡ÔñÄ£Ê½", "fonts/ZCOOLXiaoWei-Regular.ttf", 72);
+    // æç¤ºæ–‡å­—
+    auto label = Label::createWithTTF(u8"é€‰æ‹©æ¨¡å¼", "fonts/ZCOOLXiaoWei-Regular.ttf", 72);
     label->setColor(Color3B::WHITE);
     label->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 + 200));
     layer->addChild(label);
 
-    // ´´½¨¹ı¶É¶¯»­
+    // åˆ›å»ºè¿‡æ¸¡åŠ¨ç”»
     auto bg1 = Sprite::create("Menu/profile_fleur0.png");
     bg1->setPosition(Vec2(visibleSize.width / 2 - 40, visibleSize.height / 2 + 33));
     bg1->setScale(1.25f);
@@ -252,12 +252,12 @@ void MainMenuScene::startGame(Ref* sender)
     auto animatebg3 = Animate::create(animationbg3);
     bg3->runAction(animatebg3);
 
-    // ´´½¨µ×²¿¹ı¶É¶¯»­
+    // åˆ›å»ºåº•éƒ¨è¿‡æ¸¡åŠ¨ç”»
     auto topbg = Sprite::create("Menu/pause_top_fleur0.png");
     topbg->setPosition(Vec2(visibleSize.width / 2, visibleSize.height - 200));
     layer->addChild(topbg);
 
-    // ´´½¨µ×²¿¶¯»­Ö¡
+    // åˆ›å»ºåº•éƒ¨åŠ¨ç”»å¸§
     Vector<SpriteFrame*> topbgFrames;
     for (int i = 0; i <= 8; i++) {
         std::string frameName = "Menu/pause_top_fleur" + std::to_string(i) + ".png";
@@ -268,34 +268,34 @@ void MainMenuScene::startGame(Ref* sender)
         }
     }
 
-    // ²¥·Åµ×²¿¶¯»­£¨²»ÏûÊ§£©
+    // æ’­æ”¾åº•éƒ¨åŠ¨ç”»ï¼ˆä¸æ¶ˆå¤±ï¼‰
     auto animationtop = Animation::createWithSpriteFrames(topbgFrames, 0.08f);
     auto animatetop = Animate::create(animationtop);
     topbg->runAction(animatetop);
 
-    // ÆÕÍ¨Ä£Ê½°´Å¥
+    // æ™®é€šæ¨¡å¼æŒ‰é’®
     auto bg2 = Sprite::create("Menu/Area_Dirtmouth.png");
     bg2->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
     bg2->setScale(1.5f);
     bg2->setOpacity(225);
     layer->addChild(bg2);
 
-    auto normalLabel = Label::createWithTTF(u8"¾çÇéÄ£Ê½", "fonts/ZCOOLXiaoWei-Regular.ttf", 50);
+    auto normalLabel = Label::createWithTTF(u8"å‰§æƒ…æ¨¡å¼", "fonts/ZCOOLXiaoWei-Regular.ttf", 50);
     normalLabel->setColor(Color3B::WHITE);
     auto normalItem = MenuItemLabel::create(normalLabel, [=](Ref*) {
         SimpleAudioEngine::getInstance()->playEffect("Music/click.wav");
-        // ÔÚ½øÈëÓÎÏ·Ç°Í£Ö¹²Ëµ¥ÒôÀÖ
+        // åœ¨è¿›å…¥æ¸¸æˆå‰åœæ­¢èœå•éŸ³ä¹
         SimpleAudioEngine::getInstance()->stopBackgroundMusic(true);
 
-        // ´´½¨È«ºÚ¹ı¶É³¡¾°
+        // åˆ›å»ºå…¨é»‘è¿‡æ¸¡åœºæ™¯
         auto blackScene = Scene::create();
         auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255));
         blackScene->addChild(blackLayer);
         
-        // ÏÈÇĞ»»µ½ºÚÆÁ£¬ÑÓ³ÙºóÔÙ½øÈëÓÎÏ·³¡¾°
+        // å…ˆåˆ‡æ¢åˆ°é»‘å±ï¼Œå»¶è¿Ÿåå†è¿›å…¥æ¸¸æˆåœºæ™¯
         Director::getInstance()->replaceScene(TransitionFade::create(0.5f, blackScene));
         
-        // ÑÓ³Ùºó½øÈëÕæÕıµÄÓÎÏ·³¡¾°
+        // å»¶è¿Ÿåè¿›å…¥çœŸæ­£çš„æ¸¸æˆåœºæ™¯
         blackLayer->runAction(Sequence::create(
             DelayTime::create(1.0f),
             CallFunc::create([]() {
@@ -307,29 +307,29 @@ void MainMenuScene::startGame(Ref* sender)
     });
     normalItem->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
 
-    // BossÄ£Ê½°´Å¥
+    // Bossæ¨¡å¼æŒ‰é’®
     auto bg4 = Sprite::create("Menu/Area_Green_Path.png");
     bg4->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 - 300));
     bg4->setScale(1.5f);
     bg4->setOpacity(225);
     layer->addChild(bg4);
 
-    auto hardLabel = Label::createWithTTF(u8"BossÕ½", "fonts/ZCOOLXiaoWei-Regular.ttf", 50);
+    auto hardLabel = Label::createWithTTF(u8"Bossæˆ˜", "fonts/ZCOOLXiaoWei-Regular.ttf", 50);
     hardLabel->setColor(Color3B::WHITE);
     auto hardItem = MenuItemLabel::create(hardLabel, [=](Ref*) {
         SimpleAudioEngine::getInstance()->playEffect("Music/click.wav");
-        // ÔÚ½øÈë Boss ³¡¾°Ç°Í£Ö¹²Ëµ¥ÒôÀÖ
+        // åœ¨è¿›å…¥ Boss åœºæ™¯å‰åœæ­¢èœå•éŸ³ä¹
         SimpleAudioEngine::getInstance()->stopBackgroundMusic(true);
 
-        // ´´½¨È«ºÚ¹ı¶É³¡¾°
+        // åˆ›å»ºå…¨é»‘è¿‡æ¸¡åœºæ™¯
         auto blackScene = Scene::create();
         auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255));
         blackScene->addChild(blackLayer);
         
-        // ÏÈÇĞ»»µ½ºÚÆÁ£¬ÑÓ³ÙºóÔÙ½øÈëBoss³¡¾°
+        // å…ˆåˆ‡æ¢åˆ°é»‘å±ï¼Œå»¶è¿Ÿåå†è¿›å…¥Bossåœºæ™¯
         Director::getInstance()->replaceScene(TransitionFade::create(0.5f, blackScene));
         
-        // ÑÓ³Ùºó½øÈëÕæÕıµÄBoss³¡¾°
+        // å»¶è¿Ÿåè¿›å…¥çœŸæ­£çš„Bossåœºæ™¯
         blackLayer->runAction(Sequence::create(
             DelayTime::create(1.0f),
             CallFunc::create([]() {
@@ -348,21 +348,21 @@ void MainMenuScene::startGame(Ref* sender)
 
 void MainMenuScene::showQPanel()
 {
-    // ¼ì²éÊÇ·ñÒÑ¾­´æÔÚ QPanel
+    // æ£€æŸ¥æ˜¯å¦å·²ç»å­˜åœ¨ QPanel
     auto existingPanel = this->getChildByName("QPanel");
     if (existingPanel != nullptr) {
         existingPanel->removeFromParent();
         return;
     }
 
-    // ´´½¨Ò»¸ö°ëÍ¸Ã÷ÕÚÕÖ²ã
+    // åˆ›å»ºä¸€ä¸ªåŠé€æ˜é®ç½©å±‚
     auto layer = LayerColor::create(Color4B(0, 0, 0, 200));
     layer->setName("QPanel");
     this->addChild(layer, 20);
 
     auto visibleSize = Director::getInstance()->getVisibleSize();
 
-    // ´´½¨ Charm_Prompt Í¼Æ¬
+    // åˆ›å»º Charm_Prompt å›¾ç‰‡
     auto charmBg = Sprite::create("Charm/Charm_Prompt.png");
     charmBg->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
     charmBg->setScale(1.5f);
@@ -372,7 +372,7 @@ void MainMenuScene::showQPanel()
     saveIcon->setPosition(Vec2(visibleSize.width - 100, 100));
     layer->addChild(saveIcon);
 
-    // ´´½¨¶¯»­Ö¡
+    // åˆ›å»ºåŠ¨ç”»å¸§
     Vector<SpriteFrame*> saveFrames;
     for (int i = 1; i <= 20; i++) {
         std::string frameName = "Charm/Save_Icon_" + std::to_string(i) + ".png";
@@ -383,7 +383,7 @@ void MainMenuScene::showQPanel()
         }
     }
 
-    // ²¥·Å¶¯»­
+    // æ’­æ”¾åŠ¨ç”»
     auto animation = Animation::createWithSpriteFrames(saveFrames, 0.1f);
     auto animate = Animate::create(animation);
     auto repeatAnimate = Repeat::create(animate, 1);
@@ -393,29 +393,29 @@ void MainMenuScene::showQPanel()
         nullptr
     ));
 
-    // ¶¯×÷£ºÑÓ³Ù 1 ÃëºóÒÆ³ı Charm_Prompt£¬²¢ÏÔÊ¾ÆäËûÄÚÈİ
+    // åŠ¨ä½œï¼šå»¶è¿Ÿ 1 ç§’åç§»é™¤ Charm_Promptï¼Œå¹¶æ˜¾ç¤ºå…¶ä»–å†…å®¹
     charmBg->runAction(
         Sequence::create(
             DelayTime::create(2.0f),
             RemoveSelf::create(),
             CallFunc::create([=]() {
-                // ÏÔÊ¾ Charm ±êÌâºÍ±ß¿ò
-                auto label = Label::createWithTTF(u8"»¤·û", "fonts/ZCOOLXiaoWei-Regular.ttf", 48);
+                // æ˜¾ç¤º Charm æ ‡é¢˜å’Œè¾¹æ¡†
+                auto label = Label::createWithTTF(u8"æŠ¤ç¬¦", "fonts/ZCOOLXiaoWei-Regular.ttf", 48);
                 label->setColor(Color3B::WHITE);
                 label->setPosition(Vec2(visibleSize.width / 2, visibleSize.height - 40));
                 layer->addChild(label);
 
-                auto click = Label::createWithTTF(u8"µã»÷×°±¸", "fonts/ZCOOLXiaoWei-Regular.ttf", 36);
+                auto click = Label::createWithTTF(u8"ç‚¹å‡»è£…å¤‡", "fonts/ZCOOLXiaoWei-Regular.ttf", 36);
                 click->setColor(Color3B::WHITE);
                 click->setPosition(Vec2(visibleSize.width - 300, 180));
                 layer->addChild(click);
 
-                auto aocao = Label::createWithTTF(u8"°¼²Û", "fonts/ZCOOLXiaoWei-Regular.ttf", 28);
+                auto aocao = Label::createWithTTF(u8"å‡¹æ§½", "fonts/ZCOOLXiaoWei-Regular.ttf", 28);
                 aocao->setColor(Color3B::WHITE);
                 aocao->setPosition(Vec2(365, visibleSize.height / 2 + 60));
                 layer->addChild(aocao);
 
-                auto zhuangbei = Label::createWithTTF(u8"ÒÑ×°±¸", "fonts/ZCOOLXiaoWei-Regular.ttf", 44);
+                auto zhuangbei = Label::createWithTTF(u8"å·²è£…å¤‡", "fonts/ZCOOLXiaoWei-Regular.ttf", 44);
                 zhuangbei->setColor(Color3B::WHITE);
                 zhuangbei->setPosition(Vec2(400, visibleSize.height / 2 + 220));
                 layer->addChild(zhuangbei);
@@ -457,14 +457,14 @@ void MainMenuScene::showQPanel()
                 line->setScaleX(1.44f);
                 layer->addChild(line);
 
-                // ===== °¼²ÛÏµÍ³ =====
+                // ===== å‡¹æ§½ç³»ç»Ÿ =====
                 auto notchSprites = std::make_shared<std::vector<Sprite*>>();
                 
-                // °¼²ÛÎ»ÖÃ£ºÆÁÄ»ÖĞĞÄÆ«×óÉÏ
+                // å‡¹æ§½ä½ç½®ï¼šå±å¹•ä¸­å¿ƒåå·¦ä¸Š
                 float notchStartX = visibleSize.width / 2 - 600;
                 float notchY = visibleSize.height / 2 + 15;
 
-                // ¼ÆËãµ±Ç°ÒÑÊ¹ÓÃµÄ°¼²ÛÊı
+                // è®¡ç®—å½“å‰å·²ä½¿ç”¨çš„å‡¹æ§½æ•°
                 usedNotches = 0;
                 if (_charmWaywardCompass == 1) usedNotches += 1;
                 if (_charmShamanStone == 1) usedNotches += 3;
@@ -473,7 +473,7 @@ void MainMenuScene::showQPanel()
                 if (_charmSoulCatcher == 1) usedNotches += 2;
                 if (_charmSprintMaster == 1) usedNotches += 1;
 
-                // ´´½¨°¼²ÛÍ¼Æ¬
+                // åˆ›å»ºå‡¹æ§½å›¾ç‰‡
                 for (int i = 0; i < MAX_NOTCHES; i++) {
                     std::string notchImage = (i < usedNotches) ? 
                         "Charm/charm_cost_1.png" : "Charm/charm_cost_0.png";
@@ -483,7 +483,7 @@ void MainMenuScene::showQPanel()
                     notchSprites->push_back(notch);
                 }
 
-                // ¸üĞÂ°¼²ÛÏÔÊ¾µÄº¯Êı
+                // æ›´æ–°å‡¹æ§½æ˜¾ç¤ºçš„å‡½æ•°
                 auto updateNotchDisplay = [=]() {
                     for (int i = 0; i < MAX_NOTCHES; i++) {
                         std::string notchImage = (i < usedNotches) ? 
@@ -492,38 +492,38 @@ void MainMenuScene::showQPanel()
                     }
                 };
 
-                // ===== Charm ÏµÍ³ =====
+                // ===== Charm ç³»ç»Ÿ =====
                 
-                // Charm ÅäÖÃĞÅÏ¢
+                // Charm é…ç½®ä¿¡æ¯
                 struct CharmInfo {
                     std::string imagePath;
                     Vec2 originalPos;
                     Sprite* sprite;
                     Sprite* darkSprite;
                     int* statePtr;
-                    int cost;  // °¼²ÛÏûºÄ
+                    int cost;  // å‡¹æ§½æ¶ˆè€—
                     int equippedSlot;
                 };
 
                 auto charms = std::make_shared<std::vector<CharmInfo>>();
 
-                // Ô­Ê¼Î»ÖÃÅäÖÃ£ºÆÁÄ»ÖĞÏÂ²¿·Ö£¬¾ÓÖĞ£¬Ë®Æ½ÅÅÁĞ
+                // åŸå§‹ä½ç½®é…ç½®ï¼šå±å¹•ä¸­ä¸‹éƒ¨åˆ†ï¼Œå±…ä¸­ï¼Œæ°´å¹³æ’åˆ—
                 int charmCount = 6;
-                float originalGap = 150;  // ¼ä¸ô´óÒ»µã
+                float originalGap = 150;  // é—´éš”å¤§ä¸€ç‚¹
                 float originalStartX = visibleSize.width / 2 - 8 * originalGap / 2;
-                float originalY = visibleSize.height / 2 - 100;  // ÆÁÄ»ÖĞÏÂ²¿·Ö
+                float originalY = visibleSize.height / 2 - 100;  // å±å¹•ä¸­ä¸‹éƒ¨åˆ†
 
-                // ×°±¸²ÛÎ»ÖÃÅäÖÃ£º°¼²ÛÉÏ·½
+                // è£…å¤‡æ§½ä½ç½®é…ç½®ï¼šå‡¹æ§½ä¸Šæ–¹
                 float equippedStartX = notchStartX;
-                float equippedY = notchY + 125;  // °¼²ÛÉÏ·½
+                float equippedY = notchY + 125;  // å‡¹æ§½ä¸Šæ–¹
                 float equippedGap = 100;
 
                 int rows = 3;
                 int cols = 6;
-                float charmBackGap = originalGap;  // ±³¾°Í¼Æ¬¼ä¸ô
+                float charmBackGap = originalGap;  // èƒŒæ™¯å›¾ç‰‡é—´éš”
                 float charmBackStartX = originalStartX;
-                float charmBackStartY = originalY;  // ÆğÊ¼YÎ»ÖÃ
-                float rowGap = 100;  // ĞĞ¼ä¾à
+                float charmBackStartY = originalY;  // èµ·å§‹Yä½ç½®
+                float rowGap = 100;  // è¡Œé—´è·
 
                 for (int row = 0; row < rows; row++) {
                     for (int col = 0; col < cols; col++) {
@@ -537,7 +537,7 @@ void MainMenuScene::showQPanel()
                     }
                 }
 
-                // ³õÊ¼»¯ 6 ¸ö Charm£¨Í¼Æ¬Â·¾¶¡¢×´Ì¬Ö¸Õë¡¢°¼²ÛÏûºÄ£©
+                // åˆå§‹åŒ– 6 ä¸ª Charmï¼ˆå›¾ç‰‡è·¯å¾„ã€çŠ¶æ€æŒ‡é’ˆã€å‡¹æ§½æ¶ˆè€—ï¼‰
                 struct CharmConfig {
                     std::string imagePath;
                     int* statePtr;
@@ -558,16 +558,16 @@ void MainMenuScene::showQPanel()
                     info.imagePath = charmConfigs[i].imagePath;
                     info.statePtr = charmConfigs[i].statePtr;
                     info.cost = charmConfigs[i].cost;
-                    // Ô­Ê¼Î»ÖÃ£ºË®Æ½¾ÓÖĞÅÅÁĞ
+                    // åŸå§‹ä½ç½®ï¼šæ°´å¹³å±…ä¸­æ’åˆ—
                     info.originalPos = Vec2(originalStartX + i * originalGap, originalY);
                     info.equippedSlot = -1;
 
-                    // ´´½¨ Charm Í¼Æ¬
+                    // åˆ›å»º Charm å›¾ç‰‡
                     info.sprite = Sprite::create(info.imagePath);
                     info.sprite->setPosition(info.originalPos);
                     layer->addChild(info.sprite);
 
-                    // ´´½¨°µÉ«Õ¼Î»Í¼Æ¬
+                    // åˆ›å»ºæš—è‰²å ä½å›¾ç‰‡
                     info.darkSprite = Sprite::create(info.imagePath);
                     info.darkSprite->setPosition(info.originalPos);
                     info.darkSprite->setColor(Color3B(100, 100, 100));
@@ -577,7 +577,7 @@ void MainMenuScene::showQPanel()
                     charms->push_back(info);
                 }
 
-                // ¸üĞÂ×°±¸²ÛÎ»ÖÃµÄº¯Êı
+                // æ›´æ–°è£…å¤‡æ§½ä½ç½®çš„å‡½æ•°
                 auto updateEquippedPositions = [=]() {
                     int slot = 0;
                     for (auto& charm : *charms) {
@@ -590,14 +590,14 @@ void MainMenuScene::showQPanel()
                     }
                 };
 
-                // ³õÊ¼»¯Ê±¸üĞÂÒÑ×°±¸ Charm µÄÎ»ÖÃ
+                // åˆå§‹åŒ–æ—¶æ›´æ–°å·²è£…å¤‡ Charm çš„ä½ç½®
                 updateEquippedPositions();
 
-                // ===== ÓÒ²àĞÅÏ¢Ãæ°å =====
+                // ===== å³ä¾§ä¿¡æ¯é¢æ¿ =====
                 float infoPanelX = visibleSize.width - 450;
                 float infoPanelY = visibleSize.height / 2 + 100;
 
-                // Charm Í¼±ê£¨´óÍ¼£©
+                // Charm å›¾æ ‡ï¼ˆå¤§å›¾ï¼‰
                 auto infoCharmIcon = Sprite::create("Charm/Charm_WaywardCompass.png");
                 infoCharmIcon->setPosition(Vec2(infoPanelX, infoPanelY - 10));
                 infoCharmIcon->setScale(1.5f);
@@ -605,14 +605,14 @@ void MainMenuScene::showQPanel()
                 infoCharmIcon->setName("InfoCharmIcon");
                 layer->addChild(infoCharmIcon);
 
-                // Charm Ãû³Æ
+                // Charm åç§°
                 auto infoCharmName = Label::createWithTTF(u8"", "fonts/ZCOOLXiaoWei-Regular.ttf", 48);
                 infoCharmName->setColor(Color3B::WHITE);
                 infoCharmName->setPosition(Vec2(infoPanelX, infoPanelY + 150));
                 infoCharmName->setName("InfoCharmName");
                 layer->addChild(infoCharmName);
 
-                // Charm ÃèÊö
+                // Charm æè¿°
                 auto infoCharmDesc = Label::createWithTTF(u8"", "fonts/ZCOOLXiaoWei-Regular.ttf", 32);
                 infoCharmDesc->setColor(Color3B::WHITE);
                 infoCharmDesc->setPosition(Vec2(infoPanelX, infoPanelY - 150));
@@ -620,7 +620,7 @@ void MainMenuScene::showQPanel()
                 infoCharmDesc->setName("InfoCharmDesc");
                 layer->addChild(infoCharmDesc);
 
-                // °¼²ÛÏûºÄÍ¼Æ¬ÈİÆ÷
+                // å‡¹æ§½æ¶ˆè€—å›¾ç‰‡å®¹å™¨
                 auto costContainer = Node::create();
                 costContainer->setPosition(Vec2(infoPanelX + 45, infoPanelY + 100));
                 costContainer->setName("InfoCharmCostContainer");
@@ -632,7 +632,7 @@ void MainMenuScene::showQPanel()
                 infoCharmCost->setName("InfoCharmCost");
                 layer->addChild(infoCharmCost);
 
-                // ¸üĞÂĞÅÏ¢Ãæ°åµÄº¯Êı
+                // æ›´æ–°ä¿¡æ¯é¢æ¿çš„å‡½æ•°
                 auto updateInfoPanel = [=](int charmIndex, bool show) {
                     auto icon = static_cast<Sprite*>(layer->getChildByName("InfoCharmIcon"));
                     auto nameLabel = static_cast<Label*>(layer->getChildByName("InfoCharmName"));
@@ -640,7 +640,7 @@ void MainMenuScene::showQPanel()
                     auto costContainer = layer->getChildByName("InfoCharmCostContainer");
                     auto costLabel = static_cast<Label*>(layer->getChildByName("InfoCharmCost"));
 
-                    // Çå³ıÖ®Ç°µÄ°¼²ÛÍ¼Æ¬
+                    // æ¸…é™¤ä¹‹å‰çš„å‡¹æ§½å›¾ç‰‡
                     costContainer->removeAllChildren();
 
                     if (!show) {
@@ -656,48 +656,48 @@ void MainMenuScene::showQPanel()
                     int costCount = 0;
                     if (charmIndex == 0) {
                         icon->setTexture("Charm/Charm_WaywardCompass.png");
-                        nameLabel->setString(u8"Á÷ÀËÕßÂŞÅÌ");
-                        costLabel->setString(u8"»¨·Ñ");
-                        descLabel->setString(u8"µ±µØÍ¼´ò¿ªÊ±£¬½«ÆäÎ»ÖÃ¸æËßÅå´÷Õß£¬ÔÊĞíÂşÓÎÕß½øĞĞ¾«È·¶¨Î»¡£");
+                        nameLabel->setString(u8"æµæµªè€…ç½—ç›˜");
+                        costLabel->setString(u8"èŠ±è´¹");
+                        descLabel->setString(u8"å½“åœ°å›¾æ‰“å¼€æ—¶ï¼Œå°†å…¶ä½ç½®å‘Šè¯‰ä½©æˆ´è€…ï¼Œå…è®¸æ¼«æ¸¸è€…è¿›è¡Œç²¾ç¡®å®šä½ã€‚");
                         costCount = 1;
                     }
                     else if (charmIndex == 1) {
                         icon->setTexture("Charm/Charm_ShamanStone.png");
-                        nameLabel->setString(u8"ÈøÂúÖ®Ê¯");
-                        costLabel->setString(u8"»¨·Ñ");
-                        descLabel->setString(u8"Ìá¸ß·¨ÊõµÄÍşÁ¦£¬¶ÔµĞÈËÔì³É¸ü¶àÉËº¦¡£");
+                        nameLabel->setString(u8"è¨æ»¡ä¹‹çŸ³");
+                        costLabel->setString(u8"èŠ±è´¹");
+                        descLabel->setString(u8"æé«˜æ³•æœ¯çš„å¨åŠ›ï¼Œå¯¹æ•Œäººé€ æˆæ›´å¤šä¼¤å®³ã€‚");
                         costCount = 3;
                     }
                     else if (charmIndex == 2) {
                         icon->setTexture("Charm/Charm_StalwartShell.png");
-                        nameLabel->setString(u8"¼áÓ²Íâ¿Ç");
-                        costLabel->setString(u8"»¨·Ñ");
-                        descLabel->setString(u8"¼ÓÇ¿ÈÍĞÔ¡£µ±´ÓÉËº¦ÖĞ»Ö¸´Ê±£¬ÑÓ³¤³ÖÓĞÕß±£³Ö²»ÊÜÉËº¦µÄÊ±¼ä¡£");
+                        nameLabel->setString(u8"åšç¡¬å¤–å£³");
+                        costLabel->setString(u8"èŠ±è´¹");
+                        descLabel->setString(u8"åŠ å¼ºéŸ§æ€§ã€‚å½“ä»ä¼¤å®³ä¸­æ¢å¤æ—¶ï¼Œå»¶é•¿æŒæœ‰è€…ä¿æŒä¸å—ä¼¤å®³çš„æ—¶é—´ã€‚");
                         costCount = 2;
                     }
                     else if (charmIndex == 3) {
                         icon->setTexture("Charm/Charm_SteadyBody.png");
-                        nameLabel->setString(u8"ÎÈ¶¨Ö®Çû");
-                        costLabel->setString(u8"»¨·Ñ");
-                        descLabel->setString(u8"·ÀÖ¹³ÖÓĞÕßÓÃ¹Ç¶¤Åü¿³µĞÈËÊ±²úÉúºó×øÁ¦¡£");
+                        nameLabel->setString(u8"ç¨³å®šä¹‹èº¯");
+                        costLabel->setString(u8"èŠ±è´¹");
+                        descLabel->setString(u8"é˜²æ­¢æŒæœ‰è€…ç”¨éª¨é’‰åŠˆç æ•Œäººæ—¶äº§ç”ŸåååŠ›ã€‚");
                         costCount = 1;
                     }
                     else if (charmIndex == 4) {
                         icon->setTexture("Charm/Charm_SoulCatcher.png");
-                        nameLabel->setString(u8"Áé»ê²¶ÊÖ");
-                        costLabel->setString(u8"»¨·Ñ");
-                        descLabel->setString(u8"Ôö¼ÓÓÃ¹Ç¶¤¹¥»÷µĞÈËÊ±»ñµÃµÄÁé»êÊıÁ¿¡£");
+                        nameLabel->setString(u8"çµé­‚æ•æ‰‹");
+                        costLabel->setString(u8"èŠ±è´¹");
+                        descLabel->setString(u8"å¢åŠ ç”¨éª¨é’‰æ”»å‡»æ•Œäººæ—¶è·å¾—çš„çµé­‚æ•°é‡ã€‚");
                         costCount = 2;
                     }
                     else if (charmIndex == 5) {
                         icon->setTexture("Charm/Charm_SprintMaster.png");
-                        nameLabel->setString(u8"³å´Ì´óÊ¦");
-                        costLabel->setString(u8"»¨·Ñ");
-                        descLabel->setString(u8"³ÖÓĞÕß½«ÄÜ¹»¸üÆµ·±µØ³å´Ì£¬Ò²ÄÜÏòÏÂ³å´Ì¡£");
+                        nameLabel->setString(u8"å†²åˆºå¤§å¸ˆ");
+                        costLabel->setString(u8"èŠ±è´¹");
+                        descLabel->setString(u8"æŒæœ‰è€…å°†èƒ½å¤Ÿæ›´é¢‘ç¹åœ°å†²åˆºï¼Œä¹Ÿèƒ½å‘ä¸‹å†²åˆºã€‚");
                         costCount = 1;
                     }
 
-                    // ´´½¨°¼²ÛÏûºÄÍ¼Æ¬
+                    // åˆ›å»ºå‡¹æ§½æ¶ˆè€—å›¾ç‰‡
                     float costGap = 40;
                     float costStartX = -(costCount - 1) * costGap / 2;
                     for (int j = 0; j < costCount; j++) {
@@ -707,7 +707,7 @@ void MainMenuScene::showQPanel()
                     }
                 };
 
-                // ÎªÃ¿¸ö Charm Ìí¼Ó´¥Ãş¼àÌı
+                // ä¸ºæ¯ä¸ª Charm æ·»åŠ è§¦æ‘¸ç›‘å¬
                 for (int i = 0; i < charmCount; i++) {
                     auto listener = EventListenerTouchOneByOne::create();
                     listener->setSwallowTouches(true);
@@ -717,14 +717,14 @@ void MainMenuScene::showQPanel()
                             auto& charm = (*charms)[i];
                             
                             if (*charm.statePtr == 0) {
-                                // ¼ì²é°¼²ÛÊÇ·ñ×ã¹»
+                                // æ£€æŸ¥å‡¹æ§½æ˜¯å¦è¶³å¤Ÿ
                                 if (usedNotches + charm.cost > MAX_NOTCHES) {
-                                    // °¼²Û²»×ã£¬ÎŞ·¨×°±¸
-                                    CCLOG("°¼²Û²»×ã£¬ÎŞ·¨×°±¸ Charm");
+                                    // å‡¹æ§½ä¸è¶³ï¼Œæ— æ³•è£…å¤‡
+                                    CCLOG("å‡¹æ§½ä¸è¶³ï¼Œæ— æ³•è£…å¤‡ Charm");
                                     return true;
                                 }
                                 
-                                // ×°±¸ Charm
+                                // è£…å¤‡ Charm
                                 *charm.statePtr = 1;
                                 usedNotches += charm.cost;
                                 charm.darkSprite->setVisible(true);
@@ -733,7 +733,7 @@ void MainMenuScene::showQPanel()
                                 updateInfoPanel(i, true);
                             }
                             else {
-                                // Ğ¶ÏÂ Charm
+                                // å¸ä¸‹ Charm
                                 *charm.statePtr = 0;
                                 usedNotches -= charm.cost;
                                 charm.equippedSlot = -1;
@@ -757,15 +757,15 @@ void MainMenuScene::showQPanel()
 
 void MainMenuScene::openSettings(Ref* sender)
 {
-    // ²¥·Åµã»÷ÒôĞ§
+    // æ’­æ”¾ç‚¹å‡»éŸ³æ•ˆ
     SimpleAudioEngine::getInstance()->playEffect("Music/click.wav");
 
-    CCLOG("ÉèÖÃ½çÃæ");
+    CCLOG("è®¾ç½®ç•Œé¢");
 }
 
 void MainMenuScene::exitGame(Ref* sender)
 {
-    // ²¥·Åµã»÷ÒôĞ§
+    // æ’­æ”¾ç‚¹å‡»éŸ³æ•ˆ
     SimpleAudioEngine::getInstance()->playEffect("Music/click.wav");
 
     Director::getInstance()->end();
@@ -773,10 +773,10 @@ void MainMenuScene::exitGame(Ref* sender)
 
 void MainMenuScene::extrallabel(cocos2d::Ref* sender)
 {
-    // ²¥·Åµã»÷ÒôĞ§
+    // æ’­æ”¾ç‚¹å‡»éŸ³æ•ˆ
     SimpleAudioEngine::getInstance()->playEffect("Music/click.wav");
 
-    CCLOG("¶îÍâ²Ëµ¥Ïî");
+    CCLOG("é¢å¤–èœå•é¡¹");
 }
 
 

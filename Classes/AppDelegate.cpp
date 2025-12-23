@@ -1,5 +1,5 @@
 #include "AppDelegate.h"
-#include "BossScene.h"
+#include "LoadingScene.h"
 
 // #define USE_AUDIO_ENGINE 1  //音频引擎，使用时解开
 // #define USE_SIMPLE_AUDIO_ENGINE 1  //简单音频引擎，使用时解开
@@ -99,7 +99,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
     register_all_packages();  //注册所有的包，安卓用，不要动
 
     // create a scene. it's an autorelease object   创建一个场景。这是一个自动释放对象。
-    auto scene = BossScene::createScene();
+    auto scene = LoadingScene::createScene();
 
     // run  调用导演来运行场景，控制游戏中不同的场景切换
     director->runWithScene(scene);
