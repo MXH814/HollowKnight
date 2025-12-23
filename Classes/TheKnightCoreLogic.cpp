@@ -80,6 +80,10 @@ bool TheKnight::init()
     _isLookingUp = false;
     _isLookingDown = false;
     
+    // 地图模式初始化
+    _isMapMode = false;
+    _isMapKeyPressed = false;
+
     // 护符系统初始化（0=未装备，1=已装备）
     _charmStalwartShell = 0;     // 坚硬外壳：受击无敌时长+0.4s
     _charmSoulCatcher = 0;       // 灵魂捕手：攻击获得Soul+1
@@ -373,6 +377,9 @@ void TheKnight::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
     if (keyCode == EventKeyboard::KeyCode::KEY_W || 
         keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_W)
     {
+        // 地图模式下禁用
+        if (_isMapMode) return;
+        
         _isLookingUp = true;
         
         if (_state == KnightState::IDLE && _isOnGround)
@@ -384,6 +391,9 @@ void TheKnight::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
     else if (keyCode == EventKeyboard::KeyCode::KEY_S || 
              keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_S)
     {
+        // 地图模式下禁用
+        if (_isMapMode) return;
+        
         _isLookingDown = true;
         
         if (_state == KnightState::IDLE && _isOnGround)
@@ -397,7 +407,19 @@ void TheKnight::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
     {
         _isMovingLeft = true;
         
-        if (_isOnGround && _state != KnightState::DASHING)
+        // 地图模式下的移动
+        if (_isMapMode && _isOnGround)
+        {
+            if (_facingRight && _state != KnightState::MAP_TURNING)
+            {
+                changeState(KnightState::MAP_TURNING);
+            }
+            else if (!_facingRight && _state == KnightState::MAP_IDLE)
+            {
+                changeState(KnightState::MAP_WALKING);
+            }
+        }
+        else if (_isOnGround && _state != KnightState::DASHING)
         {
             if (_facingRight && _state != KnightState::TURNING)
             {
@@ -415,7 +437,19 @@ void TheKnight::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
     {
         _isMovingRight = true;
         
-        if (_isOnGround && _state != KnightState::DASHING)
+        // 地图模式下的移动
+        if (_isMapMode && _isOnGround)
+        {
+            if (!_facingRight && _state != KnightState::MAP_TURNING)
+            {
+                changeState(KnightState::MAP_TURNING);
+            }
+            else if (_facingRight && _state == KnightState::MAP_IDLE)
+            {
+                changeState(KnightState::MAP_WALKING);
+            }
+        }
+        else if (_isOnGround && _state != KnightState::DASHING)
         {
             if (!_facingRight && _state != KnightState::TURNING)
             {
@@ -431,6 +465,9 @@ void TheKnight::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
     else if (keyCode == EventKeyboard::KeyCode::KEY_K ||
              keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_K)
     {
+        // 地图模式下禁用
+        if (_isMapMode) return;
+        
         // 贴墙时按跳跃键触发蹬墙跳
         if (_state == KnightState::WALL_SLIDING)
         {
@@ -456,6 +493,9 @@ void TheKnight::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
     else if (keyCode == EventKeyboard::KeyCode::KEY_L ||
              keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_L)
     {
+        // 地图模式下禁用
+        if (_isMapMode) return;
+        
         if (_canDash && _state != KnightState::DASHING)
         {
             // 贴墙时冲刺，方向为离开墙壁
@@ -473,6 +513,9 @@ void TheKnight::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
     else if (keyCode == EventKeyboard::KeyCode::KEY_J ||
              keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_J)
     {
+        // 地图模式下禁用
+        if (_isMapMode) return;
+        
         // 不在攻击状态且不在冲刺状态时可以攻击
         if (!_isAttacking && _state != KnightState::DASHING)
         {
@@ -502,9 +545,24 @@ void TheKnight::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
     // 空格键 - 法术/回复
     else if (keyCode == EventKeyboard::KeyCode::KEY_SPACE)
     {
+        // 地图模式下禁用
+        if (_isMapMode) return;
+        
         _isSpaceKeyPressed = true;
         _spaceKeyHoldTime = 0.0f;
         // 按下时不做任何动作，等待判断是短按还是长按
+    }
+    // Tab键 - 地图模式
+    else if (keyCode == EventKeyboard::KeyCode::KEY_TAB)
+    {
+        _isMapKeyPressed = true;
+        // 只有在地面上且处于静止或移动状态时才能打开地图
+        if (_isOnGround && !_isMapMode &&
+            (_state == KnightState::IDLE || _state == KnightState::RUNNING || 
+             _state == KnightState::RUN_TO_IDLE))
+        {
+            changeState(KnightState::MAP_OPENING);
+        }
     }
 }
 
@@ -538,7 +596,19 @@ void TheKnight::onKeyReleased(EventKeyboard::KeyCode keyCode, Event* event)
     {
         _isMovingLeft = false;
         
-        if (_isOnGround && _state == KnightState::RUNNING)
+        // 地图模式下的移动
+        if (_isMapMode && _state == KnightState::MAP_WALKING)
+        {
+            if (!_isMovingRight)
+            {
+                changeState(KnightState::MAP_IDLE);
+            }
+            else if (_isMovingRight && !_facingRight && _state != KnightState::MAP_TURNING)
+            {
+                changeState(KnightState::MAP_TURNING);
+            }
+        }
+        else if (_isOnGround && _state == KnightState::RUNNING)
         {
             if (!_isMovingRight)
             {
@@ -556,7 +626,19 @@ void TheKnight::onKeyReleased(EventKeyboard::KeyCode keyCode, Event* event)
     {
         _isMovingRight = false;
         
-        if (_isOnGround && _state == KnightState::RUNNING)
+        // 地图模式下的移动
+        if (_isMapMode && _state == KnightState::MAP_WALKING)
+        {
+            if (!_isMovingLeft)
+            {
+                changeState(KnightState::MAP_IDLE);
+            }
+            else if (_isMovingLeft && _facingRight && _state != KnightState::MAP_TURNING)
+            {
+                changeState(KnightState::MAP_TURNING);
+            }
+        }
+        else if (_isOnGround && _state == KnightState::RUNNING)
         {
             if (!_isMovingLeft)
             {
@@ -577,12 +659,12 @@ void TheKnight::onKeyReleased(EventKeyboard::KeyCode keyCode, Event* event)
     // 空格键释放
     else if (keyCode == EventKeyboard::KeyCode::KEY_SPACE)
     {
-        // 如果正在回复状态且还没完成，取消回复
+        // 如果正在恢复状态且还没完成，取消恢复
         if (_state == KnightState::RECOVERING)
         {
             cancelRecover();
         }
-        // 如果按下时间短于阈值（短按），释放法术
+        // 如果按下时间少于阈值，是短按，释放法术
         else if (_isSpaceKeyPressed && _spaceKeyHoldTime < _recoverHoldThreshold)
         {
             if (_soul >= _spellCost && 
@@ -596,6 +678,17 @@ void TheKnight::onKeyReleased(EventKeyboard::KeyCode keyCode, Event* event)
             }
         }
         _isSpaceKeyPressed = false;
+    }
+    // Tab键释放 - 关闭地图
+    else if (keyCode == EventKeyboard::KeyCode::KEY_TAB)
+    {
+        _isMapKeyPressed = false;
+        // 如果处于地图模式，关闭地图
+        if (_isMapMode && 
+            (_state == KnightState::MAP_IDLE || _state == KnightState::MAP_WALKING || _state == KnightState::MAP_TURNING))
+        {
+            changeState(KnightState::MAP_CLOSING);
+        }
     }
 }
 
@@ -762,13 +855,18 @@ void TheKnight::update(float dt)
         if (!checkStillOnGround())
         {
             _isOnGround = false;
+            // 如果处于地图模式，强制退出
+            if (_isMapMode)
+            {
+                exitMapMode();
+            }
             changeState(KnightState::FALLING);
             return;
         }
     }
     
-    // 处理地面水平移动（只有RUNNING状态）
-    if (_state == KnightState::RUNNING)
+    // 更新地面水平移动（只在RUNNING状态和MAP_WALKING状态）
+    if (_state == KnightState::RUNNING || _state == KnightState::MAP_WALKING)
     {
         Vec2 pos = this->getPosition();
         float newX = pos.x;
@@ -779,6 +877,12 @@ void TheKnight::update(float dt)
         if (_charmSprintmaster)
         {
             actualMoveSpeed *= 1.2f;  // 增加20%移动速度
+        }
+        
+        // 地图模式下移动速度减小到1/3
+        if (_state == KnightState::MAP_WALKING)
+        {
+            actualMoveSpeed /= 3.0f;
         }
         
         if (_isMovingLeft)

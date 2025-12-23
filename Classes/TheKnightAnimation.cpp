@@ -268,6 +268,46 @@ void TheKnight::loadAnimations()
         AnimationCache::getInstance()->addAnimation(_recoverAnim, "recover");
     }
     
+    // 打开地图动画 - 3帧
+    _mapOpenAnim = createAnimation("TheKnight/Map/MapOpen/", "MapOpen", 1, 3, 0.05f);
+    if (_mapOpenAnim)
+    {
+        _mapOpenAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_mapOpenAnim, "mapOpen");
+    }
+    
+    // 地图模式静止动画 - 7帧
+    _mapIdleAnim = createAnimation("TheKnight/Map/MapIdle/", "MapIdle", 1, 7, 0.1f);
+    if (_mapIdleAnim)
+    {
+        _mapIdleAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_mapIdleAnim, "mapIdle");
+    }
+    
+    // 地图模式行走动画 - 8帧
+    _mapWalkAnim = createAnimation("TheKnight/Map/MapWalk/", "MapWalk", 1, 8, 0.05f);
+    if (_mapWalkAnim)
+    {
+        _mapWalkAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_mapWalkAnim, "mapWalk");
+    }
+    
+    // 地图模式转向动画 - 2帧
+    _mapTurnAnim = createAnimation("TheKnight/Map/MapTurn/", "MapTurn", 1, 2, 0.05f);
+    if (_mapTurnAnim)
+    {
+        _mapTurnAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_mapTurnAnim, "mapTurn");
+    }
+    
+    // 关闭地图动画 - 2帧
+    _mapAwayAnim = createAnimation("TheKnight/Map/MapAway/", "MapAway", 1, 2, 0.05f);
+    if (_mapAwayAnim)
+    {
+        _mapAwayAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_mapAwayAnim, "mapAway");
+    }
+    
     // 设置初始纹理
     if (_idleAnim && _idleAnim->getFrames().size() > 0)
     {
@@ -706,6 +746,81 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
+            
+        case KnightState::MAP_OPENING:
+        {
+            this->stopAllActions();
+            auto animation = AnimationCache::getInstance()->getAnimation("mapOpen");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onMapOpenFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onMapOpenFinished();
+            }
+            break;
+        }
+            
+        case KnightState::MAP_IDLE:
+        {
+            this->stopAllActions();
+            auto animation = AnimationCache::getInstance()->getAnimation("mapIdle");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                this->runAction(RepeatForever::create(animate));
+            }
+            break;
+        }
+            
+        case KnightState::MAP_WALKING:
+        {
+            this->stopAllActions();
+            auto animation = AnimationCache::getInstance()->getAnimation("mapWalk");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                this->runAction(RepeatForever::create(animate));
+            }
+            break;
+        }
+            
+        case KnightState::MAP_TURNING:
+        {
+            this->stopAllActions();
+            auto animation = AnimationCache::getInstance()->getAnimation("mapTurn");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onMapTurnFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onMapTurnFinished();
+            }
+            break;
+        }
+            
+        case KnightState::MAP_CLOSING:
+        {
+            this->stopAllActions();
+            auto animation = AnimationCache::getInstance()->getAnimation("mapAway");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onMapCloseFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onMapCloseFinished();
+            }
+            break;
+        }
     }
 }
 
@@ -869,8 +984,8 @@ void TheKnight::onWallJumpAnimFinished()
 
 void TheKnight::onDoubleJumpAnimFinished()
 {
-    // 二段跳动画（含Airborne7）播放完毕后，直接播放下落动画
-    // 不再判断速度，因为动画已经包含了最高点帧
+    // 二段跳动画（包括Airborne7）播放完后直接播放下落动画
+    // 不再判断速度，因为我们已经播放了最高点帧
     this->stopAllActions();
     auto fallAnim = AnimationCache::getInstance()->getAnimation("jumpFall");
     if (fallAnim)
@@ -880,4 +995,70 @@ void TheKnight::onDoubleJumpAnimFinished()
         this->runAction(Sequence::create(animateFall, callback, nullptr));
     }
     _state = KnightState::FALLING;
+}
+
+void TheKnight::onMapOpenFinished()
+{
+    // 打开地图动画完成后，进入地图模式静止或行走状态
+    _isMapMode = true;
+    if (_isMovingLeft || _isMovingRight)
+    {
+        if ((_isMovingLeft && _facingRight) || (_isMovingRight && !_facingRight))
+        {
+            changeState(KnightState::MAP_TURNING);
+        }
+        else
+        {
+            changeState(KnightState::MAP_WALKING);
+        }
+    }
+    else
+    {
+        changeState(KnightState::MAP_IDLE);
+    }
+}
+
+void TheKnight::onMapTurnFinished()
+{
+    _facingRight = !_facingRight;
+    this->setFlippedX(_facingRight);
+    
+    if ((_isMovingLeft && !_facingRight) || (_isMovingRight && _facingRight))
+    {
+        changeState(KnightState::MAP_WALKING);
+    }
+    else
+    {
+        changeState(KnightState::MAP_IDLE);
+    }
+}
+
+void TheKnight::onMapCloseFinished()
+{
+    _isMapMode = false;
+    // 关闭地图后根据移动状态决定下一状态
+    if (_isMovingLeft || _isMovingRight)
+    {
+        if ((_isMovingLeft && _facingRight) || (_isMovingRight && !_facingRight))
+        {
+            changeState(KnightState::TURNING);
+        }
+        else
+        {
+            changeState(KnightState::RUNNING);
+        }
+    }
+    else
+    {
+        changeState(KnightState::IDLE);
+    }
+}
+
+void TheKnight::exitMapMode()
+{
+    // 强制退出地图模式（用于受击或高度变化时）
+    if (!_isMapMode) return;
+    
+    _isMapMode = false;
+    // 不播放关闭动画，直接切换状态
 }

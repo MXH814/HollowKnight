@@ -642,14 +642,20 @@ void TheKnight::takeDamage(int damage)
     _hp -= damage;
     if (_hp < 0) _hp = 0;
     
-    // 如果正在回复，取消回复（灵魂已消耗但不回血）
+    // 如果正在回复，取消回复（不返还灵魂，但扣血）
     if (_state == KnightState::RECOVERING)
     {
         _isRecovering = false;
         // 不调用 cancelRecover，直接进入受击状态
     }
     
-    // 清理攻击特效（无条件清理，确保特效不会残留）
+    // 如果处于地图模式，强制退出
+    if (_isMapMode)
+    {
+        exitMapMode();
+    }
+    
+    // 清理攻击特效（如果正在攻击确保特效被清理）
     _isAttacking = false;
     removeSlashEffect();
     

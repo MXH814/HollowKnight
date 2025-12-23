@@ -36,7 +36,12 @@ enum class KnightState
     GET_ATTACKED,   // 受击状态（硬直）
     DEAD,          // 死亡状态
     CASTING_SPELL,  // 释放法术状态
-    RECOVERING     // 回复生命状态
+    RECOVERING,     // 回复生命状态
+    MAP_OPENING,    // 打开地图状态
+    MAP_IDLE,       // 地图模式静止状态
+    MAP_WALKING,    // 地图模式行走状态
+    MAP_TURNING,    // 地图模式转向状态
+    MAP_CLOSING     // 关闭地图状态
 };
 
 // 平台结构
@@ -129,6 +134,12 @@ private:
     void onLookDownAnimFinished();
     void onLookDownEndFinished();
     void onWallJumpAnimFinished();
+    
+    // 地图模式相关
+    void onMapOpenFinished();
+    void onMapTurnFinished();
+    void onMapCloseFinished();
+    void exitMapMode();  // 强制退出地图模式
     
     // 跳跃相关
     void startJump();
@@ -284,6 +295,10 @@ private:
     bool _isLookingUp;           // 是否按住向上看
     bool _isLookingDown;         // 是否按住向下看
     
+    // 地图模式相关
+    bool _isMapMode;             // 是否处于地图模式
+    bool _isMapKeyPressed;       // Tab键是否按住
+    
     // 护符系统
     int _charmStalwartShell;     // 坚硬外壳：受击无敌时长+0.4s
     int _charmSoulCatcher;       // 灵魂捕手：攻击获得Soul+1
@@ -340,6 +355,11 @@ private:
     Animation* _vengefulSpiritEffectAnim; // 法术特效动画
     Animation* _recoverAnim;     // 回复动画
     Animation* _wallJumpPuffAnim; // 蹬墙跳烟雾动画
+    Animation* _mapOpenAnim;     // 打开地图动画
+    Animation* _mapIdleAnim;     // 地图模式静止动画
+    Animation* _mapWalkAnim;     // 地图模式行走动画
+    Animation* _mapTurnAnim;     // 地图模式转向动画
+    Animation* _mapAwayAnim;     // 关闭地图动画
 };
 
 #endif // __THE_KNIGHT_H__
