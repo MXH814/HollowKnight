@@ -83,6 +83,14 @@ bool TheKnight::init()
     // 地图模式初始化
     _isMapMode = false;
     _isMapKeyPressed = false;
+    
+    // Chair sitting related initialization
+    _isNearChair = false;
+    _isSitting = false;
+    _sitIdleTimer = 0.0f;
+    _sitIdleTimeout = 8.0f;  // 8秒无操作后入睡
+    _isAsleep = false;
+    _exitKey = EventKeyboard::KeyCode::KEY_NONE;
 
     // 护符系统初始化（0=未装备，1=已装备）
     _charmStalwartShell = 0;     // 坚硬外壳：受击无敌时长+0.4s
@@ -373,6 +381,48 @@ bool TheKnight::checkWallSlideCollision(bool checkRight)
 
 void TheKnight::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
 {
+    // If sitting and not in map mode, any key except Tab should exit sitting
+    if (_isSitting && _state != KnightState::SIT_MAP_OPEN && _state != KnightState::SIT_MAP_CLOSE)
+    {
+        // Tab key for sit map
+        if (keyCode == EventKeyboard::KeyCode::KEY_TAB)
+        {
+            _isMapKeyPressed = true;
+            if (_state == KnightState::SIT_IDLE || _state == KnightState::SITTING_ASLEEP)
+            {
+                changeState(KnightState::SIT_MAP_OPEN);
+            }
+            return;
+        }
+        
+        // Other functional keys exit sitting
+        if (keyCode == EventKeyboard::KeyCode::KEY_A || 
+            keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_A ||
+            keyCode == EventKeyboard::KeyCode::KEY_D || 
+            keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_D ||
+            keyCode == EventKeyboard::KeyCode::KEY_W || 
+            keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_W ||
+            keyCode == EventKeyboard::KeyCode::KEY_S || 
+            keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_S ||
+            keyCode == EventKeyboard::KeyCode::KEY_K ||
+            keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_K ||
+            keyCode == EventKeyboard::KeyCode::KEY_L ||
+            keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_L ||
+            keyCode == EventKeyboard::KeyCode::KEY_J ||
+            keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_J ||
+            keyCode == EventKeyboard::KeyCode::KEY_SPACE)
+        {
+            _exitKey = keyCode;
+            bool pressedLeft = (keyCode == EventKeyboard::KeyCode::KEY_A || 
+                               keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_A);
+            exitSitting(pressedLeft);
+            
+            // Reset sitting timer
+            _sitIdleTimer = 0.0f;
+            return;
+        }
+    }
+    
     // 支持大小写 W/w 键 - 向上看
     if (keyCode == EventKeyboard::KeyCode::KEY_W || 
         keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_W)
@@ -683,8 +733,14 @@ void TheKnight::onKeyReleased(EventKeyboard::KeyCode keyCode, Event* event)
     else if (keyCode == EventKeyboard::KeyCode::KEY_TAB)
     {
         _isMapKeyPressed = false;
-        // 如果处于地图模式，关闭地图
-        if (_isMapMode && 
+        
+        // If sitting with map open, close sit map
+        if (_state == KnightState::SIT_MAP_OPEN)
+        {
+            changeState(KnightState::SIT_MAP_CLOSE);
+        }
+        // If in regular map mode, close map
+        else if (_isMapMode && 
             (_state == KnightState::MAP_IDLE || _state == KnightState::MAP_WALKING || _state == KnightState::MAP_TURNING))
         {
             changeState(KnightState::MAP_CLOSING);
@@ -698,6 +754,13 @@ void TheKnight::update(float dt)
     if (_state == KnightState::DEAD)
     {
         return;
+    }
+    
+    // 处理坐下状态
+    if (_isSitting)
+    {
+        updateSitting(dt);
+        return;  // 坐着时不处理其他更新
     }
     
     // 更新空格键按住时间，并检查是否触发回复

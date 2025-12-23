@@ -99,6 +99,21 @@ bool GameScene::init()
     _cameraOffsetY = 0.0f;
     _targetCameraOffsetY = 0.0f;
 
+    // 添加键盘事件监听器用于触发椅子交互
+    auto keyboardListener = EventListenerKeyboard::create();
+    keyboardListener->onKeyPressed = [this](EventKeyboard::KeyCode keyCode, Event* event) {
+        // 当靠近椅子且按W键时开始坐下
+        if (_knight && _knight->isNearChair() && !_knight->isSitting())
+        {
+            if (keyCode == EventKeyboard::KeyCode::KEY_W || 
+                keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_W)
+            {
+                _knight->startSitting();
+            }
+        }
+    };
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(keyboardListener, this);
+
     // 启用 update 实现摄像机跟随
     this->scheduleUpdate();
 
@@ -164,6 +179,7 @@ void GameScene::checkInteractions()
 
     Vec2 playerPos = _knight->getPosition();
     bool showPrompt = false;
+    bool nearChair = false;
 
     for (auto& obj : _interactiveObjects)
     {
@@ -173,9 +189,13 @@ void GameScene::checkInteractions()
         {
             if (obj.name == "Chair")
             {
-                showPrompt = true;
-                _interactionLabel->setString(u8"休息");
-                _interactionLabel->setPosition(Vec2(playerPos.x, playerPos.y + 80));
+                nearChair = true;
+                if (!_knight->isSitting())
+                {
+                    showPrompt = true;
+                    _interactionLabel->setString(u8"休息");
+                    _interactionLabel->setPosition(Vec2(playerPos.x, playerPos.y + 80));
+                }
             }
             else if (obj.name == "Exit")
             {
@@ -199,6 +219,7 @@ void GameScene::checkInteractions()
         }
     }
 
+    _knight->setNearChair(nearChair);
     _interactionLabel->setVisible(showPrompt);
 }
 

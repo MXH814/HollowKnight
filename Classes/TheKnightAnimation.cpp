@@ -308,6 +308,71 @@ void TheKnight::loadAnimations()
         AnimationCache::getInstance()->addAnimation(_mapAwayAnim, "mapAway");
     }
     
+    // Chair animations
+    // 坐下动画 - 3帧
+    _sitAnim = createAnimation("TheKnight/Chair/Sit/", "Sit", 1, 3, 0.1f);
+    if (_sitAnim)
+    {
+        _sitAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_sitAnim, "sit");
+    }
+    
+    // 坐着静止动画 - 1帧
+    _sitIdleAnim = createAnimation("TheKnight/Chair/SitIdle/", "SitIdle", 1, 1, 0.1f);
+    if (_sitIdleAnim)
+    {
+        _sitIdleAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_sitIdleAnim, "sitIdle");
+    }
+    
+    // 坐着入睡动画 - 2帧
+    _sitFallAsleepAnim = createAnimation("TheKnight/Chair/SitFallAsleep/", "SitFallAsleep", 1, 2, 0.2f);
+    if (_sitFallAsleepAnim)
+    {
+        _sitFallAsleepAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_sitFallAsleepAnim, "sitFallAsleep");
+    }
+    
+    // 坐着睡觉动画 - 1帧
+    _sittingAsleepAnim = createAnimation("TheKnight/Chair/SittingAsleep/", "SittingAsleep", 1, 1, 0.1f);
+    if (_sittingAsleepAnim)
+    {
+        _sittingAsleepAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_sittingAsleepAnim, "sittingAsleep");
+    }
+    
+    // 醒来动画 - 9帧
+    _wakeToSitAnim = createAnimation("TheKnight/Chair/WakeToSit/", "WakeToSit", 1, 9, 0.06f);
+    if (_wakeToSitAnim)
+    {
+        _wakeToSitAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_wakeToSitAnim, "wakeToSit");
+    }
+    
+    // 起身离开动画 - 5帧
+    _getOffAnim = createAnimation("TheKnight/Chair/GetOff/", "GetOff", 1, 5, 0.06f);
+    if (_getOffAnim)
+    {
+        _getOffAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_getOffAnim, "getOff");
+    }
+    
+    // 坐着打开地图动画 - 4帧
+    _sitMapOpenAnim = createAnimation("TheKnight/Chair/SitMapOpen/", "SitMapOpen", 1, 4, 0.08f);
+    if (_sitMapOpenAnim)
+    {
+        _sitMapOpenAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_sitMapOpenAnim, "sitMapOpen");
+    }
+    
+    // 坐着关闭地图动画 - 5帧
+    _sitMapCloseAnim = createAnimation("TheKnight/Chair/SitMapClose/", "SitMapClose", 1, 5, 0.06f);
+    if (_sitMapCloseAnim)
+    {
+        _sitMapCloseAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_sitMapCloseAnim, "sitMapClose");
+    }
+    
     // 设置初始纹理
     if (_idleAnim && _idleAnim->getFrames().size() > 0)
     {
@@ -821,6 +886,145 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
+            
+        // Chair sitting states
+        case KnightState::SITTING:
+        {
+            this->stopAllActions();
+            _isSitting = true;
+            _sitIdleTimer = 0.0f;
+            _isAsleep = false;
+            auto animation = AnimationCache::getInstance()->getAnimation("sit");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onSitAnimFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onSitAnimFinished();
+            }
+            break;
+        }
+            
+        case KnightState::SIT_IDLE:
+        {
+            this->stopAllActions();
+            auto animation = AnimationCache::getInstance()->getAnimation("sitIdle");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                this->runAction(RepeatForever::create(animate));
+            }
+            break;
+        }
+            
+        case KnightState::SIT_FALL_ASLEEP:
+        {
+            this->stopAllActions();
+            auto animation = AnimationCache::getInstance()->getAnimation("sitFallAsleep");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onSitFallAsleepFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onSitFallAsleepFinished();
+            }
+            break;
+        }
+            
+        case KnightState::SITTING_ASLEEP:
+        {
+            this->stopAllActions();
+            _isAsleep = true;
+            auto animation = AnimationCache::getInstance()->getAnimation("sittingAsleep");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                this->runAction(RepeatForever::create(animate));
+            }
+            break;
+        }
+            
+        case KnightState::WAKE_TO_SIT:
+        {
+            this->stopAllActions();
+            auto animation = AnimationCache::getInstance()->getAnimation("wakeToSit");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onWakeToSitFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onWakeToSitFinished();
+            }
+            break;
+        }
+            
+        case KnightState::GET_OFF:
+        {
+            this->stopAllActions();
+            // GetOff素材面朝左，根据_exitKey决定翻转
+            // 如果按的是A键（左），则面朝左（不翻转）
+            // 其他键面朝右（翻转）
+            bool faceLeft = (_exitKey == EventKeyboard::KeyCode::KEY_A || 
+                             _exitKey == EventKeyboard::KeyCode::KEY_CAPITAL_A);
+            this->setFlippedX(!faceLeft);
+            _facingRight = !faceLeft;
+            
+            auto animation = AnimationCache::getInstance()->getAnimation("getOff");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onGetOffFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onGetOffFinished();
+            }
+            break;
+        }
+            
+        case KnightState::SIT_MAP_OPEN:
+        {
+            this->stopAllActions();
+            auto animation = AnimationCache::getInstance()->getAnimation("sitMapOpen");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onSitMapOpenFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onSitMapOpenFinished();
+            }
+            break;
+        }
+            
+        case KnightState::SIT_MAP_CLOSE:
+        {
+            this->stopAllActions();
+            auto animation = AnimationCache::getInstance()->getAnimation("sitMapClose");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onSitMapCloseFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onSitMapCloseFinished();
+            }
+            break;
+        }
     }
 }
 
@@ -1061,4 +1265,118 @@ void TheKnight::exitMapMode()
     
     _isMapMode = false;
     // 不播放关闭动画，直接切换状态
+}
+
+// Chair sitting methods
+void TheKnight::onSitAnimFinished()
+{
+    if (_state == KnightState::SITTING)
+    {
+        changeState(KnightState::SIT_IDLE);
+    }
+}
+
+void TheKnight::onSitFallAsleepFinished()
+{
+    if (_state == KnightState::SIT_FALL_ASLEEP)
+    {
+        changeState(KnightState::SITTING_ASLEEP);
+    }
+}
+
+void TheKnight::onWakeToSitFinished()
+{
+    // Wake to sit finished, now play GetOff
+    changeState(KnightState::GET_OFF);
+}
+
+void TheKnight::onGetOffFinished()
+{
+    _isSitting = false;
+    _isAsleep = false;
+    
+    // GetOff后直接进入Idle状态
+    changeState(KnightState::IDLE);
+}
+
+void TheKnight::onSitMapOpenFinished()
+{
+    // Stay in map open state, wait for Tab release
+    // Keep the last frame
+    auto animation = AnimationCache::getInstance()->getAnimation("sitMapOpen");
+    if (animation && animation->getFrames().size() > 0)
+    {
+        auto lastFrame = animation->getFrames().back()->getSpriteFrame();
+        this->setSpriteFrame(lastFrame);
+    }
+}
+
+void TheKnight::onSitMapCloseFinished()
+{
+    // Return to sit idle or sitting asleep
+    if (_isAsleep)
+    {
+        changeState(KnightState::SITTING_ASLEEP);
+    }
+    else
+    {
+        changeState(KnightState::SIT_IDLE);
+    }
+}
+
+bool TheKnight::isSitting() const
+{
+    return _isSitting || 
+           _state == KnightState::SITTING ||
+           _state == KnightState::SIT_IDLE ||
+           _state == KnightState::SIT_FALL_ASLEEP ||
+           _state == KnightState::SITTING_ASLEEP ||
+           _state == KnightState::WAKE_TO_SIT ||
+           _state == KnightState::GET_OFF ||
+           _state == KnightState::SIT_MAP_OPEN ||
+           _state == KnightState::SIT_MAP_CLOSE;
+}
+
+void TheKnight::startSitting()
+{
+    if (_isOnGround && !_isSitting && 
+        (_state == KnightState::IDLE || _state == KnightState::LOOKING_UP))
+    {
+        changeState(KnightState::SITTING);
+    }
+}
+
+void TheKnight::exitSitting(bool pressedLeft)
+{
+    if (!_isSitting) return;
+    
+    _exitKey = pressedLeft ? EventKeyboard::KeyCode::KEY_A : EventKeyboard::KeyCode::KEY_D;
+    
+    if (_isAsleep)
+    {
+        // If asleep, play wake animation first
+        changeState(KnightState::WAKE_TO_SIT);
+    }
+    else
+    {
+        // If not asleep, directly get off
+        changeState(KnightState::GET_OFF);
+    }
+}
+
+void TheKnight::updateSitting(float dt)
+{
+    if (!_isSitting) return;
+    
+    // Only count timer in SIT_IDLE state
+    if (_state == KnightState::SIT_IDLE)
+    {
+        _sitIdleTimer += dt;
+        
+        // After 8 seconds of no input, fall asleep
+        if (_sitIdleTimer >= _sitIdleTimeout)
+        {
+            changeState(KnightState::SIT_FALL_ASLEEP);
+        }
+    }
 }

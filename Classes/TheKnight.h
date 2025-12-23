@@ -41,7 +41,17 @@ enum class KnightState
     MAP_IDLE,       // 地图模式静止状态
     MAP_WALKING,    // 地图模式行走状态
     MAP_TURNING,    // 地图模式转向状态
-    MAP_CLOSING     // 关闭地图状态
+    MAP_CLOSING,     // 关闭地图状态
+
+    // Chair sitting states
+    SITTING,           // 坐下动作
+    SIT_IDLE,          // 坐着静止
+    SIT_FALL_ASLEEP,   // 坐着入睡
+    SITTING_ASLEEP,    // 坐着睡觉
+    WAKE_TO_SIT,       // 醒来
+    GET_OFF,           // 起身离开
+    SIT_MAP_OPEN,      // 坐着打开地图
+    SIT_MAP_CLOSE      // 坐着关闭地图
 };
 
 // 平台结构
@@ -109,6 +119,12 @@ public:
     // 下劈弹反（下劈命中敌人后弹起）
     void bounceFromDownSlash();
     
+    // Chair sitting system
+    bool isNearChair() const { return _isNearChair; }
+    void setNearChair(bool isNear) { _isNearChair = isNear; }
+    bool isSitting() const;
+    void startSitting();  // Called by GameScene when near chair and press W
+    
 private:
     // 创建动画（指定起始帧和结束帧）
     Animation* createAnimation(const std::string& path, const std::string& prefix, int startFrame, int endFrame, float delay);
@@ -143,6 +159,16 @@ private:
     void onMapTurnFinished();
     void onMapCloseFinished();
     void exitMapMode();  // 强制退出地图模式
+    
+    // Chair sitting related
+    void onSitAnimFinished();
+    void onSitFallAsleepFinished();
+    void onWakeToSitFinished();
+    void onGetOffFinished();
+    void onSitMapOpenFinished();
+    void onSitMapCloseFinished();
+    void exitSitting(bool pressedLeft);  // Exit sitting with direction
+    void updateSitting(float dt);
     
     // 跳跃相关
     void startJump();
@@ -302,6 +328,14 @@ private:
     bool _isMapMode;             // 是否处于地图模式
     bool _isMapKeyPressed;       // Tab键是否按住
     
+    // Chair sitting related
+    bool _isNearChair;           // 是否靠近椅子
+    bool _isSitting;             // 是否正在坐着
+    float _sitIdleTimer;         // 坐着静止计时器
+    float _sitIdleTimeout;       // 入睡超时时间（8秒）
+    bool _isAsleep;              // 是否已经睡着
+    EventKeyboard::KeyCode _exitKey;  // 退出时按的键
+    
     // 护符系统
     int _charmStalwartShell;     // 坚硬外壳：受击无敌时长+0.4s
     int _charmSoulCatcher;       // 灵魂捕手：攻击获得Soul+1
@@ -344,7 +378,7 @@ private:
     Animation* _lookUpAnim;      // 向上看动画
     Animation* _lookUpEndAnim;   // 向上看结束动画
     Animation* _lookDownAnim;    // 向下看动画
-    Animation* _lookDownEndAnim; // 向下看结束动画
+    Animation* _lookDownEndAnim; // 谷歌翻译结果
     Animation* _wallSlideAnim;   // 贴墙下滑动画
     Animation* _wallSlashAnim;   // 贴墙攻击动画
     Animation* _wallJumpAnim;    // 蹬墙跳动画
@@ -363,6 +397,16 @@ private:
     Animation* _mapWalkAnim;     // 地图模式行走动画
     Animation* _mapTurnAnim;     // 地图模式转向动画
     Animation* _mapAwayAnim;     // 关闭地图动画
+    
+    // Chair animations
+    Animation* _sitAnim;             // 坐下动画
+    Animation* _sitIdleAnim;         // 坐着静止动画
+    Animation* _sitFallAsleepAnim;   // 坐着入睡动画
+    Animation* _sittingAsleepAnim;   // 坐着睡觉动画
+    Animation* _wakeToSitAnim;       // 醒来动画
+    Animation* _getOffAnim;          // 起身离开动画
+    Animation* _sitMapOpenAnim;      // 坐着打开地图动画
+    Animation* _sitMapCloseAnim;     // 坐着关闭地图动画
 };
 
 #endif // __THE_KNIGHT_H__

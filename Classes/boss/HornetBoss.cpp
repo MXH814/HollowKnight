@@ -1,4 +1,4 @@
-ï»¿#include "HornetBoss.h"
+#include "HornetBoss.h"
 
 USING_NS_CC;
 
@@ -15,15 +15,15 @@ HornetBoss* HornetBoss::createWithFolder(const std::string& folderPath) {
 bool HornetBoss::init(const std::string& folderPath) {
     _folderPath = folderPath;
 
-    // åˆå§‹æ˜¾ç¤º
+    // ³õÊ¼ÏÔÊ¾
     if (!Sprite::initWithFile(_folderPath + "/Hornet_hardland_5.png")) {
         return false;
     }
 
-    // è®¾ç½®é”šç‚¹ä¸ºåº•éƒ¨ä¸­å¿ƒï¼Œæ–¹ä¾¿å¤„ç†åœ°é¢é€»è¾‘
+    // ÉèÖÃÃªµãÎªµ×²¿ÖĞĞÄ£¬·½±ã´¦ÀíµØÃæÂß¼­
     this->setAnchorPoint(Vec2(0.5f, 0.0f));
 
-    // å¼€å¯æ¯å¸§æ›´æ–°
+    // ¿ªÆôÃ¿Ö¡¸üĞÂ
     this->scheduleUpdate();
     
     _currentPhase = 1;
@@ -43,27 +43,27 @@ void HornetBoss::updateTargetPosition(Vec2 targetPos) {
     _targetPos = targetPos;
 }
 
-// è¾…åŠ©ï¼šæ ¹æ®ç›®æ ‡ä½ç½®è°ƒæ•´æœå‘
+// ¸¨Öú£º¸ù¾İÄ¿±êÎ»ÖÃµ÷Õû³¯Ïò
 void HornetBoss::lookAtTarget() {
     float bossX = this->getPositionX();
     float targetX = _targetPos.x;
 
-    // å‡è®¾ï¼šstandåŸå›¾æœå³ (default FlippedX = false)
-    // å‡è®¾ï¼šwalkåŸå›¾æœå·¦ (default FlippedX = false)
+    // ¼ÙÉè£ºstandÔ­Í¼³¯ÓÒ (default FlippedX = false)
+    // ¼ÙÉè£ºwalkÔ­Í¼³¯×ó (default FlippedX = false)
 
-    // æˆ‘ä»¬æ”¹ç”¨ç®€å•çš„ setFlippedX æ¥å¤„ç†ï¼Œé€»è¾‘æ›´æ¸…æ™°
+    // ÎÒÃÇ¸ÄÓÃ¼òµ¥µÄ setFlippedX À´´¦Àí£¬Âß¼­¸üÇåÎú
     if (targetX > bossX) {
-        // ç›®æ ‡åœ¨å³
-        // å¦‚æœå½“å‰æ˜¯ stand (åŸå›¾æœå³)ï¼Œåˆ™ä¸ç¿»è½¬ï¼›å¦‚æœæ˜¯ walk (åŸå›¾æœå·¦)ï¼Œåˆ™éœ€è¦ç¿»è½¬
-        // ä¸ºäº†ç»Ÿä¸€ï¼Œæˆ‘ä»¬ç›´æ¥æ ¹æ®å½“å‰åŠ¨ä½œåæˆ–çŠ¶æ€æ¥åˆ¤æ–­ï¼Œ
-        // ä½†æœ€ç®€å•çš„æ–¹æ³•æ˜¯ç»Ÿä¸€ Scaleï¼Œè¿™é‡Œæˆ‘æ ¹æ®ä½ çš„æè¿°ä¿®æ­£ï¼š
-        this->setScaleX(-1.0f); // å¼ºåˆ¶é•œåƒ
+        // Ä¿±êÔÚÓÒ
+        // Èç¹ûµ±Ç°ÊÇ stand (Ô­Í¼³¯ÓÒ)£¬Ôò²»·­×ª£»Èç¹ûÊÇ walk (Ô­Í¼³¯×ó)£¬ÔòĞèÒª·­×ª
+        // ÎªÁËÍ³Ò»£¬ÎÒÃÇÖ±½Ó¸ù¾İµ±Ç°¶¯×÷Ãû»ò×´Ì¬À´ÅĞ¶Ï£¬
+        // µ«×î¼òµ¥µÄ·½·¨ÊÇÍ³Ò» Scale£¬ÕâÀïÎÒ¸ù¾İÄãµÄÃèÊöĞŞÕı£º
+        this->setScaleX(-1.0f); // Ç¿ÖÆ¾µÏñ
     }
     else {
-        this->setScaleX(1.0f);  // åŸå§‹æ–¹å‘
+        this->setScaleX(1.0f);  // Ô­Ê¼·½Ïò
     }
 
-    // å¦‚æœå‘ç° stand å¯¹äº† walk åäº†ï¼Œè¯·å°†ä¸Šé¢çš„ -1.0f å’Œ 1.0f å¯¹è°ƒå³å¯
+    // Èç¹û·¢ÏÖ stand ¶ÔÁË walk ·´ÁË£¬Çë½«ÉÏÃæµÄ -1.0f ºÍ 1.0f ¶Ôµ÷¼´¿É
 }
 
 Animate* HornetBoss::createAnimate(const std::string& prefix, int startIdx, int endIdx, float delay, bool reverse) {
@@ -82,42 +82,42 @@ Animate* HornetBoss::createAnimate(const std::string& prefix, int startIdx, int 
 }
 
 void HornetBoss::update(float dt) {
-    // 1. å…¨å±€è½¬å‘å‚è€ƒï¼ˆéå¼ºåˆ¶ï¼Œä»…æ›´æ–°ç›®æ ‡ç‚¹æ•°å€¼ï¼‰
+    // 1. È«¾Ö×ªÏò²Î¿¼£¨·ÇÇ¿ÖÆ£¬½ö¸üĞÂÄ¿±êµãÊıÖµ£©
     if (_player) {
-        // TODO: æœªæ¥å¦‚æœ Player ç±»æœ‰ä¸“é—¨çš„è·å–ä¸­å¿ƒç‚¹æ–¹æ³•ï¼ˆå¦‚ getCenterPositionï¼‰ï¼Œåº”æ›¿æ¢ getPosition()
+        // TODO: Î´À´Èç¹û Player ÀàÓĞ×¨ÃÅµÄ»ñÈ¡ÖĞĞÄµã·½·¨£¨Èç getCenterPosition£©£¬Ó¦Ìæ»» getPosition()
         _targetPos = _player->getPosition();
     }
 
-    // 2. å¦‚æœåŠ¨ä½œè¢«é”å®šï¼ˆæ¯”å¦‚æ­£åœ¨é‡Šæ”¾å¤§æ‹›ï¼‰ï¼Œåˆ™è·³è¿‡å½“å‰çš„ç‰©ç†æ›´æ–°
+    // 2. Èç¹û¶¯×÷±»Ëø¶¨£¨±ÈÈçÕıÔÚÊÍ·Å´óÕĞ£©£¬ÔòÌø¹ıµ±Ç°µÄÎïÀí¸üĞÂ
     if (_isActionLocked) return;
 
-    // 3. æ‰§è¡Œå½“å‰åŠ¨ä½œå¯¹åº”çš„ç‰©ç†é€»è¾‘ï¼ˆå¦‚èµ°è·¯ä½ç§»ã€è·³è·ƒæ›²çº¿ï¼‰
+    // 3. Ö´ĞĞµ±Ç°¶¯×÷¶ÔÓ¦µÄÎïÀíÂß¼­£¨Èç×ßÂ·Î»ÒÆ¡¢ÌøÔ¾ÇúÏß£©
     if (_currentPhysicsUpdate) {
         _currentPhysicsUpdate(dt);
     }
 }
-// --- ç»„åˆåŠ¨ç”»å®ç° ---
+// --- ×éºÏ¶¯»­ÊµÏÖ ---
 
 void HornetBoss::playEntryAnimation(float startX, float startY) {
     this->stopActionByTag(10);
     _currentPhysicsUpdate = nullptr;
-    _isActionLocked = true; // æ˜ç¡®é”å®š
+    _isActionLocked = true; // Ã÷È·Ëø¶¨
 
     this->setPosition(Vec2(startX, startY));
 
-    // ä¸‹è½åŠ¨ä½œ
+    // ÏÂÂä¶¯×÷
     auto fallToGround = MoveTo::create(0.4f, Vec2(startX, _groundY));
 
-    // è½åœ°åŠ¨ç”»ï¼š5å¸§åˆ°0å¸§ (reverse=true)
+    // ÂäµØ¶¯»­£º5Ö¡µ½0Ö¡ (reverse=true)
     auto landAnimate = createAnimate("Hornet_hardland", 5, 0, 0.06f, true);
 
-    // å…³é”®ä¿®æ”¹ï¼šç¡®ä¿å›è°ƒåœ¨ landAnimate ä¹‹åæ‰§è¡Œ
+    // ¹Ø¼üĞŞ¸Ä£ºÈ·±£»Øµ÷ÔÚ landAnimate Ö®ºóÖ´ĞĞ
     auto seq = Sequence::create(
         fallToGround,
         landAnimate,
         CallFunc::create([this]() {
-            this->_isActionLocked = false; // 1. å…ˆè§£é”
-            this->decideNextAction();      // 2. å¯åŠ¨æ€è€ƒé€»è¾‘
+            this->_isActionLocked = false; // 1. ÏÈ½âËø
+            this->decideNextAction();      // 2. Æô¶¯Ë¼¿¼Âß¼­
             }),
         nullptr
     );
@@ -129,8 +129,8 @@ void HornetBoss::playIdleAnimation() {
     this->stopActionByTag(10);
 
     _currentPhysicsUpdate = [this](float dt) {
-        // standåŸå›¾æœå³ã€‚ç›®æ ‡åœ¨å³(distance>0)åˆ™ä¸ç¿»è½¬(1)ï¼Œç›®æ ‡åœ¨å·¦åˆ™ç¿»è½¬(-1)
-        // æ³¨æ„ï¼šå¦‚æœè¿™é‡Œæ–¹å‘åäº†ï¼Œè¯·æŠŠ 1.0f å’Œ -1.0f å¯¹è°ƒ
+        // standÔ­Í¼³¯ÓÒ¡£Ä¿±êÔÚÓÒ(distance>0)Ôò²»·­×ª(1)£¬Ä¿±êÔÚ×óÔò·­×ª(-1)
+        // ×¢Òâ£ºÈç¹ûÕâÀï·½Ïò·´ÁË£¬Çë°Ñ 1.0f ºÍ -1.0f ¶Ôµ÷
         if (_targetPos.x > this->getPositionX()) this->setScaleX(1.0f);
         else this->setScaleX(-1.0f);
         };
@@ -140,86 +140,86 @@ void HornetBoss::playIdleAnimation() {
     repeat->setTag(10);
     this->runAction(repeat);
 }
-// ä¿®æ”¹ HornetBoss.cpp ä¸­çš„ playWalkAnimation ç‰©ç†éƒ¨åˆ†
+// ĞŞ¸Ä HornetBoss.cpp ÖĞµÄ playWalkAnimation ÎïÀí²¿·Ö
 void HornetBoss::playWalkAnimation() {
     this->stopActionByTag(10);
     _currentPhysicsUpdate = nullptr;
 
-    // 1. æ’­æ”¾èµ°è·¯åŠ¨ç”»å¸§
+    // 1. ²¥·Å×ßÂ·¶¯»­Ö¡
     auto animate = createAnimate("Hornet_walk", 0, 5, 0.1f);
     auto repeat = RepeatForever::create(animate);
     repeat->setTag(10);
     this->runAction(repeat);
 
-    // 2. ç‰©ç†å¯»æ•Œé€»è¾‘
+    // 2. ÎïÀíÑ°µĞÂß¼­
     _currentPhysicsUpdate = [this](float dt) {
         if (!_player) return;
 
         float moveSpeed = 180.0f;
         float currentX = this->getPositionX();
-        // TODO: æœªæ¥æ›¿æ¢ä¸º Player::getPositionX() æˆ– Player::getCenterPosition().x
+        // TODO: Î´À´Ìæ»»Îª Player::getPositionX() »ò Player::getCenterPosition().x
         float playerX = _player->getPositionX();
 
-        // --- è®¡ç®—æ–¹å‘ï¼šå§‹ç»ˆæœå‘ç©å®¶ ---
+        // --- ¼ÆËã·½Ïò£ºÊ¼ÖÕ³¯ÏòÍæ¼Ò ---
         float direction = (playerX > currentX) ? 1.0f : -1.0f;
 
-        // --- æ›´æ–°æœå‘ (ScaleX) ---
-        // æ ¹æ®ä½ ä¹‹å‰çš„é€»è¾‘ï¼šç›®æ ‡åœ¨å³åˆ™é•œåƒ (-1.0)ï¼Œåœ¨å·¦åˆ™åŸå§‹ (1.0)
+        // --- ¸üĞÂ³¯Ïò (ScaleX) ---
+        // ¸ù¾İÄãÖ®Ç°µÄÂß¼­£ºÄ¿±êÔÚÓÒÔò¾µÏñ (-1.0)£¬ÔÚ×óÔòÔ­Ê¼ (1.0)
         this->setScaleX(direction > 0 ? -1.0f : 1.0f);
 
-        // --- æ‰§è¡Œä½ç§» ---
+        // --- Ö´ĞĞÎ»ÒÆ ---
         float nextX = currentX + (direction * moveSpeed * dt);
 
-        // --- è¾¹ç•Œæ£€æŸ¥ä¸è·ç¦»åœæ­¢ ---
-        // å¦‚æœç¦»ç©å®¶éå¸¸è¿‘ï¼ˆä¾‹å¦‚ 50 åƒç´ ä»¥å†…ï¼‰ï¼Œåˆ™åœæ­¢ç§»åŠ¨
+        // --- ±ß½ç¼ì²éÓë¾àÀëÍ£Ö¹ ---
+        // Èç¹ûÀëÍæ¼Ò·Ç³£½ü£¨ÀıÈç 50 ÏñËØÒÔÄÚ£©£¬ÔòÍ£Ö¹ÒÆ¶¯
         if (std::abs(playerX - currentX) < 50.0f) {
             return;
         }
 
-        // ç¡®ä¿ä¸è¶…å‡ºåœ°å›¾è¾¹ç•Œ
+        // È·±£²»³¬³öµØÍ¼±ß½ç
         nextX = std::max(_minX, std::min(nextX, _maxX));
         this->setPositionX(nextX);
-        this->setPositionY(_groundY); // ç¡®ä¿é«˜åº¦å›ºå®šåœ¨åœ°é¢
+        this->setPositionY(_groundY); // È·±£¸ß¶È¹Ì¶¨ÔÚµØÃæ
         };
 }
 void HornetBoss::playJumpAnimation(cocos2d::Vec2 targetPos) {
     this->stopActionByTag(10);
 
-    // 1. ç‰©ç†å‚æ•°åˆå§‹åŒ–
+    // 1. ÎïÀí²ÎÊı³õÊ¼»¯
     float startX = this->getPositionX();
     float startY = this->getPositionY();
 
-    // è®¡ç®—æ°´å¹³ä½ç§»ï¼šè·³å‘ç›®æ ‡ç‚¹ï¼ˆå¯ä»¥æ˜¯ç©å®¶ä½ç½®ï¼Œæ¨¡æ‹Ÿèº²é¿ï¼‰
+    // ¼ÆËãË®Æ½Î»ÒÆ£ºÌøÏòÄ¿±êµã£¨¿ÉÒÔÊÇÍæ¼ÒÎ»ÖÃ£¬Ä£Äâ¶ã±Ü£©
     float distanceX = (targetPos.x - startX) * 1.2f;
 
-    // è®¾å®šç‰©ç†é‡
-    float jumpHeight = 350.0f;       // è·³è·ƒé«˜åº¦
-    float hangTime = 0.7f;          // é¢„è®¡ç©ºä¸­çš„æ€»æ—¶é—´
-    _gravity = -2000.0f;            // å¢åŠ é‡åŠ›æ„Ÿï¼Œè®©åŠ¨ä½œæ›´å‡Œå‰
+    // Éè¶¨ÎïÀíÁ¿
+    float jumpHeight = 350.0f;       // ÌøÔ¾¸ß¶È
+    float hangTime = 0.7f;          // Ô¤¼Æ¿ÕÖĞµÄ×ÜÊ±¼ä
+    _gravity = -2000.0f;            // Ôö¼ÓÖØÁ¦¸Ğ£¬ÈÃ¶¯×÷¸üÁèÀ÷
 
-    // åˆé€Ÿåº¦è®¡ç®— v = sqrt(2gh)
+    // ³õËÙ¶È¼ÆËã v = sqrt(2gh)
     _jumpVelocityY = sqrtf(2.0f * fabsf(_gravity) * jumpHeight);
-    // æ°´å¹³é€Ÿåº¦ v = s / t
+    // Ë®Æ½ËÙ¶È v = s / t
     _jumpSpeedX = distanceX / hangTime;
 
-    // 2. ç‰©ç†æ›´æ–°é—­åŒ…
+    // 2. ÎïÀí¸üĞÂ±Õ°ü
     _currentPhysicsUpdate = [this](float dt) {
-        // å‚ç›´ä½ç§»
+        // ´¹Ö±Î»ÒÆ
         _jumpVelocityY += _gravity * dt;
         float nextY = this->getPositionY() + _jumpVelocityY * dt;
 
-        // æ°´å¹³ä½ç§»
+        // Ë®Æ½Î»ÒÆ
         float nextX = this->getPositionX() + _jumpSpeedX * dt;
-        nextX = std::max(_minX, std::min(nextX, _maxX)); // è¾¹ç•Œé™åˆ¶
+        nextX = std::max(_minX, std::min(nextX, _maxX)); // ±ß½çÏŞÖÆ
 
-        // è½åœ°æ£€æµ‹
+        // ÂäµØ¼ì²â
         if (nextY <= _groundY) {
             nextY = _groundY;
             this->setPosition(Vec2(nextX, nextY));
-            _currentPhysicsUpdate = nullptr; // åœæ­¢ç‰©ç†æ›´æ–°
-            this->playIdleAnimation();      // è½åœ°åˆ‡å¾…æœº
+            _currentPhysicsUpdate = nullptr; // Í£Ö¹ÎïÀí¸üĞÂ
+            this->playIdleAnimation();      // ÂäµØÇĞ´ı»ú
 
-            // --- ä¿®å¤ç‚¹ï¼šè½åœ°åå»¶è¿Ÿä¸€å°ä¼šå„¿ï¼Œç„¶åç»§ç»­AIå†³ç­– ---
+            // --- ĞŞ¸´µã£ºÂäµØºóÑÓ³ÙÒ»Ğ¡»á¶ù£¬È»ºó¼ÌĞøAI¾ö²ß ---
             this->runAction(Sequence::create(
                 DelayTime::create(0.2f),
                 CallFunc::create([this]() { this->decideNextAction(); }),
@@ -230,13 +230,13 @@ void HornetBoss::playJumpAnimation(cocos2d::Vec2 targetPos) {
 
         this->setPosition(Vec2(nextX, nextY));
 
-        // æœå‘ï¼šè·³å‘å·¦ä¾§æ—¶ setScaleX(1.0)ï¼Œå³ä¾§æ—¶ (-1.0)
+        // ³¯Ïò£ºÌøÏò×ó²àÊ± setScaleX(1.0)£¬ÓÒ²àÊ± (-1.0)
         if (_jumpSpeedX > 0) this->setScaleX(-1.0f);
         else this->setScaleX(1.0f);
         };
 
-    // 3. åŠ¨ç”»è¡¨ç°
-    // ä¸Šå‡ 0-8 å¸§ï¼Œä¸‹é™ 8-0 å¸§
+    // 3. ¶¯»­±íÏÖ
+    // ÉÏÉı 0-8 Ö¡£¬ÏÂ½µ 8-0 Ö¡
     auto riseAnim = createAnimate("Hornet_fly", 0, 8, 0.04f);
     auto fallAnim = createAnimate("Hornet_fly", 8, 0, 0.04f, true);
 
@@ -245,18 +245,18 @@ void HornetBoss::playJumpAnimation(cocos2d::Vec2 targetPos) {
     this->runAction(seq);
 }
 void HornetBoss::playAttack1Animation(cocos2d::Vec2 targetPos) {
-    // 1. åœæ­¢æ‰€æœ‰åŠ¨ä½œå¹¶é”å®šé€»è¾‘ï¼Œé˜²æ­¢é‡å å†²çª
+    // 1. Í£Ö¹ËùÓĞ¶¯×÷²¢Ëø¶¨Âß¼­£¬·ÀÖ¹ÖØµş³åÍ»
     this->stopActionByTag(10);
     _isActionLocked = true;
 
-    // 2. å®æ—¶å¯»æ•Œï¼šæ ¹æ®ä¼ å…¥çš„ targetPos ç¡®å®šæ–¹å‘
+    // 2. ÊµÊ±Ñ°µĞ£º¸ù¾İ´«ÈëµÄ targetPos È·¶¨·½Ïò
     float currentX = this->getPositionX();
-    float direction = (targetPos.x > currentX) ? 1.0f : -1.0f; // 1ä¸ºå³ï¼Œ-1ä¸ºå·¦
+    float direction = (targetPos.x > currentX) ? 1.0f : -1.0f; // 1ÎªÓÒ£¬-1Îª×ó
 
-    // ä¿®æ­£å›¾åƒæœå‘ï¼šæ ¹æ®æ­¤å‰é€»è¾‘ï¼Œç›®æ ‡åœ¨å³åˆ™é•œåƒ (-1.0f)ï¼Œåœ¨å·¦åˆ™åŸå§‹ (1.0f)
+    // ĞŞÕıÍ¼Ïñ³¯Ïò£º¸ù¾İ´ËÇ°Âß¼­£¬Ä¿±êÔÚÓÒÔò¾µÏñ (-1.0f)£¬ÔÚ×óÔòÔ­Ê¼ (1.0f)
     this->setScaleX(direction > 0 ? -1.0f : 1.0f);
 
-    // è¾…åŠ©è·å–å¸§çš„æ–¹æ³•
+    // ¸¨Öú»ñÈ¡Ö¡µÄ·½·¨
     auto getFrame = [this](const std::string& prefix, int idx) -> SpriteFrame* {
         std::string path = StringUtils::format("%s/%s_%d.png", _folderPath.c_str(), prefix.c_str(), idx);
         auto tex = Director::getInstance()->getTextureCache()->addImage(path);
@@ -264,7 +264,7 @@ void HornetBoss::playAttack1Animation(cocos2d::Vec2 targetPos) {
         return nullptr;
         };
 
-    // --- A. è“„åŠ›åŠ¨ç”»é˜¶æ®µ (2,3,2,3,2,3,1,4,5,6,7,8,9) ---
+    // --- A. ĞîÁ¦¶¯»­½×¶Î (2,3,2,3,2,3,1,4,5,6,7,8,9) ---
     Vector<SpriteFrame*> chargeFrames;
     int seqIdx[] = { 2,3,2,3,2,3,1,4,5,6,7,8,9 };
     for (int i : seqIdx) {
@@ -273,51 +273,51 @@ void HornetBoss::playAttack1Animation(cocos2d::Vec2 targetPos) {
     }
     auto chargeAnimate = Animate::create(Animation::createWithSpriteFrames(chargeFrames, 0.06f));
 
-    // --- B. å±€éƒ¨ç‰¹æ•ˆï¼šåŠ¨æ€åˆ›å»ºä¸è‡ªåŠ¨é”€æ¯ ---
+    // --- B. ¾Ö²¿ÌØĞ§£º¶¯Ì¬´´½¨Óë×Ô¶¯Ïú»Ù ---
     auto playEffectAction = CallFunc::create([this]() {
         auto effect = Sprite::create();
-        // è®¾ç½®åœ¨äººç‰©ä¸­å¿ƒåä¸Šçš„ç›¸å¯¹ä½ç½®
+        // ÉèÖÃÔÚÈËÎïÖĞĞÄÆ«ÉÏµÄÏà¶ÔÎ»ÖÃ
         effect->setPosition(Vec2(this->getContentSize().width / 2, 100.0f));
         this->addChild(effect, 1);
 
-        // æ’­æ”¾ 0-3 å¸§ç™½å…‰ç‰¹æ•ˆ
+        // ²¥·Å 0-3 Ö¡°×¹âÌØĞ§
         auto lightAnim = createAnimate("Hornet_attack1_light", 0, 3, 0.07f);
 
-        // æ‰§è¡Œå®ŒåŠ¨ç”»åè‡ªåŠ¨ä»çˆ¶èŠ‚ç‚¹ç§»é™¤ï¼Œé‡Šæ”¾å†…å­˜
+        // Ö´ĞĞÍê¶¯»­ºó×Ô¶¯´Ó¸¸½ÚµãÒÆ³ı£¬ÊÍ·ÅÄÚ´æ
         effect->runAction(Sequence::create(lightAnim, RemoveSelf::create(), nullptr));
         });
 
-    // å°†è“„åŠ›åŠ¨ä½œä¸ç‰¹æ•ˆçˆ†å‘ç»„åˆï¼ˆç‰¹æ•ˆåœ¨è“„åŠ›ä¸­æ®µè§¦å‘ï¼‰
+    // ½«ĞîÁ¦¶¯×÷ÓëÌØĞ§±¬·¢×éºÏ£¨ÌØĞ§ÔÚĞîÁ¦ÖĞ¶Î´¥·¢£©
     auto chargeWithLight = Spawn::create(
         chargeAnimate,
         Sequence::create(DelayTime::create(0.6f), playEffectAction, nullptr),
         nullptr
     );
 
-    // --- C. åŠ¨æ€å†²åˆºä½ç§»è®¡ç®— ---
-    float dashDistance = 550.0f; // å›ºå®šå†²åˆºè·ç¦»
+    // --- C. ¶¯Ì¬³å´ÌÎ»ÒÆ¼ÆËã ---
+    float dashDistance = 550.0f; // ¹Ì¶¨³å´Ì¾àÀë
     auto visibleSize = Director::getInstance()->getVisibleSize();
 
-    // è®¡ç®—åŸºäºå½“å‰æ–¹å‘çš„ç›®æ ‡ X åæ ‡
+    // ¼ÆËã»ùÓÚµ±Ç°·½ÏòµÄÄ¿±ê X ×ø±ê
     float targetDashX = currentX + (direction * dashDistance);
 
-    // è¾¹ç•Œç¡¬çº¦æŸï¼šå‚è€ƒ setBoundaries é€»è¾‘
+    // ±ß½çÓ²Ô¼Êø£º²Î¿¼ setBoundaries Âß¼­
     if (targetDashX < _minX) targetDashX = _minX;
     if (targetDashX > _maxX) targetDashX = _maxX;
 
-    // --- D. åŠ¨ä½œç»„è£… ---
+    // --- D. ¶¯×÷×é×° ---
     auto setDashFrame = CallFunc::create([this, getFrame]() {
-        auto f11 = getFrame("Hornet_attack1", 11); // åˆ‡æ¢ä¸ºé•¿æ¡çŠ¶çš„å†²åˆºå¸§
+        auto f11 = getFrame("Hornet_attack1", 11); // ÇĞ»»Îª³¤Ìõ×´µÄ³å´ÌÖ¡
         if (f11) this->setSpriteFrame(f11);
         });
 
     auto dashMove = MoveTo::create(0.12f, Vec2(targetDashX, _groundY));
 
     auto sequence = Sequence::create(
-        chargeWithLight,        // 1. è“„åŠ›å¹¶æ’­æ”¾ç‰¹æ•ˆ
-        setDashFrame,           // 2. å˜æ¢ä¸ºå†²åˆºå§¿æ€
-        dashMove,               // 3. æ‰§è¡Œç‰©ç†ä½ç§»
-        DelayTime::create(0.4f),// 4. æ”»å‡»åçš„ç¡¬ç›´é˜¶æ®µ
+        chargeWithLight,        // 1. ĞîÁ¦²¢²¥·ÅÌØĞ§
+        setDashFrame,           // 2. ±ä»»Îª³å´Ì×ËÌ¬
+        dashMove,               // 3. Ö´ĞĞÎïÀíÎ»ÒÆ
+        DelayTime::create(0.4f),// 4. ¹¥»÷ºóµÄÓ²Ö±½×¶Î
         CallFunc::create([this]() {
             _isActionLocked = false;
             this->decideNextAction();
@@ -332,7 +332,7 @@ void HornetBoss::playAttack2Animation(cocos2d::Vec2 targetPos) {
     this->stopActionByTag(10);
     _isActionLocked = true;
 
-    // 1. æ–¹å‘åˆ¤å®šä¸é•œåƒ (é”å®šå½“å‰é¼ æ ‡æ–¹å‘)
+    // 1. ·½ÏòÅĞ¶¨Óë¾µÏñ (Ëø¶¨µ±Ç°Êó±ê·½Ïò)
     float currentX = this->getPositionX();
     bool isTargetOnRight = (targetPos.x > currentX);
     if (isTargetOnRight) {
@@ -349,40 +349,40 @@ void HornetBoss::playAttack2Animation(cocos2d::Vec2 targetPos) {
         return nullptr;
         };
 
-    // --- A. Boss æœ¬ä½“åŠ¨ä½œ ---
+    // --- A. Boss ±¾Ìå¶¯×÷ ---
     auto bodyAnim = createAnimate("Hornet_attack2", 0, 6, 0.08f);
 
-    // --- B. æ­¦å™¨æŠ•æ·é€»è¾‘ ---
+    // --- B. ÎäÆ÷Í¶ÖÀÂß¼­ ---
     auto throwWeapon = CallFunc::create([this, getFrame]() {
         auto weapon = Sprite::create(_folderPath + "/Hornet_weapon1.png");
         weapon->setAnchorPoint(Vec2(0.5f, 0.5f));
 
-        // --- è°ƒæ•´ç‚¹ 1: åˆå§‹é«˜åº¦ä¸‹ç§» ---
-        // å°†åˆå§‹ Y ä» 80.0f ä¸‹ç§»åˆ° 65.0fï¼Œè®©é’ˆä»æ‰‹éƒ¨æ›´ä½çš„ä½ç½®é£å‡º
+        // --- µ÷Õûµã 1: ³õÊ¼¸ß¶ÈÏÂÒÆ ---
+        // ½«³õÊ¼ Y ´Ó 80.0f ÏÂÒÆµ½ 65.0f£¬ÈÃÕë´ÓÊÖ²¿¸üµÍµÄÎ»ÖÃ·É³ö
         float startY = 65.0f;
         weapon->setPosition(Vec2(this->getContentSize().width / 2, startY));
         this->addChild(weapon, 2);
 
-        // --- è°ƒæ•´ç‚¹ 2: ä¸çº¿ä½ç½® (åœ¨æ­¦å™¨åé¢) ---
+        // --- µ÷Õûµã 2: Ë¿ÏßÎ»ÖÃ (ÔÚÎäÆ÷ºóÃæ) ---
         auto threadEffect = Sprite::create();
         threadEffect->setPosition(Vec2(weapon->getContentSize().width / 2-400.0f, weapon->getContentSize().height / 2));
-        // z-order ä¸º -1 ç¡®ä¿ä¸çº¿åœ¨æ­¦å™¨è´´å›¾ä¸‹æ–¹
+        // z-order Îª -1 È·±£Ë¿ÏßÔÚÎäÆ÷ÌùÍ¼ÏÂ·½
         weapon->addChild(threadEffect, -1);
         threadEffect->runAction(RepeatForever::create(createAnimate("Hornet_weapon1", 1, 6, 0.05f)));
 
-        // ç™½å…‰ç‰¹æ•ˆ
+        // °×¹âÌØĞ§
         auto light = Sprite::create(_folderPath + "/Hornet_attack2_light.png");
         light->setPosition(Vec2(this->getContentSize().width / 2, startY));
         this->addChild(light, 3);
         light->runAction(Sequence::create(FadeOut::create(0.8f), RemoveSelf::create(), nullptr));
 
-        // --- è°ƒæ•´ç‚¹ 3: é£è¡Œè½¨è¿¹ ---
-        // --- åŸä»£ç  ---
+        // --- µ÷Õûµã 3: ·ÉĞĞ¹ì¼£ ---
+        // --- Ô­´úÂë ---
         float throwDist = 700.0f;
         float flyOutTime = 0.45f;
         float flyBackTime = 0.35f;
 
-        // å°†æŠ›å‡ºçš„å‚ç›´é«˜åº¦ä¹Ÿé™ä½ï¼ˆä» 40 é™åˆ° 20ï¼‰ï¼Œè®©è½¨è¿¹æ›´å¹³ç›´ã€æ›´å†™å®
+        // ½«Å×³öµÄ´¹Ö±¸ß¶ÈÒ²½µµÍ£¨´Ó 40 ½µµ½ 20£©£¬ÈÃ¹ì¼£¸üÆ½Ö±¡¢¸üĞ´Êµ
         auto moveOut = MoveBy::create(flyOutTime, Vec2(throwDist, 20.0f));
         auto moveBack = MoveTo::create(flyBackTime, Vec2(this->getContentSize().width / 2, startY));
 
@@ -395,14 +395,14 @@ void HornetBoss::playAttack2Animation(cocos2d::Vec2 targetPos) {
         ));
         });
 
-    // --- C. åŠ¨ä½œæ€»é“¾ ---
+    // --- C. ¶¯×÷×ÜÁ´ ---
     auto sequence = Sequence::create(
         Spawn::create(
             bodyAnim,
             Sequence::create(DelayTime::create(0.16f), throwWeapon, nullptr),
             nullptr
         ),
-        DelayTime::create(0.85f), // å¯¹åº”æ­¦å™¨é£è¡Œçš„æ€»æ—¶é•¿
+        DelayTime::create(0.85f), // ¶ÔÓ¦ÎäÆ÷·ÉĞĞµÄ×ÜÊ±³¤
         CallFunc::create([this]() {
             _isActionLocked = false;
             this->decideNextAction();
@@ -414,28 +414,28 @@ void HornetBoss::playAttack2Animation(cocos2d::Vec2 targetPos) {
     this->runAction(sequence);
 }
 void HornetBoss::playAttack3Animation(cocos2d::Vec2 targetPos) {
-    // 1. å‡†å¤‡é˜¶æ®µï¼šåœæ­¢æ—§åŠ¨ä½œå¹¶é”å®šé€»è¾‘
+    // 1. ×¼±¸½×¶Î£ºÍ£Ö¹¾É¶¯×÷²¢Ëø¶¨Âß¼­
     this->stopActionByTag(10);
     _isActionLocked = true;
 
     float currentX = this->getPositionX();
     bool isTargetOnRight = (targetPos.x > currentX);
 
-    // ä¿æŒåŸæœ‰é€»è¾‘ï¼šä¸Šå‡é˜¶æ®µæœå‘ç©å®¶
+    // ±£³ÖÔ­ÓĞÂß¼­£ºÉÏÉı½×¶Î³¯ÏòÍæ¼Ò
     this->setScaleX(isTargetOnRight ? -1.0f : 1.0f);
 
     float jumpHeight = 350.0f;
     auto jumpToTop = MoveBy::create(0.4f, Vec2(0, jumpHeight));
 
-    // 2. è“„åŠ›é˜¶æ®µï¼šæ‰§è¡Œä½ åŸæœ‰çš„åè½¬é€»è¾‘å’ŒåŠ¨ç”»
+    // 2. ĞîÁ¦½×¶Î£ºÖ´ĞĞÄãÔ­ÓĞµÄ·´×ªÂß¼­ºÍ¶¯»­
     auto doCharge = CallFunc::create([this, isTargetOnRight]() {
-        // ä¿æŒä½ åŸæ³¨é‡Šä¸­çš„è°ƒè¯•ä½ï¼šå¦‚æœ 1.0 åï¼Œå°±æ”¹ -1.0
+        // ±£³ÖÄãÔ­×¢ÊÍÖĞµÄµ÷ÊÔÎ»£ºÈç¹û 1.0 ·´£¬¾Í¸Ä -1.0
         this->setScaleX(isTargetOnRight ? -1.0f : 1.0f);
         });
     auto chargeAnim = createAnimate("Hornet_attack3", 0, 2, 0.15f);
     auto longCharge = Repeat::create(chargeAnim, 2);
 
-    // 3. ä¿¯å†²é˜¶æ®µï¼šè¿™æ˜¯æœ€éœ€è¦ä¿®æ”¹é€»è¾‘çš„åœ°æ–¹ï¼ˆåˆå¹¶äº† dive å’Œç»“æŸå›è°ƒï¼‰
+    // 3. ¸©³å½×¶Î£ºÕâÊÇ×îĞèÒªĞŞ¸ÄÂß¼­µÄµØ·½£¨ºÏ²¢ÁË dive ºÍ½áÊø»Øµ÷£©
     auto doDiveAndCleanup = CallFunc::create([this, targetPos]() {
         float curX = this->getPositionX();
         float idealTargetX = targetPos.x;
@@ -449,17 +449,17 @@ void HornetBoss::playAttack3Animation(cocos2d::Vec2 targetPos) {
         float safeTargetX = std::max(_minX, std::min(idealTargetX, _maxX));
         this->setScaleX((safeTargetX > curX) ? -1.0f : 1.0f);
 
-        // --- ä¿æŒåŸæœ‰ä¿¯å†²åŠ¨ç”»å’Œä½ç§»æ•°å€¼ ---
+        // --- ±£³ÖÔ­ÓĞ¸©³å¶¯»­ºÍÎ»ÒÆÊıÖµ ---
         auto diveAnim = createAnimate("Hornet_attack3", 4, 6, 0.05f);
         float distance = std::abs(safeTargetX - curX);
-        float diveTime = 0.1f + (distance / 2000.0f);
+        float diveTime = 0.1f;
         auto diveMove = MoveTo::create(diveTime, Vec2(safeTargetX, _groundY));
 
-        // --- å…³é”®ä¿®æ”¹ï¼šåˆ›å»ºä¸€ä¸ªå±€éƒ¨çš„ Sequence ç¡®ä¿è½åœ°åè§£é” ---
+        // --- ¹Ø¼üĞŞ¸Ä£º´´½¨Ò»¸ö¾Ö²¿µÄ Sequence È·±£ÂäµØºó½âËø ---
         auto landSequence = Sequence::create(
             Spawn::create(diveAnim, EaseIn::create(diveMove, 2.0f), nullptr),
             CallFunc::create([this]() {
-                // æ‰§è¡Œä½ åŸæœ‰çš„è½åœ°ç‰¹æ•ˆé€»è¾‘
+                // Ö´ĞĞÄãÔ­ÓĞµÄÂäµØÌØĞ§Âß¼­
                 auto light = Sprite::create();
                 light->setPosition(Vec2(this->getContentSize().width / 2, 150));
                 this->addChild(light, 3);
@@ -469,24 +469,24 @@ void HornetBoss::playAttack3Animation(cocos2d::Vec2 targetPos) {
                     nullptr
                 ));
                 }),
-            DelayTime::create(0.6f), // ä¿æŒåŸæœ‰çš„è½åœ°åƒµç›´æ—¶é—´
+            DelayTime::create(0.6f), // ±£³ÖÔ­ÓĞµÄÂäµØ½©Ö±Ê±¼ä
             CallFunc::create([this]() {
-                // --- åªæœ‰åœ¨è¿™é‡Œæ‰è§£é”å¹¶è¿›å…¥ä¸‹ä¸€æ‹› ---
+                // --- Ö»ÓĞÔÚÕâÀï²Å½âËø²¢½øÈëÏÂÒ»ÕĞ ---
                 _isActionLocked = false;
                 this->decideNextAction();
                 }),
             nullptr
         );
-        landSequence->setTag(10); // ç»Ÿä¸€ Tag
+        landSequence->setTag(10); // Í³Ò» Tag
         this->runAction(landSequence);
         });
 
-    // 4. ç»„è£…æ€»åºåˆ—
+    // 4. ×é×°×ÜĞòÁĞ
     auto fullSequence = Sequence::create(
         jumpToTop,
         doCharge,
         longCharge,
-        doDiveAndCleanup, // é€»è¾‘é“¾æ¡åœ¨è¿™é‡Œä¼šé€šè¿‡å†…éƒ¨çš„ landSequence å»¶ç»­ä¸‹å»
+        doDiveAndCleanup, // Âß¼­Á´ÌõÔÚÕâÀï»áÍ¨¹ıÄÚ²¿µÄ landSequence ÑÓĞøÏÂÈ¥
         nullptr
     );
 
@@ -497,18 +497,18 @@ void HornetBoss::playAttack4Animation(cocos2d::Vec2 targetPos) {
     this->stopActionByTag(10);
     _isActionLocked = true;
 
-    // 1. è½¬å‘é€»è¾‘
+    // 1. ×ªÏòÂß¼­
     float currentX = this->getPositionX();
     bool isTargetOnRight = (targetPos.x > currentX);
     this->setScaleX(isTargetOnRight ? -1.0f : 1.0f);
 
-    // 2. å‡ç©ºä¸å‰æ‘‡
+    // 2. Éı¿ÕÓëÇ°Ò¡
     auto jumpToAir = MoveBy::create(0.25f, Vec2(0, 100.0f)); 
     auto prepAnim = createAnimate("Hornet_attack5", 0, 1, 0.1f);
 
-    // 3. æ ¸å¿ƒä¹±èˆé€»è¾‘
+    // 3. ºËĞÄÂÒÎèÂß¼­
     auto startStorm = CallFunc::create([this]() {
-        // --- ç›´æ¥å®šä¹‰å¾€è¿”å¸§é¡ºåº ---
+        // --- Ö±½Ó¶¨ÒåÍù·µÖ¡Ë³Ğò ---
         std::vector<int> frameOrder = { 2, 3, 4, 5, 6, 5, 4, 3 };
         Vector<SpriteFrame*> pingPongFrames;
 
@@ -525,7 +525,7 @@ void HornetBoss::playAttack4Animation(cocos2d::Vec2 targetPos) {
         bodyLoop->setTag(11);
         this->runAction(bodyLoop);
 
-        // --- ä¸çº¿ç‰¹æ•ˆ ---
+        // --- Ë¿ÏßÌØĞ§ ---
         if (_attack4Effect) {
             _attack4Effect->removeFromParent();
             _attack4Effect = nullptr;
@@ -539,11 +539,11 @@ void HornetBoss::playAttack4Animation(cocos2d::Vec2 targetPos) {
         auto weaponAnim = createAnimate("Hornet_weapon2", 0, 3, 0.04f);
         stormEffect->runAction(RepeatForever::create(weaponAnim));
 
-        // --- 3ç§’åçš„æ”¶æ‹›é€»è¾‘ ---
+        // --- 3ÃëºóµÄÊÕÕĞÂß¼­ ---
         auto finishSeq = Sequence::create(
             DelayTime::create(3.0f),
             CallFunc::create([this, stormEffect]() {
-                this->stopActionByTag(11); // åœæ­¢ 23456543 å¾ªç¯
+                this->stopActionByTag(11); // Í£Ö¹ 23456543 Ñ­»·
                 stormEffect->removeFromParent();
                 if (_attack4Effect == stormEffect) {
                     _attack4Effect = nullptr;
@@ -563,9 +563,9 @@ void HornetBoss::playAttack4Animation(cocos2d::Vec2 targetPos) {
     fullSeq->setTag(10);
     this->runAction(fullSeq);
 }
-// å—å‡»åŠ¨ç”» 1ï¼šç¡¬ç›´ 2 ç§’ (injured_0 - 1)
+// ÊÜ»÷¶¯»­ 1£ºÓ²Ö± 2 Ãë (injured_0 - 1)
 void HornetBoss::playInjuredAction1() {
-    // å¼ºåˆ¶æ¸…ç†æ‰€æœ‰å¯èƒ½å¯¼è‡´ä½ç§»çš„ç‰©ç†é€»è¾‘
+    // Ç¿ÖÆÇåÀíËùÓĞ¿ÉÄÜµ¼ÖÂÎ»ÒÆµÄÎïÀíÂß¼­
     _currentPhysicsUpdate = nullptr;
     this->stopAllActions();
 
@@ -573,7 +573,7 @@ void HornetBoss::playInjuredAction1() {
     _aiState = AIState::STUNNED;
 
     auto anim = createAnimate("Hornet_injured", 0, 1, 0.3f);
-    auto loop = Repeat::create(anim, 4); // å¾ªç¯4æ¬¡è€Œä¸æ˜¯ Foreverï¼Œä¿è¯èƒ½é€€å‡º
+    auto loop = Repeat::create(anim, 4); // Ñ­»·4´Î¶ø²»ÊÇ Forever£¬±£Ö¤ÄÜÍË³ö
 
     auto restore = Sequence::create(
         loop,
@@ -587,18 +587,18 @@ void HornetBoss::playInjuredAction1() {
     this->runAction(restore);
 }
 
-// å—å‡»åŠ¨ç”» 2ï¼šç¡¬ç›´ 3 ç§’ (injured2_0 - 1)
+// ÊÜ»÷¶¯»­ 2£ºÓ²Ö± 3 Ãë (injured2_0 - 1)
 void HornetBoss::playInjuredAction2() {
     this->stopActionByTag(10);
     _isActionLocked = true;
 
-    // åˆ›å»ºå—ä¼¤ 2 åŠ¨ç”»
+    // ´´½¨ÊÜÉË 2 ¶¯»­
     auto anim = createAnimate("Hornet_injured2", 0, 1, 0.3f);
     auto loop = RepeatForever::create(anim);
     loop->setTag(10);
     this->runAction(loop);
 
-    // 3 ç§’åæ¢å¤
+    // 3 Ãëºó»Ö¸´
     auto restore = Sequence::create(
         DelayTime::create(3.0f),
         CallFunc::create([this]() {
@@ -612,14 +612,14 @@ void HornetBoss::playInjuredAction2() {
     this->runAction(restore);
 }
 
-// æŒç»­å—ä¼¤çŠ¶æ€ï¼ˆä¸è‡ªåŠ¨æ¢å¤ï¼‰
+// ³ÖĞøÊÜÉË×´Ì¬£¨²»×Ô¶¯»Ö¸´£©
 void HornetBoss::playInjuredAction2Loop() {
     this->stopAllActions();
     _isActionLocked = true;
     _aiState = AIState::DEFEATED;
     _currentPhysicsUpdate = nullptr;
 
-    // åˆ›å»ºå—ä¼¤ 2 åŠ¨ç”»
+    // ´´½¨ÊÜÉË 2 ¶¯»­
     auto anim = createAnimate("Hornet_injured2", 0, 1, 0.3f);
     auto loop = RepeatForever::create(anim);
     loop->setTag(10);
@@ -627,54 +627,54 @@ void HornetBoss::playInjuredAction2Loop() {
 }
 
 void HornetBoss::playFallAnimation(cocos2d::Vec2 attackSourcePos) {
-    // 1. åˆå§‹åŒ–ï¼šåœæ­¢å½“å‰åŠ¨ä½œå¹¶é”å®š
+    // 1. ³õÊ¼»¯£ºÍ£Ö¹µ±Ç°¶¯×÷²¢Ëø¶¨
     this->stopActionByTag(10);
     _isActionLocked = true;
 
-    // 2. åˆ¤å®šæ–¹å‘
-    // å¦‚æœæ”»å‡»æºåœ¨ Boss å³ä¾§ï¼ŒBoss åº”è¯¥å‘å·¦é£
+    // 2. ÅĞ¶¨·½Ïò
+    // Èç¹û¹¥»÷Ô´ÔÚ Boss ÓÒ²à£¬Boss Ó¦¸ÃÏò×ó·É
     float currentX = this->getPositionX();
     bool attackFromRight = (attackSourcePos.x > currentX);
 
-    // Hornet_fall åŸå›¾æ˜¯å‘å³é£ã€‚
-    // å¦‚æœä»å³å¾€å·¦æ‰“ï¼ˆå‘å·¦é£ï¼‰ï¼ŒsetScaleX(-1.0) é•œåƒã€‚
-    // å¦‚æœä»å·¦å¾€å³æ‰“ï¼ˆå‘å³é£ï¼‰ï¼ŒsetScaleX(1.0) ä¿æŒåŸæ ·ã€‚
+    // Hornet_fall Ô­Í¼ÊÇÏòÓÒ·É¡£
+    // Èç¹û´ÓÓÒÍù×ó´ò£¨Ïò×ó·É£©£¬setScaleX(-1.0) ¾µÏñ¡£
+    // Èç¹û´Ó×óÍùÓÒ´ò£¨ÏòÓÒ·É£©£¬setScaleX(1.0) ±£³ÖÔ­Ñù¡£
     this->setScaleX(attackFromRight ? -1.0f : 1.0f);
 
-    // 3. è®¾ç½®å‡»é£å§¿æ€å¸§
-    // è¿™é‡Œå‡è®¾åªæœ‰ä¸€å¸§ fall.pngï¼Œç›´æ¥è®¾ç½®çº¹ç†
+    // 3. ÉèÖÃ»÷·É×ËÌ¬Ö¡
+    // ÕâÀï¼ÙÉèÖ»ÓĞÒ»Ö¡ fall.png£¬Ö±½ÓÉèÖÃÎÆÀí
     std::string fallPath = StringUtils::format("%s/Hornet_fall.png", _folderPath.c_str());
     this->setTexture(fallPath);
 
-    // 4. åˆ›å»ºç™½å…‰ç‰¹æ•ˆ (Hornet_fall_light.png)
+    // 4. ´´½¨°×¹âÌØĞ§ (Hornet_fall_light.png)
     auto light = Sprite::create(StringUtils::format("%s/Hornet_fall_light.png", _folderPath.c_str()));
     if (light) {
         light->setPosition(Vec2(this->getContentSize().width / 2, this->getContentSize().height / 2));
         light->setOpacity(255);
-        light->setScale(1.0f); // ä»åŸå›¾å¤§å°å¼€å§‹
+        light->setScale(1.0f); // ´ÓÔ­Í¼´óĞ¡¿ªÊ¼
         this->addChild(light, 5);
 
-        // ç™½å…‰æ•ˆæœï¼šé€æ¸æ”¾å¤§å¹¶æ¶ˆå¤±
+        // °×¹âĞ§¹û£ºÖğ½¥·Å´ó²¢ÏûÊ§
         auto lightAction = Spawn::create(
-            ScaleTo::create(0.8f, 2.5f), // æ”¾å¤§åˆ° 2.5 å€
-            FadeOut::create(1.5f),      // é€æ¸å˜é€æ˜
+            ScaleTo::create(0.8f, 2.5f), // ·Å´óµ½ 2.5 ±¶
+            FadeOut::create(1.5f),      // Öğ½¥±äÍ¸Ã÷
             nullptr
         );
         light->runAction(Sequence::create(lightAction, RemoveSelf::create(), nullptr));
     }
 
-    // 5. æŠ›ç‰©çº¿ä½ç§» (JumpBy)
-    // æ ¹æ®æ–¹å‘å†³å®šä½ç§»æ­£è´Ÿ
+    // 5. Å×ÎïÏßÎ»ÒÆ (JumpBy)
+    // ¸ù¾İ·½Ïò¾ö¶¨Î»ÒÆÕı¸º
     float jumpDistance = attackFromRight ? -150.0f : 150.0f;
-    // å‚æ•°ï¼šæ—¶é•¿, ä½ç§»å‘é‡, è·³è·ƒé«˜åº¦, è·³è·ƒæ¬¡æ•°
+    // ²ÎÊı£ºÊ±³¤, Î»ÒÆÏòÁ¿, ÌøÔ¾¸ß¶È, ÌøÔ¾´ÎÊı
     auto jumpAction = JumpBy::create(0.5f, Vec2(jumpDistance, 0), 80.0f, 1);
 
-    // 6. æ‰§è¡Œåºåˆ—
+    // 6. Ö´ĞĞĞòÁĞ
     auto fallSequence = Sequence::create(
         jumpAction,
-        DelayTime::create(0.5f), // è½åœ°åçš„çŸ­æš‚åƒµç›´
+        DelayTime::create(0.5f), // ÂäµØºóµÄ¶ÌÔİ½©Ö±
         CallFunc::create([this]() {
-            // ä¿®æ”¹ï¼šå¦‚æœæ˜¯å‡»è´¥çŠ¶æ€ï¼Œè½åœ°åç›´æ¥ç¦»åœº
+            // ĞŞ¸Ä£ºÈç¹ûÊÇ»÷°Ü×´Ì¬£¬ÂäµØºóÖ±½ÓÀë³¡
             if (_aiState == AIState::DEFEATED) {
                 this->playLeaveAnimation();
             } else {
@@ -692,26 +692,26 @@ void HornetBoss::playLeaveAnimation() {
     this->stopActionByTag(10);
     _isActionLocked = true;
 
-    // 1. å®šä¹‰ç»ˆç‚¹ï¼ˆå±å¹•ä¸Šæ–¹ä¸­å¿ƒï¼Œè€ƒè™‘å¯è§åŒºåŸŸåŸç‚¹ï¼‰
+    // 1. ¶¨ÒåÖÕµã£¨ÆÁÄ»ÉÏ·½ÖĞĞÄ£¬¿¼ÂÇ¿É¼ûÇøÓòÔ­µã£©
     auto director   = Director::getInstance();
     auto visibleSize = director->getVisibleSize();
     auto origin      = director->getVisibleOrigin();
     Vec2 exitPos = Vec2(origin.x + visibleSize.width / 2.0f,
                         origin.y + visibleSize.height + 200.0f);
 
-    // --- é˜¶æ®µ A: åŸåœ°è·³èµ·å¹¶æ‚¬åœ ---
+    // --- ½×¶Î A: Ô­µØÌøÆğ²¢ĞüÍ£ ---
     auto jumpUp = MoveBy::create(0.3f, Vec2(0, 350.0f));
 
     auto leaveLogic = CallFunc::create([this, exitPos]() {
-        // å…ˆå·¦å³é•œåƒï¼Œå†ä¸Šä¸‹é•œåƒï¼Œé‡ç½®å¹¶æ—‹è½¬ 180 åº¦è®©å¤´éƒ¨æœä¸Š
+        // ÏÈ×óÓÒ¾µÏñ£¬ÔÙÉÏÏÂ¾µÏñ£¬ÖØÖÃ²¢Ğı×ª 180 ¶ÈÈÃÍ·²¿³¯ÉÏ
         this->setScaleX(-1.0f);
         this->setScaleY(-1.0f);
         this->setRotation(180.0f);
 
-        // 1. è½¬èº«åŠ¨ç”» (leave4 -> 5)
+        // 1. ×ªÉí¶¯»­ (leave4 -> 5)
         auto turnAndHold = createAnimate("Hornet_leave", 4, 5, 0.08f);
 
-        // 2. ä¸çº¿é€»è¾‘
+        // 2. Ë¿ÏßÂß¼­
         auto silkLogic = CallFunc::create([this]() {
             auto silk = Sprite::create();
             silk->setPosition(Vec2(this->getContentSize().width / 2,
@@ -729,7 +729,7 @@ void HornetBoss::playLeaveAnimation() {
             silk->runAction(Sequence::create(silkFlying, silkTension, silkFrame3, silkDisappear, nullptr));
         });
 
-        // 3. äººç‰©å¼¹å°„å†²å‡ºï¼ˆé£å‘åœºæ™¯ä¸Šæ–¹ä¸­å¤®ï¼‰
+        // 3. ÈËÎïµ¯Éä³å³ö£¨·ÉÏò³¡¾°ÉÏ·½ÖĞÑë£©
         auto shootOut = CallFunc::create([this, exitPos]() {
             auto flyLoop = RepeatForever::create(createAnimate("Hornet_leave", 0, 2, 0.05f));
             this->runAction(flyLoop);
@@ -742,7 +742,7 @@ void HornetBoss::playLeaveAnimation() {
             ));
         });
 
-        // å»¶é•¿æ‚¬åœæ—¶é—´ï¼šåŸ 0.25f -> 0.60f
+        // ÑÓ³¤ĞüÍ£Ê±¼ä£ºÔ­ 0.25f -> 0.60f
         this->runAction(Sequence::create(
             turnAndHold,
             silkLogic,
@@ -758,15 +758,15 @@ void HornetBoss::playLeaveAnimation() {
 }
 
 void HornetBoss::resetState() {
-    this->stopAllActions(); // åœæ­¢æ‰€æœ‰åŠ¨ä½œï¼Œé˜²æ­¢ Tag æ¼æ‰
+    this->stopAllActions(); // Í£Ö¹ËùÓĞ¶¯×÷£¬·ÀÖ¹ Tag Â©µô
     _isActionLocked = false;
     _isJumping = false;
     _currentPhysicsUpdate = nullptr;
     _aiState = AIState::IDLE;
-    this->setRotation(0);   // é‡ç½®æ—‹è½¬ï¼ˆé˜²æ­¢ Leave åŠ¨ç”»æ®‹ç•™ï¼‰
+    this->setRotation(0);   // ÖØÖÃĞı×ª£¨·ÀÖ¹ Leave ¶¯»­²ĞÁô£©
 }
 
-// è¡¥å…¨ç¼ºå¤±å®šä¹‰ï¼Œä¿®å¤é“¾æ¥é”™è¯¯
+// ²¹È«È±Ê§¶¨Òå£¬ĞŞ¸´Á´½Ó´íÎó
 void HornetBoss::moveToSafetyAndAttack(std::function<void()> onComplete) {
     this->stopActionByTag(10);
     _currentPhysicsUpdate = nullptr;
@@ -774,15 +774,15 @@ void HornetBoss::moveToSafetyAndAttack(std::function<void()> onComplete) {
     _isFacingLocked = true;
     _aiState = AIState::EVADING;
 
-    // å‘åœºåœ°ä¸­å¿ƒé æ‹¢
+    // Ïò³¡µØÖĞĞÄ¿¿Â£
     float centerX = (_minX + _maxX) / 2.0f;
     float currentX = this->getPositionX();
     float jumpDir = (centerX > currentX) ? 1.0f : -1.0f;
 
-    // èƒŒå¯¹è·³è·ƒæ–¹å‘
+    // ±³¶ÔÌøÔ¾·½Ïò
     this->setScaleX(-jumpDir);
 
-    // åŠ¨ç”»å¸§
+    // ¶¯»­Ö¡
     auto frame0 = StringUtils::format("%s/Hornet_backjump_0.png", _folderPath.c_str());
     auto frame1 = StringUtils::format("%s/Hornet_backjump_1.png", _folderPath.c_str());
     auto animation = Animation::create();
@@ -792,7 +792,7 @@ void HornetBoss::moveToSafetyAndAttack(std::function<void()> onComplete) {
     animation->setRestoreOriginalFrame(false);
     auto animate = Animate::create(animation);
 
-    // ç‰©ç†è·³è·ƒ
+    // ÎïÀíÌøÔ¾
     auto jumpAction = JumpBy::create(0.8f, Vec2(jumpDir * 450.0f, 0), 240.0f, 1);
 
     auto seq = Sequence::create(
@@ -863,7 +863,7 @@ void HornetBoss::onDamaged() {
     seq->setTag(999);
     this->runAction(seq);
 
-    // å‡»è´¥çŠ¶æ€ï¼šä»…è®¡æ¬¡ä»¥ä¾¿ç¦»åœº
+    // »÷°Ü×´Ì¬£º½ö¼Æ´ÎÒÔ±ãÀë³¡
     if (_aiState == AIState::DEFEATED) {
         _defeatedHitCount++;
         if (_defeatedHitCount >= 3) {
@@ -873,12 +873,12 @@ void HornetBoss::onDamaged() {
         return;
     }
 
-    // å—å‡»ç¡¬ç›´çŠ¶æ€ä¸è®¡å…¥æ”»å‡»æ¬¡æ•°
+    // ÊÜ»÷Ó²Ö±×´Ì¬²»¼ÆÈë¹¥»÷´ÎÊı
     if (_aiState == AIState::STUNNED) {
         return;
     }
 
-    // æ­£å¸¸æˆ˜æ–—é˜¶æ®µå—å‡»é€»è¾‘
+    // Õı³£Õ½¶·½×¶ÎÊÜ»÷Âß¼­
     _hitCount++;
     _phaseHitCount++;
 
@@ -894,34 +894,34 @@ void HornetBoss::onDamaged() {
     }
 }
 void HornetBoss::blinkWhite() {
-    // åœæ­¢ä¹‹å‰çš„é—ªçƒåŠ¨ä½œ
+    // Í£Ö¹Ö®Ç°µÄÉÁË¸¶¯×÷
     this->stopActionByTag(997);
 
-    // ä½¿ç”¨é€æ˜åº¦å¿«é€Ÿé—ªçƒæ¨¡æ‹Ÿå—å‡»åé¦ˆ
+    // Ê¹ÓÃÍ¸Ã÷¶È¿ìËÙÉÁË¸Ä£ÄâÊÜ»÷·´À¡
     auto blink = Sequence::create(
         FadeTo::create(0.03f, 0),   
-        FadeTo::create(0.03f, 255),   // æ¢å¤
+        FadeTo::create(0.03f, 255),   // »Ö¸´
         FadeTo::create(0.03f, 0),   
-        FadeTo::create(0.03f, 255),   // æ¢å¤æ­£å¸¸
+        FadeTo::create(0.03f, 255),   // »Ö¸´Õı³£
         nullptr
     );
     blink->setTag(997);
     this->runAction(blink);
 }
 Rect HornetBoss::getBossHitRect() {
-    // ä½¿ç”¨ RectApplyTransform è·å–æ›´ç²¾ç¡®çš„ä¸–ç•Œåæ ‡çŸ©å½¢ï¼Œæ”¯æŒç¿»è½¬å’Œæ—‹è½¬
+    // Ê¹ÓÃ RectApplyTransform »ñÈ¡¸ü¾«È·µÄÊÀ½ç×ø±ê¾ØĞÎ£¬Ö§³Ö·­×ªºÍĞı×ª
     Size size = this->getContentSize();
     Rect rect = Rect(0, 0, size.width, size.height);
     return RectApplyTransform(rect, this->getNodeToWorldTransform());
 }
 
 Rect HornetBoss::getWeaponRect() {
-    // éå†å­èŠ‚ç‚¹æŸ¥æ‰¾æ­¦å™¨ç²¾çµï¼ˆHornet_weapon1.pngï¼Œä¸åŒ…æ‹¬ä¸çº¿åŠ¨ç”»å¸§ï¼‰
+    // ±éÀú×Ó½Úµã²éÕÒÎäÆ÷¾«Áé£¨Hornet_weapon1.png£¬²»°üÀ¨Ë¿Ïß¶¯»­Ö¡£©
     for (auto child : this->getChildren()) {
         auto sprite = dynamic_cast<Sprite*>(child);
         if (sprite) {
             std::string resourceName = sprite->getResourceName();
-            // åªåŒ¹é… Hornet_weapon1.pngï¼ˆæ­¦å™¨æœ¬ä½“ï¼‰ï¼Œæ’é™¤ä¸çº¿å¸§ï¼ˆHornet_weapon1_1åˆ°6æ˜¯ä¸çº¿ï¼‰
+            // Ö»Æ¥Åä Hornet_weapon1.png£¨ÎäÆ÷±¾Ìå£©£¬ÅÅ³ıË¿ÏßÖ¡£¨Hornet_weapon1_1µ½6ÊÇË¿Ïß£©
             if (resourceName.find("Hornet_weapon1.png") != std::string::npos) {
                 Size size = sprite->getContentSize();
                 Rect rect = Rect(0, 0, size.width, size.height);
@@ -933,7 +933,7 @@ Rect HornetBoss::getWeaponRect() {
 }
 
 Rect HornetBoss::getAttack4Rect() {
-    // Attack4ï¼ˆä¹±èˆæ”»å‡»ï¼‰ä½¿ç”¨ Hornet_weapon2 ç³»åˆ—
+    // Attack4£¨ÂÒÎè¹¥»÷£©Ê¹ÓÃ Hornet_weapon2 ÏµÁĞ
     if (_attack4Effect) {
         Size size = _attack4Effect->getContentSize();
         Rect rect = Rect(0, 0, size.width, size.height);

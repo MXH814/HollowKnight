@@ -1,9 +1,9 @@
-ï»¿// HornetAI.cpp
+// HornetAI.cpp
 #include "HornetBoss.h"
 USING_NS_CC;
 
 void HornetBoss::startAI(Node* playerTarget) {
-    // TODO: å‚æ•°ç±»å‹åº”æ”¹ä¸º Player*ï¼Œå¹¶ä¿å­˜åˆ° _player æˆå‘˜å˜é‡ä¸­
+    // TODO: ²ÎÊıÀàĞÍÓ¦¸ÄÎª Player*£¬²¢±£´æµ½ _player ³ÉÔ±±äÁ¿ÖĞ
     this->_player = playerTarget;
 
     this->scheduleUpdate();
@@ -15,32 +15,32 @@ void HornetBoss::startAI(Node* playerTarget) {
 void HornetBoss::decideNextAction() {
     if (_isActionLocked || !_player) return;
         
-    // å¦‚æœå¤„äºå‡»è´¥çŠ¶æ€ï¼Œä¸å†è¿›è¡Œä»»ä½•AIå†³ç­–
+    // Èç¹û´¦ÓÚ»÷°Ü×´Ì¬£¬²»ÔÙ½øĞĞÈÎºÎAI¾ö²ß
     if (_aiState == AIState::DEFEATED) return;
 
-    // è·å–å½“å‰è·ç¦»
-    // TODO: æœªæ¥æ›¿æ¢ä¸º Player::getPositionX()
+    // »ñÈ¡µ±Ç°¾àÀë
+    // TODO: Î´À´Ìæ»»Îª Player::getPositionX()
     float distance = std::abs(this->getPositionX() - _player->getPositionX());
     int randVal = cocos2d::random(1, 100);
 
-    // --- å¼ºåˆ¶é—´éš”é€»è¾‘ ---
-    // å¦‚æœä¸Šä¸€ä¸ªçŠ¶æ€æ˜¯ ATTACKINGï¼Œåˆ™è¿™æ¬¡å¿…é¡»å¼ºåˆ¶è¿›å…¥ IDLE æˆ– WALKING 
+    // --- Ç¿ÖÆ¼ä¸ôÂß¼­ ---
+    // Èç¹ûÉÏÒ»¸ö×´Ì¬ÊÇ ATTACKING£¬ÔòÕâ´Î±ØĞëÇ¿ÖÆ½øÈë IDLE »ò WALKING 
     if (_aiState == AIState::ATTACKING) {
         _aiState = AIState::IDLE;
 
-        // æ ¹æ®é˜¶æ®µè°ƒæ•´ä¼‘æ¯æ—¶é—´
+        // ¸ù¾İ½×¶Îµ÷ÕûĞİÏ¢Ê±¼ä
         float minRest, maxRest;
         switch (_currentPhase) {
-            case 1: minRest = 0.8f; maxRest = 1.5f; break; // é˜¶æ®µ1ï¼šæœ€æ…¢
-            case 2: minRest = 0.5f; maxRest = 1.2f; break; // é˜¶æ®µ2ï¼šåŸé€Ÿåº¦
-            case 3: minRest = 0.3f; maxRest = 0.8f; break; // é˜¶æ®µ3ï¼šåŠ å¿«
-            case 4: minRest = 0.1f; maxRest = 0.4f; break; // é˜¶æ®µ4ï¼šæå¿«
+            case 1: minRest = 0.8f; maxRest = 1.5f; break; // ½×¶Î1£º×îÂı
+            case 2: minRest = 0.5f; maxRest = 1.2f; break; // ½×¶Î2£ºÔ­ËÙ¶È
+            case 3: minRest = 0.3f; maxRest = 0.8f; break; // ½×¶Î3£º¼Ó¿ì
+            case 4: minRest = 0.1f; maxRest = 0.4f; break; // ½×¶Î4£º¼«¿ì
             default: minRest = 0.5f; maxRest = 1.2f; break;
         }
             
         float restTime = cocos2d::random(minRest, maxRest);
 
-        // 50% æ¦‚ç‡åŸåœ°å¾…æœºï¼Œ50% æ¦‚ç‡èµ°åŠ¨ä¸€ä¸‹
+        // 50% ¸ÅÂÊÔ­µØ´ı»ú£¬50% ¸ÅÂÊ×ß¶¯Ò»ÏÂ
         if (cocos2d::random(0, 1) == 0) {
                 this->playIdleAnimation();
                 this->runAction(Sequence::create(
@@ -53,47 +53,47 @@ void HornetBoss::decideNextAction() {
                 this->runAction(Sequence::create(
                     DelayTime::create(restTime),
                     CallFunc::create([this]() {
-                        this->_currentPhysicsUpdate = nullptr; // åœæ­¢èµ°è·¯ç‰©ç†
+                        this->_currentPhysicsUpdate = nullptr; // Í£Ö¹×ßÂ·ÎïÀí
                         this->decideNextAction();
                         }), nullptr));
             }
-            return; // ç»“æŸå½“å‰å†³ç­–ï¼Œç­‰å¾… DelayTime åå†æ¬¡è¿›å…¥
+            return; // ½áÊøµ±Ç°¾ö²ß£¬µÈ´ı DelayTime ºóÔÙ´Î½øÈë
         }
 
-    // --- æ­£å¼æ”»å‡»å†³ç­–é€»è¾‘ ---
+    // --- ÕıÊ½¹¥»÷¾ö²ßÂß¼­ ---
     _aiState = AIState::ATTACKING;
     int currentAttack = 0;
 
     if (distance < 250.0f) {
-        // è¿‘è·ç¦»ï¼šåˆ é™¤å•ç‹¬åæ’¤æ­¥ï¼Œæé«˜æ”»å‡»1æ¦‚ç‡
+        // ½ü¾àÀë£ºÉ¾³ıµ¥¶Àºó³·²½£¬Ìá¸ß¹¥»÷1¸ÅÂÊ
         if (randVal <= 95) {
-            // 95%æ¦‚ç‡ä½¿ç”¨æ”»å‡»1
+            // 95%¸ÅÂÊÊ¹ÓÃ¹¥»÷1
             currentAttack = 1;
         }
         else {
-            // 5%æ¦‚ç‡ä½¿ç”¨æ”»å‡»4ï¼ˆä¹±èˆï¼‰
+            // 5%¸ÅÂÊÊ¹ÓÃ¹¥»÷4£¨ÂÒÎè£©
             currentAttack = 4;
         }
     }
     else {
-        // è¿œè·ç¦»ï¼šæé«˜æ”»å‡»2(æŠ•æ·æ­¦å™¨)æ¦‚ç‡ï¼Œé™ä½æ”»å‡»4æ¦‚ç‡åˆ°5%
+        // Ô¶¾àÀë£ºÌá¸ß¹¥»÷2(Í¶ÖÀÎäÆ÷)¸ÅÂÊ£¬½µµÍ¹¥»÷4¸ÅÂÊµ½5%
         if (randVal <= 20) {
-            // 20%æ¦‚ç‡ä½¿ç”¨æ”»å‡»3ï¼ˆä¿¯å†²ï¼‰
+            // 20%¸ÅÂÊÊ¹ÓÃ¹¥»÷3£¨¸©³å£©
             currentAttack = 3;
         }
         else if (randVal <= 80) {
-            // 60%æ¦‚ç‡ä½¿ç”¨æ”»å‡»2ï¼ˆæŠ•æ·æ­¦å™¨ï¼‰- å¤§å¹…æé«˜
+            // 60%¸ÅÂÊÊ¹ÓÃ¹¥»÷2£¨Í¶ÖÀÎäÆ÷£©- ´ó·ùÌá¸ß
             currentAttack = 2;
         }
         else if (randVal <= 85) {
-            // 5%æ¦‚ç‡ä½¿ç”¨æ”»å‡»4ï¼ˆä¹±èˆï¼‰- æä½æ¦‚ç‡ï¼Œ10æ¬¡å‡ºç°0-1æ¬¡
+            // 5%¸ÅÂÊÊ¹ÓÃ¹¥»÷4£¨ÂÒÎè£©- ¼«µÍ¸ÅÂÊ£¬10´Î³öÏÖ0-1´Î
             currentAttack = 4;
         }
         else {
-            // 15%æ¦‚ç‡èµ°è·¯
+            // 15%¸ÅÂÊ×ßÂ·
             this->playWalkAnimation();
             _lastAttackType = 0;
-            // èµ°è·¯åçš„å›è°ƒ
+            // ×ßÂ·ºóµÄ»Øµ÷
             this->runAction(Sequence::create(DelayTime::create(1.0f), CallFunc::create([this]() {
                 this->_currentPhysicsUpdate = nullptr;
                 this->decideNextAction();
@@ -102,16 +102,16 @@ void HornetBoss::decideNextAction() {
         }
     }
 
-    // --- æ”»å‡»å»é‡æ£€æŸ¥ ---
+    // --- ¹¥»÷È¥ÖØ¼ì²é ---
     if (currentAttack != 0) {
-        // å¦‚æœå’Œä¸Šæ¬¡ä¸€æ ·
+        // Èç¹ûºÍÉÏ´ÎÒ»Ñù
         if (currentAttack == _lastAttackType) {
-            // ç‰¹æ®Šå¤„ç†æ”»å‡»3ï¼šå…è®¸è¿ç»­ä¸¤æ¬¡
+            // ÌØÊâ´¦Àí¹¥»÷3£ºÔÊĞíÁ¬ĞøÁ½´Î
             if (currentAttack == 3 && _attack3RepeatCount < 1) {
                 _attack3RepeatCount++;
             }
             else {
-                // å…¶ä»–æ”»å‡»æˆ–æ”»å‡»3å·²é‡å¤è¿‡ï¼šå¼ºåˆ¶åˆ‡æ¢åˆ°å¦ä¸€ç§åŠ¨ä½œï¼ˆä¾‹å¦‚ï¼šå¦‚æœä¸è®©é‡å¤ï¼Œå°±æ”¹æˆèµ°è·¯ï¼‰
+                // ÆäËû¹¥»÷»ò¹¥»÷3ÒÑÖØ¸´¹ı£ºÇ¿ÖÆÇĞ»»µ½ÁíÒ»ÖÖ¶¯×÷£¨ÀıÈç£ºÈç¹û²»ÈÃÖØ¸´£¬¾Í¸Ä³É×ßÂ·£©
                 this->playWalkAnimation();
                 this->runAction(Sequence::create(DelayTime::create(0.8f), CallFunc::create([this]() {
                     this->_currentPhysicsUpdate = nullptr;
@@ -121,30 +121,30 @@ void HornetBoss::decideNextAction() {
             }
         }
         else {
-            _attack3RepeatCount = 0; // é‡ç½®æ”»å‡»3è®¡æ•°
+            _attack3RepeatCount = 0; // ÖØÖÃ¹¥»÷3¼ÆÊı
         }
 
         _lastAttackType = currentAttack;
 
-        // æ‰§è¡Œæœ€ç»ˆé€‰å®šçš„æ”»å‡»
+        // Ö´ĞĞ×îÖÕÑ¡¶¨µÄ¹¥»÷
         switch (currentAttack) {
             case 1: 
             {
-                // ä¿®æ”¹ï¼šAttack 1 å¢åŠ ä¸ Attack 2 ç›¸åŒçš„å®‰å…¨æ£€æŸ¥é€»è¾‘
-                // å¦‚æœå‰æ–¹ç©ºé—´ä¸è¶³ä»¥æ–½å±•å†²åˆºï¼ˆå‡è®¾å†²åˆºè·ç¦»è¾ƒé•¿ï¼‰ï¼Œåˆ™å…ˆè°ƒæ•´ä½ç½®
+                // ĞŞ¸Ä£ºAttack 1 Ôö¼ÓÓë Attack 2 ÏàÍ¬µÄ°²È«¼ì²éÂß¼­
+                // Èç¹ûÇ°·½¿Õ¼ä²»×ãÒÔÊ©Õ¹³å´Ì£¨¼ÙÉè³å´Ì¾àÀë½Ï³¤£©£¬ÔòÏÈµ÷ÕûÎ»ÖÃ
                 float currentX = this->getPositionX();
-                // TODO: æœªæ¥æ›¿æ¢ä¸º Player::getPositionX()
+                // TODO: Î´À´Ìæ»»Îª Player::getPositionX()
                 float direction = (this->_player->getPositionX() > currentX) ? 1.0f : -1.0f;
-                // æ£€æŸ¥å‰æ–¹ 550 åƒç´ ï¼ˆAttack1 å†²åˆºè·ç¦»ï¼‰æ˜¯å¦æœ‰ç©ºé—´ï¼Œé¢„ç•™ 100 ç¼“å†²
+                // ¼ì²éÇ°·½ 550 ÏñËØ£¨Attack1 ³å´Ì¾àÀë£©ÊÇ·ñÓĞ¿Õ¼ä£¬Ô¤Áô 100 »º³å
                 if (currentX + (direction * 650.0f) < _minX || currentX + (direction * 650.0f) > _maxX) {
-                    // ç©ºé—´ä¸è¶³ï¼Œå…ˆç§»åŠ¨åˆ°å®‰å…¨ä½ç½®ï¼Œå®Œæˆåå›è°ƒæ‰§è¡Œ Attack 1
+                    // ¿Õ¼ä²»×ã£¬ÏÈÒÆ¶¯µ½°²È«Î»ÖÃ£¬Íê³Éºó»Øµ÷Ö´ĞĞ Attack 1
                     this->moveToSafetyAndAttack([this]() {
-                        // TODO: æœªæ¥æ›¿æ¢ä¸º Player::getPosition()
+                        // TODO: Î´À´Ìæ»»Îª Player::getPosition()
                         this->playAttack1Animation(this->_player->getPosition());
                     });
                 }
                 else {
-                    // TODO: æœªæ¥æ›¿æ¢ä¸º Player::getPosition()
+                    // TODO: Î´À´Ìæ»»Îª Player::getPosition()
                     this->playAttack1Animation(_player->getPosition());
                 }
             }
@@ -152,25 +152,25 @@ void HornetBoss::decideNextAction() {
             case 2:
             {
                 float currentX = this->getPositionX();
-                // TODO: æœªæ¥æ›¿æ¢ä¸º Player::getPositionX()
+                // TODO: Î´À´Ìæ»»Îª Player::getPositionX()
                 float direction = (this->_player->getPositionX() > currentX) ? 1.0f : -1.0f;
-                // Attack 2 æŠ•æ·è·ç¦»çº¦ 700ï¼Œé¢„ç•™ 250 ç¼“å†²
+                // Attack 2 Í¶ÖÀ¾àÀëÔ¼ 700£¬Ô¤Áô 250 »º³å
                 if (currentX + (direction * 750.0f) < _minX + 250.0f || currentX + (direction * 750.0f) > _maxX - 250.0f) {
-                    // ç©ºé—´ä¸è¶³ï¼Œå…ˆç§»åŠ¨åˆ°å®‰å…¨ä½ç½®ï¼Œå®Œæˆåå›è°ƒæ‰§è¡Œ Attack 2
+                    // ¿Õ¼ä²»×ã£¬ÏÈÒÆ¶¯µ½°²È«Î»ÖÃ£¬Íê³Éºó»Øµ÷Ö´ĞĞ Attack 2
                     this->moveToSafetyAndAttack([this]() {
-                        // TODO: æœªæ¥æ›¿æ¢ä¸º Player::getPosition()
+                        // TODO: Î´À´Ìæ»»Îª Player::getPosition()
                         this->playAttack2Animation(this->_player->getPosition());
                     });
                 }
                 else {
-                    // TODO: æœªæ¥æ›¿æ¢ä¸º Player::getPosition()
+                    // TODO: Î´À´Ìæ»»Îª Player::getPosition()
                     this->playAttack2Animation(_player->getPosition());
                 }
             }
             break;
-            // TODO: æœªæ¥æ›¿æ¢ä¸º Player::getPosition()
+            // TODO: Î´À´Ìæ»»Îª Player::getPosition()
             case 3: this->playAttack3Animation(_player->getPosition()); break;
-            // TODO: æœªæ¥æ›¿æ¢ä¸º Player::getPosition()
+            // TODO: Î´À´Ìæ»»Îª Player::getPosition()
             case 4: this->playAttack4Animation(_player->getPosition()); break;
         }
     }
