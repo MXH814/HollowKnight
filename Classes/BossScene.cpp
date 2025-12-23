@@ -21,16 +21,17 @@ bool BossScene::init()
     this->addChild(blackLayer, 10, "LoadingBlack");
 
     // 加载 TMX 地图
-    _mapScale = 0.8f;
+    _mapScale = 1.0f;  // 不缩放，与原项目保持一致
     _map = TMXTiledMap::create("Maps/Bossroom.tmx");
     CCASSERT(_map != nullptr, "TMX 地图加载失败");
 
+    // 【关键点】锚点和位置必须是 (0,0)
     _map->setAnchorPoint(Vec2::ZERO);
-    _map->setPosition(Vec2::ZERO);
+    _map->setPosition(origin);
     _map->setScale(_mapScale);
     this->addChild(_map, 0);
     
-    // 计算缩放后的地图尺寸
+    // 计算地图尺寸
     auto mapContentSize = _map->getContentSize();
     _mapSize = Size(mapContentSize.width * _mapScale, mapContentSize.height * _mapScale);
 
@@ -52,7 +53,35 @@ bool BossScene::init()
         _knight->setPosition(Vec2(startX, startY));
         _knight->setScale(1.0f);
         _knight->setPlatforms(_platforms);
-        this->addChild(_knight, 10);
+        this->addChild(_knight, 10, "PlayerInstance");
+    }
+
+    // 创建 Hornet Boss
+    _hornet = HornetBoss::createWithFolder("Hornet");
+    if (_hornet)
+    {
+        // 【关键】使用原项目中固定的边界值
+        // groundY = 180.0f, minX = 500.0f, maxX = 1900.0f
+        float groundY = 180.0f;
+        float minX = 500.0f;
+        float maxX = 1900.0f;
+        
+        _hornet->setBoundaries(groundY, minX, maxX);
+        _hornet->setName("HornetBoss");
+        this->addChild(_hornet, 9);
+        
+        // 启动Boss AI，传入玩家节点
+        if (_knight)
+        {
+            _hornet->startAI(_knight);
+        }
+        else
+        {
+            // 保险起见，如果没有玩家也让他先入场
+            _hornet->playEntryAnimation(600, 800);
+        }
+        
+        CCLOG("Boss边界设置: 地面Y=%.1f, 最小X=%.1f, 最大X=%.1f", groundY, minX, maxX);
     }
 
     // 添加关闭按钮
@@ -93,15 +122,33 @@ bool BossScene::init()
         _soulLabel->setTextColor(Color4B(200, 200, 255, 255));
         this->addChild(_soulLabel, 100);
     }
+    
+    // 创建Boss HP显示标签
+    _bossHPLabel = Label::createWithTTF("HORNET", "fonts/Marker Felt.ttf", 28);
+    if (_bossHPLabel)
+    {
+        _bossHPLabel->setAnchorPoint(Vec2(0.5f, 0));
+        _bossHPLabel->setPosition(Vec2(origin.x + visibleSize.width / 2, origin.y + 20));
+        _bossHPLabel->setTextColor(Color4B(255, 100, 100, 255));
+        this->addChild(_bossHPLabel, 100);
+    }
 
     // 初始化摄像机偏移
     _cameraOffsetY = 0.0f;
     _targetCameraOffsetY = 0.0f;
+    
+    // 初始化攻击冷却
+    _knightAttackCooldown = 0.0f;
+    _spellAttackCooldown = 0.0f;
 
     // 直接移除黑层
     if (blackLayer && blackLayer->getParent()) {
         blackLayer->removeFromParent();
     }
+    
+    // 输出地图信息（调试用）
+    CCLOG("Map Size: %f x %f", _mapSize.width, _mapSize.height);
+    CCLOG("Screen Size: %f x %f", visibleSize.width, visibleSize.height);
 
     // 启用update
     this->scheduleUpdate();
@@ -131,16 +178,15 @@ void BossScene::parseCollisionLayer()
         
         Platform platform;
         platform.rect = Rect(x, y, width, height);
-        platform.node = nullptr;  // TMX地图碰撞不需要节点
+        platform.node = nullptr;
         _platforms.push_back(platform);
         
-        // 调试输出
         std::string name = dict["name"].asString();
-        CCLOG("解析碰撞区域: %s - x:%.1f y:%.1f w:%.1f h:%.1f", 
+        CCLOG("创建碰撞平台: %s - x:%.1f y:%.1f w:%.1f h:%.1f", 
               name.c_str(), x, y, width, height);
     }
     
-    CCLOG("共解析 %zu 个碰撞区域", _platforms.size());
+    CCLOG("共创建 %zu 个碰撞平台", _platforms.size());
 }
 
 void BossScene::updateCamera()
@@ -150,7 +196,7 @@ void BossScene::updateCamera()
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 knightPos = _knight->getPosition();
     
-    // 根据看向状态设置目标偏移
+    // 根据看向状态调整目标偏移
     float lookOffset = 150.0f;
     if (_knight->isLookingUp())
     {
@@ -165,11 +211,11 @@ void BossScene::updateCamera()
         _targetCameraOffsetY = 0.0f;
     }
     
-    // 平滑插值镜头偏移
+    // 平滑插值看向偏移
     float offsetLerpFactor = 0.05f;
     _cameraOffsetY += (_targetCameraOffsetY - _cameraOffsetY) * offsetLerpFactor;
     
-    // 计算摄像机目标位置（让骑士在屏幕中央）
+    // 计算摄像机目标位置（骑士在屏幕中心）
     float cameraX = knightPos.x;
     float cameraY = knightPos.y + _cameraOffsetY;
     
@@ -201,6 +247,10 @@ void BossScene::updateCamera()
         _soulLabel->setPosition(Vec2(newX + visibleSize.width / 2 - 20, 
                                      newY + visibleSize.height / 2 - 20));
     }
+    if (_bossHPLabel)
+    {
+        _bossHPLabel->setPosition(Vec2(newX, newY - visibleSize.height / 2 + 50));
+    }
 }
 
 void BossScene::updateHPLabel()
@@ -223,11 +273,133 @@ void BossScene::updateSoulLabel()
     }
 }
 
+void BossScene::checkCombatCollisions()
+{
+    if (!_knight || !_hornet) return;
+    if (_knight->isDead()) return;
+    
+    // ========== 1. 检测Hornet对TheKnight的伤害 ==========
+    if (!_knight->isInvincible() && !_knight->isStunned())
+    {
+        Rect knightRect = _knight->getBoundingBox();
+        bool knightHit = false;
+        
+        // 检测Boss本体碰撞
+        Rect bossRect = _hornet->getBossHitRect();
+        if (knightRect.intersectsRect(bossRect))
+        {
+            knightHit = true;
+        }
+        
+        // 检测投掷武器碰撞（Attack2）
+        if (!knightHit)
+        {
+            Rect weaponRect = _hornet->getWeaponRect();
+            if (weaponRect.size.width > 0 && knightRect.intersectsRect(weaponRect))
+            {
+                knightHit = true;
+            }
+        }
+        
+        // 检测乱舞攻击碰撞（Attack4）
+        if (!knightHit)
+        {
+            Rect attack4Rect = _hornet->getAttack4Rect();
+            if (attack4Rect.size.width > 0 && knightRect.intersectsRect(attack4Rect))
+            {
+                knightHit = true;
+            }
+        }
+        
+        // 如果被击中
+        if (knightHit)
+        {
+            // 设置后退方向（根据Boss位置）
+            bool fromRight = (_hornet->getPositionX() > _knight->getPositionX());
+            _knight->setKnockbackDirection(fromRight);
+            _knight->takeDamage(1);
+        }
+    }
+    
+    // ========== 2. 检测TheKnight对Hornet的伤害 ==========
+    Rect bossHurtRect = _hornet->getBossHitRect();
+    
+    // 更新冷却计时器
+    float dt = Director::getInstance()->getDeltaTime();
+    if (_knightAttackCooldown > 0)
+    {
+        _knightAttackCooldown -= dt;
+    }
+    if (_spellAttackCooldown > 0)
+    {
+        _spellAttackCooldown -= dt;
+    }
+    
+    // 检测骑士斩击（Slash）碰撞
+    if (_knightAttackCooldown <= 0)
+    {
+        Rect slashRect;
+        if (_knight->getSlashEffectBoundingBox(slashRect))
+        {
+            if (slashRect.intersectsRect(bossHurtRect))
+            {
+                _hornet->onDamaged();
+                
+                // 增加灵魂值（考虑灵魂捕手护符）
+                int soulGain = 1;
+                if (_knight->getCharmSoulCatcher())
+                {
+                    soulGain += 1;
+                }
+                _knight->addSoul(soulGain);
+                
+                // 下劈命中敌人后弹反
+                _knight->bounceFromDownSlash();
+                
+                // 设置攻击冷却，防止一次攻击多次伤害
+                _knightAttackCooldown = 0.3f;
+            }
+        }
+    }
+    
+    // 检测法术（Vengeful Spirit）碰撞
+    if (_spellAttackCooldown <= 0)
+    {
+        Sprite* spellEffect = _knight->getVengefulSpiritEffect();
+        if (spellEffect)
+        {
+            auto effectSize = spellEffect->getContentSize();
+            auto effectPos = spellEffect->getPosition();
+            Rect spellRect(effectPos.x - effectSize.width / 2,
+                           effectPos.y - effectSize.height / 2,
+                           effectSize.width,
+                           effectSize.height);
+            
+            if (spellRect.intersectsRect(bossHurtRect))
+            {
+                // 法术伤害（考虑萨满之石护符）
+                _hornet->onDamaged();
+                if (_knight->getCharmShamanStone())
+                {
+                    // 萨满之石额外伤害
+                    _hornet->onDamaged();
+                }
+                
+                // 设置法术冷却
+                _spellAttackCooldown = 0.2f;
+            }
+        }
+    }
+}
+
 void BossScene::update(float dt)
 {
     updateCamera();
     updateHPLabel();
     updateSoulLabel();
+    
+    // 碰撞检测
+    checkCombatCollisions();
 }
 
 void BossScene::menuCloseCallback(Ref* pSender)

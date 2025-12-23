@@ -3,6 +3,7 @@
 
 #include "cocos2d.h"
 #include "TheKnight.h"
+#include "boss/HornetBoss.h"
 
 class BossScene : public cocos2d::Scene
 {
@@ -27,8 +28,14 @@ private:
     void updateHPLabel();
     void updateSoulLabel();
     
+    // 碰撞检测
+    void checkCombatCollisions();
+    
     // 玩家
     TheKnight* _knight;
+    
+    // Boss
+    HornetBoss* _hornet = nullptr;
     
     // 平台列表
     std::vector<Platform> _platforms;
@@ -45,6 +52,11 @@ private:
     // UI标签
     cocos2d::Label* _hpLabel;
     cocos2d::Label* _soulLabel;
+    cocos2d::Label* _bossHPLabel = nullptr;
+    
+    // 攻击命中冷却（防止一次攻击多次伤害）
+    float _knightAttackCooldown = 0.0f;
+    float _spellAttackCooldown = 0.0f;
 };
 
 #endif // __BOSS_SCENE_H__

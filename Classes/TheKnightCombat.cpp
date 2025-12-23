@@ -277,6 +277,7 @@ void TheKnight::updateUpSlash(float dt)
     
     updateSlashEffectPosition();
     
+    // 上劈时不再有向上移动的效果，只处理重力和水平移动
     if (!_isOnGround)
     {
         _velocityY -= _gravity * dt;
@@ -779,4 +780,20 @@ void TheKnight::onDeathAnimFinished()
     this->setVisible(false);
     // 停止更新
     this->unscheduleUpdate();
+}
+
+void TheKnight::bounceFromDownSlash()
+{
+    // 下劈命中敌人后弹起
+    // 只有在下劈状态才能弹反
+    if (_state != KnightState::DOWN_SLASHING) return;
+    
+    // 设置向上的速度，实现弹起效果
+    _velocityY = 800.0f;  // 弹起力度
+    
+    // 确保处于空中状态
+    _isOnGround = false;
+    
+    // 重置二段跳（弹反后可以再次二段跳）
+    _hasDoubleJumped = false;
 }

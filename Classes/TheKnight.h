@@ -106,6 +106,9 @@ public:
     // 设置受击后退方向（根据敌人位置）
     void setKnockbackDirection(bool fromRight);
     
+    // 下劈弹反（下劈命中敌人后弹起）
+    void bounceFromDownSlash();
+    
 private:
     // 创建动画（指定起始帧和结束帧）
     Animation* createAnimation(const std::string& path, const std::string& prefix, int startFrame, int endFrame, float delay);
