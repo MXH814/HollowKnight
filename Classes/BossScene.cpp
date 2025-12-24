@@ -21,19 +21,19 @@ bool BossScene::init()
     this->addChild(blackLayer, 10, "LoadingBlack");
 
     // 加载 TMX 地图
-    _mapScale = 1.0f;  // 不缩放，与原项目保持一致
+    scale = 1.0f;  // 不缩放，与原项目保持一致
     _map = TMXTiledMap::create("Maps/Bossroom.tmx");
     CCASSERT(_map != nullptr, "TMX 地图加载失败");
 
     // 【关键点】锚点和位置必须是 (0,0)
     _map->setAnchorPoint(Vec2::ZERO);
     _map->setPosition(origin);
-    _map->setScale(_mapScale);
+    _map->setScale(scale);
     this->addChild(_map, 0);
     
     // 计算地图尺寸
     auto mapContentSize = _map->getContentSize();
-    _mapSize = Size(mapContentSize.width * _mapScale, mapContentSize.height * _mapScale);
+    _mapSize = Size(mapContentSize.width * scale, mapContentSize.height * scale);
 
     // 解析碰撞层
     parseCollisionLayer();
@@ -43,8 +43,8 @@ bool BossScene::init()
     CCASSERT(objectGroup != nullptr, "地图缺少对象层 Objects");
 
     auto startPoint = objectGroup->getObject("PlayerStart");
-    float startX = startPoint["x"].asFloat() * _mapScale;
-    float startY = startPoint["y"].asFloat() * _mapScale;
+    float startX = startPoint["x"].asFloat() * scale;
+    float startY = startPoint["y"].asFloat() * scale;
 
     // 创建小骑士
     _knight = TheKnight::create();
@@ -171,10 +171,10 @@ void BossScene::parseCollisionLayer()
     {
         ValueMap& dict = obj.asValueMap();
         
-        float x = dict["x"].asFloat() * _mapScale;
-        float y = dict["y"].asFloat() * _mapScale;
-        float width = dict["width"].asFloat() * _mapScale;
-        float height = dict["height"].asFloat() * _mapScale;
+        float x = dict["x"].asFloat() * scale;
+        float y = dict["y"].asFloat() * scale;
+        float width = dict["width"].asFloat() * scale;
+        float height = dict["height"].asFloat() * scale;
         
         Platform platform;
         platform.rect = Rect(x, y, width, height);

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="140" height="118" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="26">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="140" height="118" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="33">
  <editorsettings>
   <chunksize width="13" height="16"/>
  </editorsettings>
  <tileset firstgid="1" source="dirtmouth.tsx"/>
  <tileset firstgid="52157" source="../NPC/NPCs.tsx"/>
+ <tileset firstgid="52159" source="mapsbg.tsx"/>
  <layer id="1" name="图块层 1" width="140" height="118">
   <data encoding="csv">
 151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274,275,276,277,278,279,280,281,282,283,284,285,286,287,288,289,290,
@@ -129,11 +130,13 @@
  </layer>
  <objectgroup id="2" name="Objects">
   <object id="1" name="PlayerStart" type="Start" x="1016.75" y="1593.88" width="45.75" height="33.5" visible="0"/>
-  <object id="5" name="npc1" gid="52158" x="872.5" y="1629.25" width="55" height="74"/>
+  <object id="5" name="npc1" type="npc" gid="52158" x="872.5" y="1629.25" width="55" height="74"/>
   <object id="25" name="Chair" x="1034.75" y="1593.75" width="12.5" height="33.75" visible="0"/>
+  <object id="26" name="layer1" type="bg" gid="52176" x="640" y="1686" width="101" height="120"/>
+  <object id="27" name="layer2" type="bg" gid="52175" x="1326" y="1677.75" width="188" height="103"/>
  </objectgroup>
  <objectgroup id="3" name="Collision">
-  <object id="14" name="solid2" type="crash" x="-19" y="1628" width="1971" height="280" visible="0"/>
+  <object id="14" name="solid2" type="crash" x="-19" y="1629" width="1973" height="280" visible="0"/>
   <object id="15" name="solid3" type="crash" x="1942.75" y="1653.75" width="114.5" height="245" visible="0"/>
   <object id="16" name="solid4" type="crash" x="2041.75" y="1680" width="120" height="219" visible="0"/>
   <object id="17" name="solid5" type="crash" x="2147.5" y="1703.5" width="192" height="197" visible="0"/>

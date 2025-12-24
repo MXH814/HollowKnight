@@ -926,8 +926,16 @@ void TheKnight::changeState(KnightState newState)
             auto animation = AnimationCache::getInstance()->getAnimation("sitFallAsleep");
             if (animation)
             {
+                // 调整位置偏移（向右上）
+                Vec2 originalPos = this->getPosition();
+                this->setPosition(originalPos + Vec2(5, 10)); // 向右5，向上10
+                
                 auto animate = Animate::create(animation);
-                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onSitFallAsleepFinished, this));
+                auto callback = CallFunc::create([this, originalPos]() {
+                    // 恢复位置
+                    this->setPosition(originalPos);
+                    this->onSitFallAsleepFinished();
+                });
                 this->runAction(Sequence::create(animate, callback, nullptr));
             }
             else
@@ -941,6 +949,16 @@ void TheKnight::changeState(KnightState newState)
         {
             this->stopAllActions();
             _isAsleep = true;
+            
+            // 调整位置偏移（向右上），与SitFallAsleep保持一致
+            // 注意：需要在退出此状态时恢复位置，或者在WakeToSit开始时恢复
+            // 由于SITTING_ASLEEP是循环状态，我们在这里设置偏移
+            // 并在切换到WAKE_TO_SIT时处理恢复（或者在WAKE_TO_SIT里也保持偏移直到动画结束）
+            
+            // 这里我们假设进入SITTING_ASLEEP前位置是正常的（因为SIT_FALL_ASLEEP结束时恢复了）
+            // 所以我们需要再次应用偏移
+            this->setPosition(this->getPosition() + Vec2(5, 10));
+            
             auto animation = AnimationCache::getInstance()->getAnimation("sittingAsleep");
             if (animation)
             {
@@ -953,15 +971,33 @@ void TheKnight::changeState(KnightState newState)
         case KnightState::WAKE_TO_SIT:
         {
             this->stopAllActions();
+            
+            // 如果是从SITTING_ASLEEP过来的，位置是有偏移的
+            // WAKE_TO_SIT动画应该也是基于这个偏移位置的（假设素材一致）
+            // 所以我们保持偏移，直到动画结束
+            
+            // 如果不是从SITTING_ASLEEP过来的（理论上不会），可能需要处理
+            // 但为了安全起见，我们记录当前位置作为"偏移后的位置"
+            // 并在动画结束恢复到 "当前位置 - 偏移量"
+            
+            Vec2 currentPos = this->getPosition();
+            Vec2 originalPos = currentPos - Vec2(5, 10); // 假设当前是偏移后的位置
+            
             auto animation = AnimationCache::getInstance()->getAnimation("wakeToSit");
             if (animation)
             {
                 auto animate = Animate::create(animation);
-                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onWakeToSitFinished, this));
+                auto callback = CallFunc::create([this, originalPos]() {
+                    // 动画结束，恢复位置
+                    this->setPosition(originalPos);
+                    this->onWakeToSitFinished();
+                });
                 this->runAction(Sequence::create(animate, callback, nullptr));
             }
             else
             {
+                // 如果没有动画，直接恢复位置并结束
+                this->setPosition(originalPos);
                 onWakeToSitFinished();
             }
             break;
@@ -970,7 +1006,7 @@ void TheKnight::changeState(KnightState newState)
         case KnightState::GET_OFF:
         {
             this->stopAllActions();
-            // GetOff素材面朝左，根据_exitKey决定翻转
+            // GetOff素材面朝左，根据后退方向决定翻转
             // 如果按的是A键（左），则面朝左（不翻转）
             // 其他键面朝右（翻转）
             bool faceLeft = (_exitKey == EventKeyboard::KeyCode::KEY_A || 

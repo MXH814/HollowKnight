@@ -42,7 +42,7 @@ private:
     
     // 地图相关
     cocos2d::TMXTiledMap* _map;
-    float _mapScale;
+    float scale;
     cocos2d::Size _mapSize;
     
     // 摄像机相关

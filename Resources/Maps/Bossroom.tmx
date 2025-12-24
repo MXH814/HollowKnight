@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="147" height="100" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="30">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="147" height="100" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="39">
  <tileset firstgid="1" source="bossroom.tsx"/>
  <layer id="1" name="图块层 1" width="147" height="100">
   <data encoding="csv">
@@ -115,5 +115,12 @@
   <object id="26" name="top1" type="crash" x="2041.33" y="-24" width="333.333" height="710.667" visible="0"/>
   <object id="27" name="wall3" type="crash" x="2352" y="561.333" width="125.333" height="602.667" visible="0"/>
   <object id="29" name="top2" type="crash" x="98" y="-102" width="2214" height="230" visible="0"/>
+  <object id="31" name="top3" type="crash" x="1958" y="-86" width="326" height="572" visible="0"/>
+  <object id="32" name="top4" type="crash" x="1876" y="26" width="212" height="238" visible="0"/>
+  <object id="33" name="top5" type="crash" x="330" y="36" width="108" height="428" visible="0"/>
+  <object id="34" name="top6" type="crash" x="428" y="60" width="76" height="322" visible="0"/>
+  <object id="35" name="top7" type="crash" x="486" y="70" width="54" height="194" visible="0"/>
+  <object id="36" name="top8" type="crash" x="530" y="102" width="40" height="120" visible="0"/>
+  <object id="37" name="top9" type="crash" x="556" y="96" width="56" height="82" visible="0"/>
  </objectgroup>
 </map>

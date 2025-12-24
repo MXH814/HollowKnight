@@ -129,7 +129,7 @@
  </layer>
  <objectgroup id="3" name="Collision">
   <object id="12" name="wall1" type="crash" x="-10" y="769" width="471" height="1135" visible="0"/>
-  <object id="13" name="soolid1" type="crash" x="431" y="1626" width="1995" height="299" visible="0"/>
+  <object id="13" name="solid1" type="crash" x="431" y="1627" width="1995" height="297" visible="0"/>
   <object id="14" name="s1" type="crash" x="374.33" y="769.33" width="123.333" height="12.67" visible="0"/>
   <object id="15" name="s2" type="crash" x="395.333" y="780.667" width="92" height="18.6667" visible="0"/>
   <object id="16" name="s3" type="crash" x="349.333" y="794" width="130" height="21.3333" visible="0"/>

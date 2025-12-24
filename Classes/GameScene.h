@@ -22,7 +22,9 @@ private:
     void loadInteractiveObjects(cocos2d::TMXTiledMap* map, 
                                 float scale, 
                                 const cocos2d::Vec2& mapOffset);
-    
+    void loadForegroundObjects(cocos2d::TMXTiledMap* map,
+        float scale,
+        const cocos2d::Vec2& mapOffset);
     void checkInteractions();
     
     // 摄像机更新
@@ -49,7 +51,7 @@ private:
     bool _isTransitioning = false;
     
     // 地图信息
-    float _mapScale = 1.8f;
+    float scale = 1.8f;
     cocos2d::Size _mapSize;
     
     // 摄像机偏移（看向上/下）

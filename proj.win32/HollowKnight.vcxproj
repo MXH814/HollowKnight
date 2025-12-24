@@ -159,6 +159,7 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
     <ClCompile Include="..\Classes\HelloWorldScene.cpp" />
     <ClCompile Include="..\Classes\LoadingScene.cpp" />
     <ClCompile Include="..\Classes\MainMenuScene.cpp" />
+    <ClCompile Include="..\Classes\NextScene.cpp" />
     <ClCompile Include="..\Classes\TheKnightCoreLogic.cpp" />
     <ClCompile Include="..\Classes\TheKnightAnimation.cpp" />
     <ClCompile Include="..\Classes\TheKnightCombat.cpp" />
@@ -175,6 +176,7 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
     <ClInclude Include="..\Classes\HelloWorldScene.h" />
     <ClInclude Include="..\Classes\LoadingScene.h" />
     <ClInclude Include="..\Classes\MainMenuScene.h" />
+    <ClInclude Include="..\Classes\NextScene.h" />
     <ClInclude Include="..\Classes\TheKnight.h" />
     <ClInclude Include="main.h" />
   </ItemGroup>

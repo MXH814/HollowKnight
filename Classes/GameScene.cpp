@@ -1,5 +1,6 @@
 #include "GameScene.h"
 #include "TheKnight.h"
+#include "NextScene.h"
 #include <BossScene.h>
 
 USING_NS_CC;
@@ -27,7 +28,7 @@ bool GameScene::init()
         Vec2 position;
     };
 
-    _mapScale = 1.8f;
+    scale = 1.8f;
 
     // 3个地图块的配置
     std::vector<MapChunk> chunks = {
@@ -45,25 +46,28 @@ bool GameScene::init()
         auto map = TMXTiledMap::create(chunk.file);
         CCASSERT(map != nullptr, ("地图加载失败: " + chunk.file).c_str());
 
-        map->setScale(_mapScale);
+        map->setScale(scale);
         map->setAnchorPoint(Vec2::ZERO);
-        Vec2 mapPos = Vec2(origin.x + chunk.position.x * _mapScale, 
-                           origin.y + chunk.position.y * _mapScale);
+        Vec2 mapPos = Vec2(origin.x + chunk.position.x * scale, 
+                           origin.y + chunk.position.y * scale);
         map->setPosition(mapPos);
         this->addChild(map, 0);
 
         // 更新地图总尺寸
         auto mapContentSize = map->getContentSize();
-        float mapRight = mapPos.x + mapContentSize.width * _mapScale;
-        float mapTop = mapPos.y + mapContentSize.height * _mapScale;
+        float mapRight = mapPos.x + mapContentSize.width * scale;
+        float mapTop = mapPos.y + mapContentSize.height * scale;
         totalMapWidth = std::max(totalMapWidth, mapRight);
         maxMapHeight = std::max(maxMapHeight, mapTop);
 
         // 创建碰撞平台（使用 Platform 结构，与 BossScene 相同）
-        createCollisionFromTMX(map, "Collision", _mapScale, mapPos);
+        createCollisionFromTMX(map, "Collision", scale, mapPos);
         
         // 加载交互对象（如椅子、出口）
-        loadInteractiveObjects(map, _mapScale, mapPos);
+        loadInteractiveObjects(map, scale, mapPos);
+
+        // 加载前景对象（bg类，显示在角色上层）
+        loadForegroundObjects(map, scale, mapPos);
     }
     
     // 保存地图尺寸
@@ -75,9 +79,9 @@ bool GameScene::init()
     CCASSERT(objectGroup != nullptr, "地图缺少对象层 Objects");
 
     auto startPoint = objectGroup->getObject("PlayerStart");
-    float mapOffsetX = 150 * 16 * _mapScale;
-    float startX = startPoint["x"].asFloat() * _mapScale + mapOffsetX;
-    float startY = startPoint["y"].asFloat() * _mapScale;
+    float mapOffsetX = 150 * 16 * scale;
+    float startX = startPoint["x"].asFloat() * scale + mapOffsetX;
+    float startY = startPoint["y"].asFloat() * scale;
 
     // 创建玩家（使用 TheKnight，与 BossScene 相同）
     _knight = TheKnight::create();
@@ -199,19 +203,19 @@ void GameScene::checkInteractions()
             }
             else if (obj.name == "Exit")
             {
-                // 进入出口，切换到 BossScene
+                // 进入出口，切换到 NextScene
                 _isTransitioning = true;
-                
+
                 auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 0));
                 this->addChild(blackLayer, 1000);
-                
+
                 blackLayer->runAction(Sequence::create(
                     FadeIn::create(0.5f),
                     CallFunc::create([]() {
                         Director::getInstance()->replaceScene(
-                            TransitionFade::create(0.5f, BossScene::createScene(), Color3B::BLACK)
+                            TransitionFade::create(0.5f, NextScene::createScene(), Color3B::BLACK)
                         );
-                    }),
+                        }),
                     nullptr
                 ));
                 return;
@@ -322,6 +326,79 @@ void GameScene::createCollisionFromTMX(TMXTiledMap* map, const std::string& laye
             _platforms.push_back(platform);
 
             CCLOG("创建碰撞平台: x=%.1f, y=%.1f, w=%.1f, h=%.1f", x, y, width, height);
+        }
+    }
+}
+
+void GameScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2& mapOffset)
+{
+    auto objectGroup = map->getObjectGroup("Objects");
+    if (!objectGroup) {
+        CCLOG("警告：未找到 Objects 对象层");
+        return;
+    }
+
+    auto& objects = objectGroup->getObjects();
+
+    for (auto& obj : objects)
+    {
+        auto& dict = obj.asValueMap();
+
+        // 获取对象的class或type属性
+        std::string objClass = "";
+        if (dict.find("class") != dict.end()) {
+            objClass = dict["class"].asString();
+        }
+        else if (dict.find("type") != dict.end()) {
+            objClass = dict["type"].asString();
+        }
+
+        // 只处理bg类的对象
+        if (objClass != "bg") {
+            continue;
+        }
+
+        // 获取对象名称作为图片文件名
+        std::string name = dict["name"].asString();
+        if (name.empty()) {
+            CCLOG("警告：bg类对象没有名称，跳过");
+            continue;
+        }
+
+        // 获取对象在地图中的原始位置（未缩放）
+        float objX = dict["x"].asFloat();
+        float objY = dict["y"].asFloat();
+        float objWidth = dict["width"].asFloat();
+        float objHeight = dict["height"].asFloat();
+
+        // 使用对象名称 + .png 作为图片路径
+        std::string imagePath = "Maps/" + name + ".png";
+        auto fgSprite = Sprite::create(imagePath);
+
+        if (!fgSprite) {
+            imagePath = name + ".png";
+            fgSprite = Sprite::create(imagePath);
+        }
+        float spriteHeight = fgSprite->getContentSize().height;
+        if (fgSprite)
+        {
+            // 计算世界坐标位置
+            float worldX = objX * scale + mapOffset.x;
+            float worldY = (objY + spriteHeight) * scale + mapOffset.y;
+
+            // TMX 对象的 y 坐标是对象底部，锚点设为左下角
+            fgSprite->setAnchorPoint(Vec2(0, 0));
+            fgSprite->setPosition(Vec2(worldX, worldY));
+            fgSprite->setScale(scale);
+
+            // 添加到比角色更高的z-order层（角色是5，前景用10）
+            this->addChild(fgSprite, 10);
+
+            CCLOG("加载前景对象: %s at (%.1f, %.1f)", imagePath.c_str(), worldX, worldY);
+        }
+        else
+        {
+            CCLOG("警告：无法加载前景图片: %s", imagePath.c_str());
         }
     }
 }
