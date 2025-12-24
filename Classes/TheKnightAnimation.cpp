@@ -268,6 +268,30 @@ void TheKnight::loadAnimations()
         AnimationCache::getInstance()->addAnimation(_recoverAnim, "recover");
     }
     
+    // Focus聚气动画 - 7帧
+    _focusAnim = createAnimation("TheKnight/Focus/", "Focus", 1, 7, 0.1f);
+    if (_focusAnim)
+    {
+        _focusAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_focusAnim, "focus");
+    }
+    
+    // Focus回血动画 - 6帧
+    _focusGetAnim = createAnimation("TheKnight/Focus/", "FocusGet", 1, 6, 0.08f);
+    if (_focusGetAnim)
+    {
+        _focusGetAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_focusGetAnim, "focusGet");
+    }
+    
+    // Focus结束动画 - 3帧
+    _focusEndAnim = createAnimation("TheKnight/Focus/", "FocusEnd", 1, 3, 0.08f);
+    if (_focusEndAnim)
+    {
+        _focusEndAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_focusEndAnim, "focusEnd");
+    }
+    
     // 打开地图动画 - 3帧
     _mapOpenAnim = createAnimation("TheKnight/Map/MapOpen/", "MapOpen", 1, 3, 0.05f);
     if (_mapOpenAnim)
@@ -794,7 +818,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::RECOVERING:
         {
             this->stopAllActions();
@@ -808,6 +832,57 @@ void TheKnight::changeState(KnightState newState)
             else
             {
                 onRecoverAnimFinished();
+            }
+            break;
+        }
+        
+        case KnightState::FOCUSING:
+        {
+            this->stopAllActions();
+            auto animation = AnimationCache::getInstance()->getAnimation("focus");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onFocusAnimFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onFocusAnimFinished();
+            }
+            break;
+        }
+        
+        case KnightState::FOCUS_GET:
+        {
+            this->stopAllActions();
+            auto animation = AnimationCache::getInstance()->getAnimation("focusGet");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onFocusGetAnimFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onFocusGetAnimFinished();
+            }
+            break;
+        }
+        
+        case KnightState::FOCUS_END:
+        {
+            this->stopAllActions();
+            auto animation = AnimationCache::getInstance()->getAnimation("focusEnd");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onFocusEndAnimFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onFocusEndAnimFinished();
             }
             break;
         }

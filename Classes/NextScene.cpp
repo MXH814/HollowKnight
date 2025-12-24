@@ -53,8 +53,8 @@ bool NextScene::init()
     std::vector<MapChunk> chunks = {
         {"Maps/Forgotten Crossroads1.tmx", Vec2(0, 0)},
         {"Maps/Forgotten Crossroads2.tmx", Vec2(120 * 16, 0)},
-        {"Maps/Forgotten Crossroads3.tmx", Vec2(0, 120 * 16)},
-        {"Maps/Forgotten Crossroads4.tmx", Vec2(120 * 16, 120 * 16)}
+        {"Maps/Forgotten Crossroads3.tmx", Vec2(0, 105 * 16)},
+        {"Maps/Forgotten Crossroads4.tmx", Vec2(120 * 16, 105 * 16)}
     };
 
     // 加载所有地图块并创建碰撞体

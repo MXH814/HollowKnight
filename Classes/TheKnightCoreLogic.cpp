@@ -134,9 +134,15 @@ bool TheKnight::init()
     _recoverCost = 2;
     _isSpaceKeyPressed = false;
     _spaceKeyHoldTime = 0.0f;
-    _recoverHoldThreshold = 0.2f;  // 长按0.2秒开始回复
+    _recoverHoldThreshold = 0.2f;  // 长按0.2秒开始恢复
     _isRecovering = false;
     _recoverConsumed = false;
+    
+    // Focus系统初始化
+    _isFocusing = false;
+    _focusConsumed = false;
+    _focusCost = 2;               // Focus消耗2点灵魂
+    
     _castSpellAnimTimer = 0.0f;
     _spellEffectCreated = false;
     _vengefulSpiritEffect = nullptr;
@@ -709,12 +715,19 @@ void TheKnight::onKeyReleased(EventKeyboard::KeyCode keyCode, Event* event)
     // 空格键释放
     else if (keyCode == EventKeyboard::KeyCode::KEY_SPACE)
     {
+        // 如果正在Focus状态，松开空格键应该播放FocusEnd动画
+        if (_state == KnightState::FOCUSING || _state == KnightState::FOCUS_GET)
+        {
+            // Focus动画完成后会检查_isSpaceKeyPressed来决定是否继续
+            // 所以这里只需要标记按键已释放，让动画回调处理FocusEnd
+            // 如果当前正在播放Focus动画，动画结束回调会检测到_isSpaceKeyPressed为false并播放FocusEnd
+        }
         // 如果正在恢复状态且还没完成，取消恢复
-        if (_state == KnightState::RECOVERING)
+        else if (_state == KnightState::RECOVERING)
         {
             cancelRecover();
         }
-        // 如果按下时间少于阈值，是短按，释放法术
+        // 如果按住时间小于阈值，是短按释放法术
         else if (_isSpaceKeyPressed && _spaceKeyHoldTime < _recoverHoldThreshold)
         {
             if (_soul >= _spellCost && 
@@ -722,6 +735,9 @@ void TheKnight::onKeyReleased(EventKeyboard::KeyCode keyCode, Event* event)
                 _state != KnightState::GET_ATTACKED &&
                 _state != KnightState::DEAD &&
                 _state != KnightState::CASTING_SPELL &&
+                _state != KnightState::FOCUSING &&
+                _state != KnightState::FOCUS_GET &&
+                _state != KnightState::FOCUS_END &&
                 !_isAttacking)
             {
                 startCastSpell();
@@ -763,22 +779,25 @@ void TheKnight::update(float dt)
         return;  // 坐着时不处理其他更新
     }
     
-    // 更新空格键按住时间，并检查是否触发回复
+    // 更新空格键按住时间，并检查是否触发Focus
     if (_isSpaceKeyPressed)
     {
         _spaceKeyHoldTime += dt;
         
-        // 按住超过阈值，开始回复
+        // 按住超过阈值，开始Focus
         if (_spaceKeyHoldTime >= _recoverHoldThreshold && 
+            _state != KnightState::FOCUSING &&
+            _state != KnightState::FOCUS_GET &&
+            _state != KnightState::FOCUS_END &&
             _state != KnightState::RECOVERING &&
             _state != KnightState::CASTING_SPELL)
         {
-            if (_soul >= _recoverCost && 
+            if (_soul >= _focusCost && 
                 _state != KnightState::DASHING && 
                 _state != KnightState::GET_ATTACKED &&
                 !_isAttacking)
             {
-                startRecover();
+                startFocus();
             }
         }
     }
@@ -864,14 +883,20 @@ void TheKnight::update(float dt)
         updateCastSpell(dt);
         return;
     }
-    // 处理回复状态
+    // 处理恢复状态
     else if (_state == KnightState::RECOVERING)
     {
         updateRecover(dt);
         return;
     }
+    // 更新Focus状态
+    else if (_state == KnightState::FOCUSING || _state == KnightState::FOCUS_GET)
+    {
+        updateFocus(dt);
+        return;
+    }
     
-    // 处理贴墙下滑
+    // 更新贴墙下滑
     if (_state == KnightState::WALL_SLIDING)
     {
         updateWallSlide(dt);

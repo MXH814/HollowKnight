@@ -643,11 +643,17 @@ void TheKnight::takeDamage(int damage)
     _hp -= damage;
     if (_hp < 0) _hp = 0;
     
-    // 如果正在回复，取消回复（不返还灵魂，但扣血）
+    // 如果正在恢复，取消恢复（灵魂已消耗，不回血）
     if (_state == KnightState::RECOVERING)
     {
         _isRecovering = false;
         // 不调用 cancelRecover，直接进入受击状态
+    }
+    
+    // 如果正在Focus，取消Focus（灵魂已消耗，不回血）
+    if (_state == KnightState::FOCUSING || _state == KnightState::FOCUS_GET || _state == KnightState::FOCUS_END)
+    {
+        cancelFocus();
     }
     
     // 如果处于地图模式，强制退出

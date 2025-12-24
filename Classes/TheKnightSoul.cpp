@@ -56,7 +56,7 @@ void TheKnight::updateCastSpell(float dt)
         createVengefulSpiritEffect();
     }
     
-    // 处理空中物理
+    // 更新物理下落
     if (!_isOnGround)
     {
         _velocityY -= _gravity * dt;
@@ -122,7 +122,7 @@ void TheKnight::createVengefulSpiritEffect()
     {
         _vengefulSpiritEffect->setAnchorPoint(Vec2(0.5f, 0.5f));
         
-        // 设置初始位置（在角色面前）
+        // 设置初始位置（在角色正前方）
         Vec2 pos = this->getPosition();
         auto knightSize = this->getContentSize();
         auto effectSize = _vengefulSpiritEffect->getContentSize();
@@ -143,7 +143,7 @@ void TheKnight::createVengefulSpiritEffect()
         
         this->getParent()->addChild(_vengefulSpiritEffect, this->getLocalZOrder() + 1);
         
-        // 创建循环动画
+        // 播放循环动画
         auto animation = AnimationCache::getInstance()->getAnimation("vengefulSpiritEffect");
         if (animation)
         {
@@ -176,7 +176,7 @@ void TheKnight::updateVengefulSpiritEffect(float dt)
         {
             if (_vengefulSpiritFacingRight)
             {
-                // 向右移动，检查是否撞到平台左侧
+                // 向右移动，检查是否碰到平台左边
                 if (effectRect.getMaxX() >= platform.rect.getMinX() &&
                     effectRect.getMinX() < platform.rect.getMinX())
                 {
@@ -186,7 +186,7 @@ void TheKnight::updateVengefulSpiritEffect(float dt)
             }
             else
             {
-                // 向左移动，检查是否撞到平台右侧
+                // 向左移动，检查是否碰到平台右边
                 if (effectRect.getMinX() <= platform.rect.getMaxX() &&
                     effectRect.getMaxX() > platform.rect.getMaxX())
                 {
@@ -215,7 +215,7 @@ void TheKnight::startRecover()
     }
     
     _isRecovering = true;
-    _recoverConsumed = true;  // 标记已消耗灵魂
+    _recoverConsumed = true;  // 标记灵魂已消耗
     
     // 清理攻击特效
     if (_isAttacking)
@@ -229,7 +229,7 @@ void TheKnight::startRecover()
 
 void TheKnight::updateRecover(float dt)
 {
-    // 处理空中物理
+    // 更新物理下落
     if (!_isOnGround)
     {
         _velocityY -= _gravity * dt;
@@ -256,7 +256,7 @@ void TheKnight::updateRecover(float dt)
 
 void TheKnight::onRecoverAnimFinished()
 {
-    // 回复动画正常完成，恢复生命值
+    // 恢复动画播放完成，恢复生命值
     if (_isRecovering && _recoverConsumed)
     {
         _hp += 1;
@@ -299,7 +299,7 @@ void TheKnight::onRecoverAnimFinished()
 
 void TheKnight::cancelRecover()
 {
-    // 取消回复，灵魂已消耗但不回血
+    // 取消恢复（不会恢复血量）
     _isRecovering = false;
     // _recoverConsumed 保持为 true，表示灵魂已被消耗
     
@@ -330,4 +330,148 @@ void TheKnight::cancelRecover()
     {
         changeState(KnightState::IDLE);
     }
+}
+
+// Focus系统实现
+
+void TheKnight::startFocus()
+{
+    if (!useSoul(_focusCost))
+    {
+        return;
+    }
+    
+    _isFocusing = true;
+    _focusConsumed = true;  // 标记灵魂已消耗
+    
+    // 清理攻击特效
+    if (_isAttacking)
+    {
+        _isAttacking = false;
+        removeSlashEffect();
+    }
+    
+    changeState(KnightState::FOCUSING);
+}
+
+void TheKnight::updateFocus(float dt)
+{
+    // 更新物理下落
+    if (!_isOnGround)
+    {
+        _velocityY -= _gravity * dt;
+        
+        if (_velocityY < -1600.0f)
+        {
+            _velocityY = -1600.0f;
+        }
+        
+        Vec2 pos = this->getPosition();
+        pos.y += _velocityY * dt;
+        this->setPosition(pos);
+        
+        float groundY;
+        if (checkGroundCollision(groundY))
+        {
+            pos.y = groundY;
+            _velocityY = 0;
+            _isOnGround = true;
+            this->setPosition(pos);
+        }
+    }
+}
+
+void TheKnight::onFocusAnimFinished()
+{
+    // Focus动画播放完成，检查是否还在按住空格键
+    if (_isFocusing && _isSpaceKeyPressed)
+    {
+        // 进入FocusGet状态（回血）
+        changeState(KnightState::FOCUS_GET);
+    }
+    else
+    {
+        // 松开了空格键，播放FocusEnd动画
+        _isFocusing = false;
+        _focusConsumed = false;
+        changeState(KnightState::FOCUS_END);
+    }
+}
+
+void TheKnight::onFocusGetAnimFinished()
+{
+    // FocusGet动画播放完成，回复1点血
+    _hp += 1;
+    if (_hp > _maxHP)
+    {
+        _hp = _maxHP;
+    }
+    
+    // 检查是否还在按住空格键且灵魂充足
+    if (_isSpaceKeyPressed && _soul >= _focusCost)
+    {
+        // 消耗灵魂并继续Focus循环
+        if (useSoul(_focusCost))
+        {
+            _focusConsumed = true;
+            changeState(KnightState::FOCUSING);
+        }
+        else
+        {
+            // 灵魂不足，播放FocusEnd
+            _isFocusing = false;
+            _focusConsumed = false;
+            changeState(KnightState::FOCUS_END);
+        }
+    }
+    else
+    {
+        // 松开了空格键或灵魂不足，播放FocusEnd动画
+        _isFocusing = false;
+        _focusConsumed = false;
+        changeState(KnightState::FOCUS_END);
+    }
+}
+
+void TheKnight::onFocusEndAnimFinished()
+{
+    // FocusEnd动画播放完成，切换到适合的状态
+    _isFocusing = false;
+    _focusConsumed = false;
+    
+    if (!_isOnGround)
+    {
+        if (_velocityY > 0)
+        {
+            changeState(KnightState::JUMPING);
+        }
+        else
+        {
+            changeState(KnightState::FALLING);
+        }
+    }
+    else if (_isMovingLeft || _isMovingRight)
+    {
+        if ((_isMovingLeft && _facingRight) || (_isMovingRight && !_facingRight))
+        {
+            changeState(KnightState::TURNING);
+        }
+        else
+        {
+            changeState(KnightState::RUNNING);
+        }
+    }
+    else
+    {
+        changeState(KnightState::IDLE);
+    }
+}
+
+void TheKnight::cancelFocus()
+{
+    // 被打断（受击等），不回血，直接结束Focus
+    _isFocusing = false;
+    // _focusConsumed 保持为 true，表示灵魂已被消耗但未回血
+    
+    // 不播放FocusEnd动画，由受击等状态处理
 }

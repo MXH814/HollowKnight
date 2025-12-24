@@ -166,7 +166,7 @@ void GameScene::loadInteractiveObjects(TMXTiledMap* map, float scale, const Vec2
             InteractiveObject exitObj;
             exitObj.position = Vec2(x + width / 2, y + height / 2);
             exitObj.name = "Exit";
-            exitObj.radius = 50.0f;
+            exitObj.radius = 150.0f;
             
             _interactiveObjects.push_back(exitObj);
             

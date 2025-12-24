@@ -36,7 +36,10 @@ enum class KnightState
     GET_ATTACKED,   // 受击状态（硬直）
     DEAD,          // 死亡状态
     CASTING_SPELL,  // 释放法术状态
-    RECOVERING,     // 回复生命状态
+    RECOVERING,     // 回复生命状态（保留向后兼容）
+    FOCUSING,       // Focus聚气状态（长按空格）
+    FOCUS_GET,      // Focus回血状态
+    FOCUS_END,      // Focus结束状态（松开空格）
     MAP_OPENING,    // 打开地图状态
     MAP_IDLE,       // 地图模式静止状态
     MAP_WALKING,    // 地图模式行走状态
@@ -232,6 +235,14 @@ private:
     void onRecoverAnimFinished();
     void cancelRecover();
     
+    // Focus系统相关
+    void startFocus();
+    void updateFocus(float dt);
+    void onFocusAnimFinished();
+    void onFocusGetAnimFinished();
+    void onFocusEndAnimFinished();
+    void cancelFocus();
+    
     // 贴墙攻击相关
     void startWallSlash();
     void updateWallSlash(float dt);
@@ -353,6 +364,12 @@ private:
     float _recoverHoldThreshold; // 判定长按的时间阈值
     bool _isRecovering;          // 是否正在回复
     bool _recoverConsumed;       // 回复是否已消耗灵魂
+    
+    // Focus系统相关
+    bool _isFocusing;            // 是否正在Focus
+    bool _focusConsumed;         // Focus是否已消耗灵魂
+    int _focusCost;              // Focus消耗灵魂
+    
     float _castSpellAnimTimer;   // 法术动画计时器
     bool _spellEffectCreated;    // 法术特效是否已创建
     Sprite* _vengefulSpiritEffect; // 法术特效精灵
@@ -391,6 +408,9 @@ private:
     Animation* _vengefulSpiritAnim;      // 法术释放动画
     Animation* _vengefulSpiritEffectAnim; // 法术特效动画
     Animation* _recoverAnim;     // 回复动画
+    Animation* _focusAnim;       // Focus聚气动画
+    Animation* _focusGetAnim;    // Focus回血动画
+    Animation* _focusEndAnim;    // Focus结束动画
     Animation* _wallJumpPuffAnim; // 蹬墙跳烟雾动画
     Animation* _mapOpenAnim;     // 打开地图动画
     Animation* _mapIdleAnim;     // 地图模式静止动画
