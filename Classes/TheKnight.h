@@ -36,6 +36,8 @@ enum class KnightState
     DOWN_SLASHING,  // 向下攻击状态
     GET_ATTACKED,   // 受击状态（硬直）
     DEAD,          // 死亡状态
+    SPIKE_DEATH,   // 尖刺死亡状态
+    HAZARD_RESPAWN, // 危险区域重生状态
     CASTING_SPELL,  // 释放法术状态
     RECOVERING,     // 回复生命状态（保留向后兼容）
     FOCUSING,       // Focus聚气状态（长按空格）
@@ -102,6 +104,14 @@ public:
     
     // 是否正在重落地
     bool isHardLanding() const { return _state == KnightState::HARD_LANDING; }
+    
+    // 尖刺死亡相关
+    bool isSpikeDeathState() const { return _state == KnightState::SPIKE_DEATH; }
+    bool isHazardRespawnState() const { return _state == KnightState::HAZARD_RESPAWN; }
+    void startSpikeDeath();  // 开始尖刺死亡动画
+    void startHazardRespawn(const Vec2& respawnPos);  // 开始危险区域重生
+    void setLastSafePosition(const Vec2& pos) { _lastSafePosition = pos; }
+    Vec2 getLastSafePosition() const { return _lastSafePosition; }
     
     // 获取生命值
     int getHP() const { return _hp; }
@@ -243,6 +253,10 @@ private:
     // 死亡相关
     void startDeath();
     void onDeathAnimFinished();
+    
+    // 尖刺死亡相关
+    void onSpikeDeathAnimFinished();
+    void onHazardRespawnAnimFinished();
     
     // 灵魂系统相关
     bool useSoul(int amount);
@@ -405,6 +419,10 @@ private:
     // 平台列表
     std::vector<Platform> _platforms;
     
+    // 安全位置（用于危险区域重生）
+    Vec2 _lastSafePosition;
+    Vec2 _respawnPosition;  // 重生目标位置
+    
     // 动画缓存
     Animation* _idleAnim;
     Animation* _runStartAnim;
@@ -432,6 +450,8 @@ private:
     Animation* _downSlashAnim;   // 向下攻击动画
     Animation* _getAttackedAnim; // 受击动画
     Animation* _deadAnim;        // 死亡动画
+    Animation* _spikeDeathAnim;  // 尖刺死亡动画
+    Animation* _hazardRespawnAnim; // 危险区域重生动画
     Animation* _vengefulSpiritAnim;      // 法术释放动画
     Animation* _vengefulSpiritEffectAnim; // 法术特效动画
     Animation* _recoverAnim;     // 回复动画

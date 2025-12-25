@@ -803,3 +803,112 @@ void TheKnight::bounceFromDownSlash()
     // 重置二段跳（弹反后可以再次二段跳）
     _hasDoubleJumped = false;
 }
+
+void TheKnight::startSpikeDeath()
+{
+    // 如果已经在尖刺死亡或重生状态，忽略
+    if (_state == KnightState::SPIKE_DEATH || 
+        _state == KnightState::HAZARD_RESPAWN ||
+        _state == KnightState::DEAD)
+    {
+        return;
+    }
+    
+    // 扣1点血
+    _hp -= 1;
+    if (_hp < 0) _hp = 0;
+    
+    // 停止所有移动
+    _isMovingLeft = false;
+    _isMovingRight = false;
+    _velocityY = 0;
+    
+    // 清理攻击特效
+    _isAttacking = false;
+    removeSlashEffect();
+    
+    // 清理冲刺特效
+    if (_dashEffect)
+    {
+        _dashEffect->removeFromParent();
+        _dashEffect = nullptr;
+    }
+    
+    // 如果血量归零，直接死亡
+    if (_hp <= 0)
+    {
+        startDeath();
+        return;
+    }
+    
+    // 开始无敌状态
+    _isInvincible = true;
+    _invincibleTimer = _invincibleDuration;
+    if (_charmStalwartShell)
+    {
+        _invincibleTimer += 0.4f;
+    }
+    
+    // SpikeDeath素材面朝左，如果角色面朝右需要翻转
+    // 注意：正常idle素材也是面朝左，setFlippedX(true)表示面朝右
+    // 所以SpikeDeath动画应该保持当前的翻转状态
+    this->setFlippedX(_facingRight);
+    
+    // 切换到尖刺死亡状态
+    changeState(KnightState::SPIKE_DEATH);
+    
+    CCLOG("开始SpikeDeath动画，facingRight=%d", _facingRight);
+}
+
+void TheKnight::onSpikeDeathAnimFinished()
+{
+    // 尖刺死亡动画播放完毕，此时等待场景处理黑屏和重生
+    // 这个回调会在NextScene中被监听
+    CCLOG("SpikeDeath animation finished, waiting for respawn");
+}
+
+void TheKnight::startHazardRespawn(const Vec2& respawnPos)
+{
+    // 设置重生位置
+    _respawnPosition = respawnPos;
+    
+    // 重置状态
+    _isOnGround = true;
+    _velocityY = 0;
+    _isOnWall = false;
+    _hasDoubleJumped = false;
+    
+    // HazardRespawn素材面朝左，如果角色面朝右需要翻转
+    // 保持当前的朝向设置
+    this->setFlippedX(_facingRight);
+    
+    // 切换到重生状态
+    changeState(KnightState::HAZARD_RESPAWN);
+    
+    CCLOG("开始HazardRespawn动画，位置(%.1f, %.1f)，facingRight=%d", respawnPos.x, respawnPos.y, _facingRight);
+}
+
+void TheKnight::onHazardRespawnAnimFinished()
+{
+    // 重生动画播放完毕，恢复正常状态
+    _isOnGround = true;
+    this->setVisible(true);
+    this->setOpacity(255);
+    
+    // 根据移动状态决定下一状态
+    if (_isMovingLeft || _isMovingRight)
+    {
+        if ((_isMovingLeft && _facingRight) || (_isMovingRight && !_facingRight))
+        {
+            changeState(KnightState::TURNING);
+        }
+        else
+        {
+            changeState(KnightState::RUNNING);
+        }
+    }
+    else
+    {
+        changeState(KnightState::IDLE);
+    }
+}

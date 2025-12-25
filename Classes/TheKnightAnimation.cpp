@@ -252,6 +252,22 @@ void TheKnight::loadAnimations()
         AnimationCache::getInstance()->addAnimation(_deadAnim, "dead");
     }
     
+    // 尖刺死亡动画 - 8帧
+    _spikeDeathAnim = createAnimation("TheKnight/Dead/SpikeDeath/", "SpikeDeath", 1, 8, 0.08f);
+    if (_spikeDeathAnim)
+    {
+        _spikeDeathAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_spikeDeathAnim, "spikeDeath");
+    }
+    
+    // 危险区域重生动画 - 20帧
+    _hazardRespawnAnim = createAnimation("TheKnight/HazardRespawn/", "HazardRespawn", 1, 20, 0.1f);
+    if (_hazardRespawnAnim)
+    {
+        _hazardRespawnAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_hazardRespawnAnim, "hazardRespawn");
+    }
+    
     // 法术释放动画 - 9帧
     _vengefulSpiritAnim = createAnimation("TheKnight/VengefulSpirit/", "VengefulSpirit", 1, 9, 0.03f);
     if (_vengefulSpiritAnim)
@@ -823,6 +839,44 @@ void TheKnight::changeState(KnightState newState)
             else
             {
                 onDeathAnimFinished();
+            }
+            break;
+        }
+        
+        case KnightState::SPIKE_DEATH:
+        {
+            this->stopAllActions();
+            // 播放尖刺死亡动画
+            auto animation = AnimationCache::getInstance()->getAnimation("spikeDeath");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onSpikeDeathAnimFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onSpikeDeathAnimFinished();
+            }
+            break;
+        }
+        
+        case KnightState::HAZARD_RESPAWN:
+        {
+            this->stopAllActions();
+            // 设置位置到重生点
+            this->setPosition(_respawnPosition);
+            // 播放危险重生动画
+            auto animation = AnimationCache::getInstance()->getAnimation("hazardRespawn");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onHazardRespawnAnimFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onHazardRespawnAnimFinished();
             }
             break;
         }

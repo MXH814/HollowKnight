@@ -38,6 +38,13 @@ bool NextScene::init()
     _isNearExit = false;
     _isNearThorn = false;
     
+    // 初始化尖刺伤害相关变量
+    _isInSpikeDeath = false;
+    _lastSafePosition = Vec2::ZERO;
+    _spikeDeathTimer = 0.0f;
+    _spikeDeathPhase = 0;
+    _blackScreen = nullptr;
+    
     // 初始化震动相关变量
     _isShaking = false;
     _shakeDuration = 0.0f;
@@ -130,7 +137,7 @@ bool NextScene::init()
     createHPAndSoulUI();
 
     // 创建出口提示标签
-    _exitLabel = Label::createWithSystemFont(u8"按 Q 离开", "Arial", 24);
+    _exitLabel = Label::createWithSystemFont(u8"按 W 离开", "Arial", 24);
     _exitLabel->setTextColor(Color4B::WHITE);
     _exitLabel->setVisible(false);
     this->addChild(_exitLabel, 100, "ExitLabel");
@@ -316,7 +323,7 @@ void NextScene::checkInteractions()
         _exitLabel->setVisible(_isNearExit);
     }
 
-    // 检测尖刺
+    // 检测尖刺（仅用于显示警告标签，实际碰撞检测在update中）
     _isNearThorn = false;
     if (_thornLabel) {
         for (auto& thornObj : _thornObjects)
@@ -336,6 +343,154 @@ void NextScene::checkInteractions()
             }
         }
         _thornLabel->setVisible(_isNearThorn);
+    }
+}
+
+void NextScene::startSpikeDeath(TheKnight* knight)
+{
+    if (_isInSpikeDeath) return;
+    
+    _isInSpikeDeath = true;
+    _spikeDeathPhase = 1;
+    _spikeDeathTimer = 0.0f;
+    
+    // 调用骑士的尖刺死亡函数
+    knight->startSpikeDeath();
+    
+    CCLOG("尖刺死亡流程开始，阶段1：播放SpikeDeath动画");
+}
+
+void NextScene::updateSpikeDeath(float dt, TheKnight* knight)
+{
+    _spikeDeathTimer += dt;
+    
+    switch (_spikeDeathPhase)
+    {
+        case 1:  // 阶段1：等待SpikeDeath动画完成
+        {
+            // SpikeDeath动画8帧，每帧0.08秒，共0.64秒
+            if (_spikeDeathTimer >= 0.64f)
+            {
+                // 创建全屏黑屏 - 使用足够大的尺寸确保覆盖整个可视区域
+                Size visibleSize = Director::getInstance()->getVisibleSize();
+                _blackScreen = LayerColor::create(Color4B(0, 0, 0, 0), visibleSize.width * 3, visibleSize.height * 3);
+                _blackScreen->setIgnoreAnchorPointForPosition(false);
+                _blackScreen->setAnchorPoint(Vec2(0.5f, 0.5f));
+                
+                // 将黑屏放置在摄像机位置
+                auto scene = this->getScene();
+                if (scene)
+                {
+                    auto camera = scene->getDefaultCamera();
+                    if (camera)
+                    {
+                        _blackScreen->setPosition(camera->getPosition());
+                    }
+                }
+                
+                this->addChild(_blackScreen, 1000, "SpikeDeathBlack");
+                
+                // 黑屏淡入
+                _blackScreen->runAction(FadeTo::create(0.3f, 255));
+                
+                _spikeDeathPhase = 2;
+                _spikeDeathTimer = 0.0f;
+                CCLOG("尖刺死亡流程阶段2：黑屏淡入");
+            }
+            break;
+        }
+        
+        case 2:  // 阶段2：黑屏显示
+        {
+            // 更新黑屏位置跟随摄像机
+            if (_blackScreen)
+            {
+                auto scene = this->getScene();
+                if (scene)
+                {
+                    auto camera = scene->getDefaultCamera();
+                    if (camera)
+                    {
+                        _blackScreen->setPosition(camera->getPosition());
+                    }
+                }
+            }
+            
+            if (_spikeDeathTimer >= 0.5f)  // 黑屏0.5秒
+            {
+                // 将骑士移动到安全位置
+                Vec2 respawnPos = _lastSafePosition;
+                if (respawnPos == Vec2::ZERO)
+                {
+                    // 如果没有记录安全位置，使用初始位置
+                    respawnPos = knight->getPosition();
+                }
+                
+                // 隐藏骑士，准备重生
+                knight->setVisible(false);
+                
+                // 开始重生动画
+                knight->startHazardRespawn(respawnPos);
+                
+                _spikeDeathPhase = 3;
+                _spikeDeathTimer = 0.0f;
+                CCLOG("尖刺死亡流程阶段3：开始重生，位置(%.1f, %.1f)", respawnPos.x, respawnPos.y);
+            }
+            break;
+        }
+        
+        case 3:  // 阶段3：等待一小段时间然后淡出黑屏
+        {
+            // 更新黑屏位置跟随摄像机
+            if (_blackScreen)
+            {
+                auto scene = this->getScene();
+                if (scene)
+                {
+                    auto camera = scene->getDefaultCamera();
+                    if (camera)
+                    {
+                        _blackScreen->setPosition(camera->getPosition());
+                    }
+                }
+            }
+            
+            if (_spikeDeathTimer >= 0.1f)
+            {
+                // 显示骑士
+                knight->setVisible(true);
+                
+                // 黑屏淡出
+                if (_blackScreen)
+                {
+                    _blackScreen->runAction(Sequence::create(
+                        FadeTo::create(0.3f, 0),
+                        RemoveSelf::create(),
+                        nullptr
+                    ));
+                    _blackScreen = nullptr;
+                }
+                
+                _spikeDeathPhase = 4;
+                _spikeDeathTimer = 0.0f;
+                CCLOG("尖刺死亡流程阶段4：黑屏淡出");
+            }
+            break;
+        }
+        
+        case 4:  // 阶段4：等待HazardRespawn动画完成
+        {
+            // HazardRespawn动画20帧，每帧0.05秒，共1.0秒
+            if (_spikeDeathTimer >= 1.0f || !knight->isHazardRespawnState())
+            {
+                // 重生完成
+                _isInSpikeDeath = false;
+                _spikeDeathPhase = 0;
+                _spikeDeathTimer = 0.0f;
+                CCLOG("尖刺死亡流程完成");
+            }
+            break;
+        }
     }
 }
 
@@ -368,6 +523,64 @@ void NextScene::update(float dt)
     if (!camera) return;
 
     Vec2 knightPos = knight->getPosition();
+    
+    // 处理尖刺死亡流程
+    if (_isInSpikeDeath)
+    {
+        updateSpikeDeath(dt, knight);
+        
+        // 尖刺死亡期间仍然更新摄像机位置
+        Vec2 cameraPos = camera->getPosition();
+        float cameraOffsetY = 200.0f;
+        Vec2 targetPos = Vec2(knightPos.x, knightPos.y + cameraOffsetY);
+        float lerpFactor = 0.1f;
+        Vec2 newPos = cameraPos + (targetPos - cameraPos) * lerpFactor;
+        newPos = newPos + _shakeOffset;
+        camera->setPosition(newPos);
+        
+        updateHPAndSoulUI(dt);
+        return;
+    }
+    
+    // 记录安全位置（当骑士在地面上且不处于特殊状态时）
+    if (!knight->isDead() && !knight->isSpikeDeathState() && !knight->isHazardRespawnState())
+    {
+        // 简单判断：如果骑士Y坐标接近某个平台顶部，就记录为安全位置
+        for (const auto& platform : _platforms)
+        {
+            float platformTop = platform.rect.getMaxY();
+            if (knightPos.x > platform.rect.getMinX() &&
+                knightPos.x < platform.rect.getMaxX() &&
+                std::abs(knightPos.y - platformTop) < 20.0f)
+            {
+                _lastSafePosition = knightPos;
+                knight->setLastSafePosition(knightPos);
+                break;
+            }
+        }
+    }
+    
+    // 检测尖刺碰撞
+    if (!knight->isDead() && !knight->isSpikeDeathState() && !knight->isHazardRespawnState() && !knight->isInvincible())
+    {
+        for (auto& thornObj : _thornObjects)
+        {
+            Rect thornRect(
+                thornObj.position.x - thornObj.size.width / 2,
+                thornObj.position.y - thornObj.size.height / 2,
+                thornObj.size.width,
+                thornObj.size.height
+            );
+            
+            if (thornRect.containsPoint(knightPos))
+            {
+                // 触发尖刺死亡
+                CCLOG("玩家碰到尖刺！开始尖刺死亡流程");
+                startSpikeDeath(knight);
+                break;
+            }
+        }
+    }
 
     // 检测骑士重落地状态触发震动
     static bool wasHardLanding = false;

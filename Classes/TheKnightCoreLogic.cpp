@@ -154,6 +154,10 @@ bool TheKnight::init()
     _vengefulSpiritSpeed = 3000.0f;
     _vengefulSpiritFacingRight = false;
 
+    // 安全位置初始化
+    _lastSafePosition = Vec2::ZERO;
+    _respawnPosition = Vec2::ZERO;
+
     // 加载动画
     loadAnimations();
     

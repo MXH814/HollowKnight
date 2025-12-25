@@ -51,6 +51,10 @@ private:
     // 检测交互
     void checkInteractions();
     
+    // 尖刺死亡流程
+    void startSpikeDeath(TheKnight* knight);
+    void updateSpikeDeath(float dt, TheKnight* knight);
+    
     // 屏幕震动效果
     void shakeScreen(float duration, float intensity);
     
@@ -72,6 +76,13 @@ private:
     bool _isTransitioning = false;     // 是否正在场景切换
     bool _isNearExit = false;          // 是否靠近出口
     bool _isNearThorn = false;         // 是否靠近尖刺
+    
+    // 尖刺伤害相关
+    bool _isInSpikeDeath = false;      // 是否正在尖刺死亡流程
+    cocos2d::Vec2 _lastSafePosition;   // 最后的安全位置
+    float _spikeDeathTimer = 0.0f;     // 尖刺死亡计时器
+    int _spikeDeathPhase = 0;          // 尖刺死亡阶段：0=未开始, 1=播放动画, 2=黑屏, 3=重生
+    cocos2d::LayerColor* _blackScreen = nullptr;  // 黑屏遮罩
     
     // 屏幕震动相关
     bool _isShaking = false;           // 是否正在震动
