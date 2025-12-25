@@ -153,6 +153,9 @@ public:
     // 下劈弹反（下劈命中敌人后弹起）
     void bounceFromDownSlash();
     
+    // 从外部触发跳跃（用于场景切换时的跳跃效果）
+    void triggerJumpFromExternal(float horizontalSpeed);
+    
     // Chair sitting system
     bool isNearChair() const { return _isNearChair; }
     void setNearChair(bool isNear) { _isNearChair = isNear; }
@@ -359,6 +362,12 @@ private:
     float _wallJumpPuffTimer;        // 烟雾特效计时器
     int _wallJumpPuffFrame;          // 当前烟雾特效帧
     Vec2 _wallJumpPuffPos;           // 烟雾特效位置
+    
+    // 外部触发跳跃相关
+    bool _isExternalJump;            // 是否处于外部触发的跳跃
+    float _externalJumpTimer;        // 外部跳跃计时器
+    float _externalJumpDuration;     // 外部跳跃强制移动持续时间
+    float _externalJumpDirection;    // 外部跳跃水平方向（1.0或-1.0）
     
     // 冲刺相关
     float _dashSpeed;            // 冲刺速度

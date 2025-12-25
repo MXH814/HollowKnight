@@ -123,6 +123,12 @@ bool TheKnight::init()
     _wallJumpPuffFrame = 0;
     _wallJumpPuffPos = Vec2::ZERO;
     
+    // 外部触发跳跃初始化
+    _isExternalJump = false;
+    _externalJumpTimer = 0.0f;
+    _externalJumpDuration = 0.5f;
+    _externalJumpDirection = 0.0f;
+    
     // 攻击相关初始化
     _isAttacking = false;
     _stateBeforeAttack = KnightState::IDLE;
@@ -785,6 +791,19 @@ void TheKnight::onKeyReleased(EventKeyboard::KeyCode keyCode, Event* event)
 
 void TheKnight::update(float dt)
 {
+    // 调试：每隔1秒输出位置
+    static float debugTimer = 0.0f;
+    debugTimer += dt;
+    if (debugTimer >= 1.0f)
+    {
+        Vec2 pos = this->getPosition();
+        CCLOG("[TheKnight] 位置: (%.1f, %.1f), 状态: %d, 朝向: %s, 在地面: %s", 
+              pos.x, pos.y, (int)_state, 
+              _facingRight ? "右" : "左",
+              _isOnGround ? "是" : "否");
+        debugTimer = 0.0f;
+    }
+    
     // 死亡状态不处理任何更新
     if (_state == KnightState::DEAD)
     {

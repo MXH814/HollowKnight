@@ -137,7 +137,7 @@ bool NextScene::init()
     createHPAndSoulUI();
 
     // 创建出口提示标签
-    _exitLabel = Label::createWithSystemFont(u8"按 W 离开", "Arial", 24);
+    _exitLabel = Label::createWithSystemFont(u8"按 W 进入", "Arial", 24);
     _exitLabel->setTextColor(Color4B::WHITE);
     _exitLabel->setVisible(false);
     this->addChild(_exitLabel, 100, "ExitLabel");
@@ -151,6 +151,47 @@ bool NextScene::init()
     // 添加键盘监听
     auto keyboardListener = EventListenerKeyboard::create();
     keyboardListener->onKeyPressed = [this](EventKeyboard::KeyCode keyCode, Event* event) {
+        // 按W键处理出口交互
+        if (keyCode == EventKeyboard::KeyCode::KEY_W || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_W)
+        {
+            // 如果在出口附近且没有正在切换场景，则切换场景
+            if (_isNearExit && !_isTransitioning)
+            {
+                _isTransitioning = true;
+                
+                // 获取骑士的朝向
+                auto knight = dynamic_cast<TheKnight*>(this->getChildByName("Player"));
+                bool facingRight = true;
+                if (knight)
+                {
+                    facingRight = knight->getScaleX() > 0;
+                }
+                
+                // 目标位置
+                Vec2 spawnPos(8606.7f, 300.0f);
+                
+                // 创建全黑过渡场景
+                auto blackScene = Scene::create();
+                auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255));
+                blackScene->addChild(blackLayer);
+
+                // 先切换到黑屏，延迟后再进入目标场景
+                Director::getInstance()->replaceScene(TransitionFade::create(0.5f, blackScene));
+
+                // 延迟后进入真正的目标场景
+                blackLayer->runAction(Sequence::create(
+                    DelayTime::create(1.0f),
+                    CallFunc::create([spawnPos, facingRight]() {
+                        auto gameScene = GameScene::createSceneWithSpawn(spawnPos, facingRight);
+                        Director::getInstance()->replaceScene(TransitionFade::create(0.5f, gameScene));
+                    }),
+                    nullptr
+                ));
+                return;
+            }
+        }
+        
+        // 按Q键处理护符面板
         if (keyCode == EventKeyboard::KeyCode::KEY_Q)
         {
             auto charmManager = CharmManager::getInstance();
@@ -167,30 +208,6 @@ bool NextScene::init()
                 {
                     charmManager->syncToKnight(knight);
                 }
-                return;
-            }
-            
-            // 如果在出口附近且没有正在切换场景，则切换场景
-            if (_isNearExit && !_isTransitioning)
-            {
-                _isTransitioning = true;
-                // 创建全黑过渡场景
-                auto blackScene = Scene::create();
-                auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255));
-                blackScene->addChild(blackLayer);
-
-                // 先切换到黑屏，延迟后再进入目标场景
-                Director::getInstance()->replaceScene(TransitionFade::create(0.5f, blackScene));
-
-                // 延迟后进入真正的目标场景
-                blackLayer->runAction(Sequence::create(
-                    DelayTime::create(1.0f),
-                    CallFunc::create([]() {
-                        auto gameScene = GameScene::createScene();
-                        Director::getInstance()->replaceScene(TransitionFade::create(0.5f, gameScene));
-                    }),
-                    nullptr
-                ));
                 return;
             }
             

@@ -8,6 +8,10 @@ class GameScene : public cocos2d::Scene
 {
 public:
     static cocos2d::Scene* createScene();
+    
+    // 带有生成位置和朝向的场景创建方法
+    static cocos2d::Scene* createSceneWithSpawn(const cocos2d::Vec2& spawnPos, bool facingRight);
+    
     virtual bool init() override;
     virtual void update(float dt) override;
     
@@ -82,6 +86,12 @@ private:
     
     // 坐下状态追踪
     bool _wasSitting = false;                    // 上一帧是否坐着
+    
+    // 静态变量：从NextScene返回时的生成参数
+    static bool s_hasCustomSpawn;                // 是否有自定义生成位置
+    static cocos2d::Vec2 s_customSpawnPos;       // 自定义生成位置
+    static bool s_spawnFacingRight;              // 生成时的朝向
+    static bool s_spawnDoJump;                   // 是否需要跳跃动作
 };
 
 #endif // __GAME_SCENE_H__

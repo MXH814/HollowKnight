@@ -38,13 +38,32 @@ void TheKnight::updateJump(float dt)
     newPos.y += _velocityY * dt;
     
     // 计算新的水平位置
-    if (_isMovingLeft)
+    // 处理外部跳跃的强制移动
+    if (_isExternalJump)
     {
-        newPos.x -= _moveSpeed * dt;
+        _externalJumpTimer += dt;
+        if (_externalJumpTimer < _externalJumpDuration)
+        {
+            // 强制移动期间
+            newPos.x += _externalJumpDirection * _moveSpeed * dt;
+        }
+        else
+        {
+            // 强制移动结束
+            _isExternalJump = false;
+        }
     }
-    if (_isMovingRight)
+    else
     {
-        newPos.x += _moveSpeed * dt;
+        // 正常的玩家输入移动
+        if (_isMovingLeft)
+        {
+            newPos.x -= _moveSpeed * dt;
+        }
+        if (_isMovingRight)
+        {
+            newPos.x += _moveSpeed * dt;
+        }
     }
     
     // 先更新位置用于碰撞检测
@@ -74,6 +93,7 @@ void TheKnight::updateJump(float dt)
         newPos.y = groundY;
         _velocityY = 0;
         _isOnGround = true;
+        _isExternalJump = false;  // 落地时结束外部跳跃
         this->setPosition(newPos);
         
         // 计算下落距离，判断是普通落地还是重落地
@@ -91,37 +111,45 @@ void TheKnight::updateJump(float dt)
     
     // 检查墙壁碰撞和贴墙
     float correctedX;
-    if (_isMovingRight && checkWallCollision(correctedX, true))
+    bool movingRight = _isMovingRight || (_isExternalJump && _externalJumpDirection > 0);
+    bool movingLeft = _isMovingLeft || (_isExternalJump && _externalJumpDirection < 0);
+    
+    if (movingRight && checkWallCollision(correctedX, true))
     {
         newPos.x = correctedX;
         this->setPosition(newPos);
         if (checkWallSlideCollision(true))
         {
+            _isExternalJump = false;
             startWallSlide(true);
             return;
         }
     }
-    else if (_isMovingLeft && checkWallCollision(correctedX, false))
+    else if (movingLeft && checkWallCollision(correctedX, false))
     {
         newPos.x = correctedX;
         this->setPosition(newPos);
         if (checkWallSlideCollision(false))
         {
+            _isExternalJump = false;
             startWallSlide(false);
             return;
         }
     }
     
-    // 空中转向
-    if (_isMovingLeft && _facingRight)
+    // 空中转向（只在非外部跳跃时）
+    if (!_isExternalJump)
     {
-        _facingRight = false;
-        this->setFlippedX(false);
-    }
-    else if (_isMovingRight && !_facingRight)
-    {
-        _facingRight = true;
-        this->setFlippedX(true);
+        if (_isMovingLeft && _facingRight)
+        {
+            _facingRight = false;
+            this->setFlippedX(false);
+        }
+        else if (_isMovingRight && !_facingRight)
+        {
+            _facingRight = true;
+            this->setFlippedX(true);
+        }
     }
     
     // 如果速度变为负数，切换到下落状态
@@ -150,13 +178,32 @@ void TheKnight::updateFall(float dt)
     newPos.y += _velocityY * dt;
     
     // 计算新的水平位置
-    if (_isMovingLeft)
+    // 处理外部跳跃的强制移动
+    if (_isExternalJump)
     {
-        newPos.x -= _moveSpeed * dt;
+        _externalJumpTimer += dt;
+        if (_externalJumpTimer < _externalJumpDuration)
+        {
+            // 强制移动期间
+            newPos.x += _externalJumpDirection * _moveSpeed * dt;
+        }
+        else
+        {
+            // 强制移动结束
+            _isExternalJump = false;
+        }
     }
-    if (_isMovingRight)
+    else
     {
-        newPos.x += _moveSpeed * dt;
+        // 正常的玩家输入移动
+        if (_isMovingLeft)
+        {
+            newPos.x -= _moveSpeed * dt;
+        }
+        if (_isMovingRight)
+        {
+            newPos.x += _moveSpeed * dt;
+        }
     }
     
     // 先更新位置用于碰撞检测
@@ -169,6 +216,7 @@ void TheKnight::updateFall(float dt)
         newPos.y = groundY;
         _velocityY = 0;
         _isOnGround = true;
+        _isExternalJump = false;  // 落地时结束外部跳跃
         this->setPosition(newPos);
         
         // 计算下落距离，判断是普通落地还是重落地
@@ -186,22 +234,27 @@ void TheKnight::updateFall(float dt)
     
     // 检查墙壁碰撞和贴墙
     float correctedX;
-    if (_isMovingRight && checkWallCollision(correctedX, true))
+    bool movingRight = _isMovingRight || (_isExternalJump && _externalJumpDirection > 0);
+    bool movingLeft = _isMovingLeft || (_isExternalJump && _externalJumpDirection < 0);
+    
+    if (movingRight && checkWallCollision(correctedX, true))
     {
         newPos.x = correctedX;
         this->setPosition(newPos);
         if (checkWallSlideCollision(true))
         {
+            _isExternalJump = false;
             startWallSlide(true);
             return;
         }
     }
-    else if (_isMovingLeft && checkWallCollision(correctedX, false))
+    else if (movingLeft && checkWallCollision(correctedX, false))
     {
         newPos.x = correctedX;
         this->setPosition(newPos);
         if (checkWallSlideCollision(false))
         {
+            _isExternalJump = false;
             startWallSlide(false);
             return;
         }
@@ -790,4 +843,43 @@ void TheKnight::updateDashEffect(float dt)
             _dashEffect = nullptr;
         }
     }
+}
+
+void TheKnight::triggerJumpFromExternal(float horizontalSpeed)
+{
+    // 从外部触发跳跃（用于场景切换时的跳跃效果）
+    _isOnGround = false;
+    _velocityY = _jumpForce;  // 使用完整的跳跃力度
+    _jumpKeyHoldTime = _maxJumpHoldTime;  // 设置为最大值，防止继续增加跳跃力度
+    _isJumpKeyPressed = false;  // 防止继续累积
+    _hasDoubleJumped = false;  // 允许二段跳
+    _fallStartY = this->getPositionY();  // 记录起始位置
+    
+    // 不设置_isMovingRight/_isMovingLeft，而是使用外部跳跃专用变量
+    _isMovingRight = false;
+    _isMovingLeft = false;
+    
+    // 设置外部跳跃参数
+    _isExternalJump = true;
+    _externalJumpTimer = 0.0f;
+    _externalJumpDuration = 0.5f;  // 强制移动0.5秒
+    _externalJumpDirection = (horizontalSpeed > 0) ? 1.0f : -1.0f;
+    
+    // 设置朝向
+    if (horizontalSpeed > 0)
+    {
+        _facingRight = true;
+        this->setFlippedX(true);
+    }
+    else if (horizontalSpeed < 0)
+    {
+        _facingRight = false;
+        this->setFlippedX(false);
+    }
+    
+    // 切换到跳跃状态
+    changeState(KnightState::JUMPING);
+    
+    CCLOG("外部触发跳跃！速度Y: %.1f, 朝向: %s, 强制移动时间: %.1f秒", 
+          _velocityY, _facingRight ? "右" : "左", _externalJumpDuration);
 }

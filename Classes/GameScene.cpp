@@ -6,8 +6,34 @@
 
 USING_NS_CC;
 
+// 静态变量初始化
+bool GameScene::s_hasCustomSpawn = false;
+Vec2 GameScene::s_customSpawnPos = Vec2::ZERO;
+bool GameScene::s_spawnFacingRight = true;
+bool GameScene::s_spawnDoJump = false;
+
 Scene* GameScene::createScene()
 {
+    // 重置静态变量
+    s_hasCustomSpawn = false;
+    s_customSpawnPos = Vec2::ZERO;
+    s_spawnFacingRight = true;
+    s_spawnDoJump = false;
+    
+    return GameScene::create();
+}
+
+Scene* GameScene::createSceneWithSpawn(const Vec2& spawnPos, bool facingRight)
+{
+    // 设置静态变量（在create/init之前）
+    s_hasCustomSpawn = true;
+    s_customSpawnPos = spawnPos;
+    s_spawnFacingRight = facingRight;
+    s_spawnDoJump = true;
+    
+    CCLOG("GameScene::createSceneWithSpawn - 设置生成参数: pos(%.1f, %.1f), facingRight=%d", 
+          spawnPos.x, spawnPos.y, facingRight);
+    
     return GameScene::create();
 }
 
@@ -88,13 +114,50 @@ bool GameScene::init()
     _knight = TheKnight::create();
     if (_knight)
     {
-        _knight->setPosition(Vec2(startX, startY));
-        _knight->setScale(1.0f);
+        // 如果有自定义生成位置，使用自定义位置
+        if (s_hasCustomSpawn)
+        {
+            CCLOG("使用自定义生成位置: (%.1f, %.1f), 朝向: %s", 
+                  s_customSpawnPos.x, s_customSpawnPos.y, 
+                  s_spawnFacingRight ? "右" : "左");
+            
+            _knight->setPosition(s_customSpawnPos);
+            // 设置朝向（通过setScaleX）
+            float scaleValue = s_spawnFacingRight ? 1.0f : -1.0f;
+            _knight->setScaleX(scaleValue);
+            _knight->setScaleY(1.0f);
+        }
+        else
+        {
+            _knight->setPosition(Vec2(startX, startY));
+            _knight->setScale(1.0f);
+        }
+        
         _knight->setPlatforms(_platforms);
         this->addChild(_knight, 5, "Player");
         
         // 同步护符状态到玩家
         CharmManager::getInstance()->syncToKnight(_knight);
+        
+        // 如果需要跳跃动作
+        if (s_hasCustomSpawn && s_spawnDoJump)
+        {
+            // 计算跳跃水平速度，根据朝向
+            float horizontalSpeed = s_spawnFacingRight ? 1.0f : -1.0f;
+            
+            // 使用骑士自己的跳跃系统
+            _knight->triggerJumpFromExternal(horizontalSpeed);
+            
+            CCLOG("玩家从NextScene返回，位置(%.1f, %.1f)，朝向%s，触发跳跃动作", 
+                  s_customSpawnPos.x, s_customSpawnPos.y, 
+                  s_spawnFacingRight ? "右" : "左");
+        }
+        
+        // 重置静态变量，避免影响下次场景创建
+        s_hasCustomSpawn = false;
+        s_customSpawnPos = Vec2::ZERO;
+        s_spawnFacingRight = true;
+        s_spawnDoJump = false;
     }
 
     // 创建交互提示标签
@@ -168,16 +231,16 @@ void GameScene::createHPAndSoulUI()
     if (!_knight) return;
     
     // 创建UI层（固定在屏幕上，不随场景移动）
-    _uiLayer = Node::create();
-    if (!_uiLayer) return;
-    this->addChild(_uiLayer, 1000);  // 最高层级
+//     _uiLayer = Node::create();
+//     if (!_uiLayer) return;
+//     this->addChild(_uiLayer, 1000);  // 最高层级
     
     // 血条背景
     _hpBg = Sprite::create("Hp/hpbg.png");
     if (_hpBg)
     {
         _hpBg->setPosition(Vec2(200, 950));
-        _uiLayer->addChild(_hpBg);
+        this->addChild(_hpBg, 1001);
     }
     
     // 初始化血量和灵魂显示
@@ -196,7 +259,7 @@ void GameScene::createHPAndSoulUI()
     {
         _soulBg->setScale(0.9f);
         _soulBg->setPosition(Vec2(152, 935));
-        _uiLayer->addChild(_soulBg);
+        this->addChild(_soulBg, 1001);
         
         // 如果Soul为0，隐藏灵魂显示
         if (currentSoul <= 0)
@@ -241,7 +304,7 @@ void GameScene::createHPAndSoulUI()
             hpBar->setPosition(Vec2(260 + i * gap, 980));
             hpBar->setScale(0.5f);
             hpBar->setVisible(i < _lastDisplayedHP);  // 只显示当前血量
-            _uiLayer->addChild(hpBar);
+            this->addChild(hpBar, 1001);
             _hpBars.push_back(hpBar);
         }
     }
@@ -253,7 +316,7 @@ void GameScene::createHPAndSoulUI()
         _hpLose->setPosition(Vec2(260 + _lastDisplayedHP * gap, 978));
         _hpLose->setScale(0.5f);
         _hpLose->setVisible(_lastDisplayedHP < maxHp);
-        _uiLayer->addChild(_hpLose);
+        this->addChild(_hpLose, 1001);
     }
 }
 
