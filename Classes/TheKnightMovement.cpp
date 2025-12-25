@@ -12,7 +12,8 @@ void TheKnight::startJump()
     _isOnGround = false;
     _velocityY = _minJumpForce;
     _jumpKeyHoldTime = 0.0f;
-    _hasDoubleJumped = false;  // 起跳时重置二段跳
+    _hasDoubleJumped = false;  // 跳跃时重置二段跳
+    _fallStartY = this->getPositionY();  // 记录起跳位置
     changeState(KnightState::JUMPING);
 }
 
@@ -49,6 +50,12 @@ void TheKnight::updateJump(float dt)
     // 先更新位置用于碰撞检测
     this->setPosition(newPos);
     
+    // 更新最高点位置（用于下落距离计算）
+    if (this->getPositionY() > _fallStartY)
+    {
+        _fallStartY = this->getPositionY();
+    }
+    
     // 检查天花板碰撞
     float ceilingY;
     if (checkCeilingCollision(ceilingY))
@@ -68,7 +75,17 @@ void TheKnight::updateJump(float dt)
         _velocityY = 0;
         _isOnGround = true;
         this->setPosition(newPos);
-        changeState(KnightState::LANDING);
+        
+        // 计算下落距离，判断是普通落地还是重落地
+        float fallDistance = _fallStartY - groundY;
+        if (fallDistance >= _hardLandThreshold)
+        {
+            changeState(KnightState::HARD_LANDING);
+        }
+        else
+        {
+            changeState(KnightState::LANDING);
+        }
         return;
     }
     
@@ -153,7 +170,17 @@ void TheKnight::updateFall(float dt)
         _velocityY = 0;
         _isOnGround = true;
         this->setPosition(newPos);
-        changeState(KnightState::LANDING);
+        
+        // 计算下落距离，判断是普通落地还是重落地
+        float fallDistance = _fallStartY - groundY;
+        if (fallDistance >= _hardLandThreshold)
+        {
+            changeState(KnightState::HARD_LANDING);
+        }
+        else
+        {
+            changeState(KnightState::LANDING);
+        }
         return;
     }
     
@@ -199,6 +226,7 @@ void TheKnight::startDoubleJump()
     _velocityY = _doubleJumpForce;
     _jumpKeyHoldTime = _maxJumpHoldTime;  // 设置为最大值，防止长按增加跳跃力度
     _isJumpKeyPressed = false;  // 重置跳跃键状态，防止后续误判
+    _fallStartY = this->getPositionY();  // 记录二段跳起始位置
     changeState(KnightState::DOUBLE_JUMPING);
 }
 
@@ -227,6 +255,12 @@ void TheKnight::updateDoubleJump(float dt)
     // 先更新位置用于碰撞检测
     this->setPosition(newPos);
     
+    // 更新最高点位置（用于下落距离计算）
+    if (this->getPositionY() > _fallStartY)
+    {
+        _fallStartY = this->getPositionY();
+    }
+    
     // 检查天花板碰撞
     float ceilingY;
     if (checkCeilingCollision(ceilingY))
@@ -246,7 +280,17 @@ void TheKnight::updateDoubleJump(float dt)
         _velocityY = 0;
         _isOnGround = true;
         this->setPosition(newPos);
-        changeState(KnightState::LANDING);
+        
+        // 计算下落距离，判断是普通落地还是重落地
+        float fallDistance = _fallStartY - groundY;
+        if (fallDistance >= _hardLandThreshold)
+        {
+            changeState(KnightState::HARD_LANDING);
+        }
+        else
+        {
+            changeState(KnightState::LANDING);
+        }
         return;
     }
     
@@ -293,6 +337,7 @@ void TheKnight::startWallSlide(bool wallOnRight)
     _velocityY = 0.0f;
     _isOnGround = false;
     _hasDoubleJumped = false;  // 贴墙时重置二段跳
+    _fallStartY = this->getPositionY();  // 记录贴墙开始位置
     
     // 素材是角色右侧为墙（角色面向左），所以：
     // 如果墙在右侧，不翻转（素材原样，角色面向左）
@@ -345,7 +390,17 @@ void TheKnight::updateWallSlide(float dt)
         _isOnWall = false;
         this->setPosition(newPos);
         this->setFlippedX(_facingRight);
-        changeState(KnightState::LANDING);
+        
+        // 计算下落距离，判断是普通落地还是重落地
+        float fallDistance = _fallStartY - groundY;
+        if (fallDistance >= _hardLandThreshold)
+        {
+            changeState(KnightState::HARD_LANDING);
+        }
+        else
+        {
+            changeState(KnightState::LANDING);
+        }
         return;
     }
     
@@ -399,6 +454,7 @@ void TheKnight::startWallJump()
     this->setFlippedX(_facingRight);
     
     _velocityY = _wallJumpForceY;
+    _fallStartY = this->getPositionY();  // 记录蹬墙跳起始位置
     
     changeState(KnightState::WALL_JUMPING);
 }
@@ -439,6 +495,12 @@ void TheKnight::updateWallJump(float dt)
     // 先更新位置用于碰撞检测
     this->setPosition(newPos);
     
+    // 更新最高点位置（用于下落距离计算）
+    if (this->getPositionY() > _fallStartY)
+    {
+        _fallStartY = this->getPositionY();
+    }
+    
     // 检查天花板碰撞
     float ceilingY;
     if (checkCeilingCollision(ceilingY))
@@ -458,7 +520,17 @@ void TheKnight::updateWallJump(float dt)
         _velocityY = 0;
         _isOnGround = true;
         this->setPosition(newPos);
-        changeState(KnightState::LANDING);
+        
+        // 计算下落距离，判断是普通落地还是重落地
+        float fallDistance = _fallStartY - groundY;
+        if (fallDistance >= _hardLandThreshold)
+        {
+            changeState(KnightState::HARD_LANDING);
+        }
+        else
+        {
+            changeState(KnightState::LANDING);
+        }
         return;
     }
     

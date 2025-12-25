@@ -108,6 +108,14 @@ void TheKnight::loadAnimations()
         AnimationCache::getInstance()->addAnimation(_landAnim, "land");
     }
     
+    // 重落地动画 - 10帧
+    _hardLandAnim = createAnimation("TheKnight/Land/HardLand/", "HardLand", 1, 10, 0.05f);
+    if (_hardLandAnim)
+    {
+        _hardLandAnim->retain();
+        AnimationCache::getInstance()->addAnimation(_hardLandAnim, "hardLand");
+    }
+    
     // 冲刺动画 - 12帧
     _dashAnim = createAnimation("TheKnight/Dash/", "Dash", 1, 12, 0.02f);
     if (_dashAnim)
@@ -548,6 +556,23 @@ void TheKnight::changeState(KnightState newState)
             else
             {
                 onLandFinished();
+            }
+            break;
+        }
+            
+        case KnightState::HARD_LANDING:
+        {
+            this->stopAllActions();
+            auto animation = AnimationCache::getInstance()->getAnimation("hardLand");
+            if (animation)
+            {
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onHardLandFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
+            }
+            else
+            {
+                onHardLandFinished();
             }
             break;
         }
@@ -1197,6 +1222,29 @@ void TheKnight::onLandFinished()
     _hasDoubleJumped = false;
     
     // 落地动画播放完毕，根据输入状态决定下一个状态
+    if (_isMovingLeft || _isMovingRight)
+    {
+        if ((_isMovingLeft && _facingRight) || (_isMovingRight && !_facingRight))
+        {
+            changeState(KnightState::TURNING);
+        }
+        else
+        {
+            changeState(KnightState::RUNNING);
+        }
+    }
+    else
+    {
+        changeState(KnightState::IDLE);
+    }
+}
+
+void TheKnight::onHardLandFinished()
+{
+    // 重落地时重置二段跳
+    _hasDoubleJumped = false;
+    
+    // 重落地动画播放完毕，根据输入状态决定下一个状态
     if (_isMovingLeft || _isMovingRight)
     {
         if ((_isMovingLeft && _facingRight) || (_isMovingRight && !_facingRight))

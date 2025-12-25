@@ -36,6 +36,13 @@ bool NextScene::init()
     _isTransitioning = false;
     _isNearExit = false;
     _isNearThorn = false;
+    
+    // 初始化震动相关变量
+    _isShaking = false;
+    _shakeDuration = 0.0f;
+    _shakeElapsed = 0.0f;
+    _shakeIntensity = 0.0f;
+    _shakeOffset = Vec2::ZERO;
 
     // 在加载地图之前添加全黑遮罩层
     auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255));
@@ -149,11 +156,6 @@ bool NextScene::init()
     };
     _eventDispatcher->addEventListenerWithSceneGraphPriority(keyboardListener, this);
 
-    // 添加碰撞监听器
-    auto contactListener = EventListenerPhysicsContact::create();
-    contactListener->onContactBegin = CC_CALLBACK_1(NextScene::onContactBegin, this);
-    _eventDispatcher->addEventListenerWithSceneGraphPriority(contactListener, this);
-
     // 启用 update 实现摄像机跟随
     this->scheduleUpdate();
 
@@ -200,7 +202,7 @@ void NextScene::loadExitObjects(TMXTiledMap* map, float scale, const Vec2& mapOf
         
         ExitObject exitObj;
         exitObj.position = Vec2(x + width / 2, y + height / 2);
-        exitObj.radius = std::max(width, height) / 2 + 50.0f;  // 稍微扩大检测范围
+        exitObj.radius = std::max(width, height) / 2 + 50.0f;
         
         _exitObjects.push_back(exitObj);
         
@@ -222,7 +224,6 @@ void NextScene::loadThornObjects(TMXTiledMap* map, float scale, const Vec2& mapO
     {
         auto& dict = obj.asValueMap();
         
-        // 获取对象的 class 或 type 属性
         std::string objClass = "";
         if (dict.find("class") != dict.end()) {
             objClass = dict["class"].asString();
@@ -231,7 +232,6 @@ void NextScene::loadThornObjects(TMXTiledMap* map, float scale, const Vec2& mapO
             objClass = dict["type"].asString();
         }
         
-        // 只处理 thorn 类的对象
         if (objClass != "thorn") {
             continue;
         }
@@ -243,7 +243,7 @@ void NextScene::loadThornObjects(TMXTiledMap* map, float scale, const Vec2& mapO
         
         ThornObject thornObj;
         thornObj.position = Vec2(x + width / 2, y + height / 2);
-        thornObj.size = Size(width + 50.0f, height + 50.0f);  // 稍微扩大检测范围
+        thornObj.size = Size(width + 50.0f, height + 50.0f);
         
         _thornObjects.push_back(thornObj);
         
@@ -284,7 +284,6 @@ void NextScene::checkInteractions()
     if (_thornLabel) {
         for (auto& thornObj : _thornObjects)
         {
-            // 使用矩形检测
             Rect thornRect(
                 thornObj.position.x - thornObj.size.width / 2,
                 thornObj.position.y - thornObj.size.height / 2,
@@ -305,154 +304,84 @@ void NextScene::checkInteractions()
 
 bool NextScene::onContactBegin(PhysicsContact& contact)
 {
-    auto nodeA = contact.getShapeA()->getBody()->getNode();
-    auto nodeB = contact.getShapeB()->getBody()->getNode();
-    
-    if (!nodeA || !nodeB) return true;
-    
-    // 检测是否是玩家与地面碰撞
-    Node* knight = nullptr;
-    if (nodeA->getName() == "Player") {
-        knight = nodeA;
-    } else if (nodeB->getName() == "Player") {
-        knight = nodeB;
-    }
-    
-    // 如果是玩家碰撞且还没有落地过
-    if (knight && !_hasLandedOnce) {
-        _hasLandedOnce = true;
-        
-        // 触发屏幕震动
-        shakeScreen(0.8f, 50.0f);
-        
-        CCLOG("玩家首次落地，触发屏幕震动");
-    }
-    
+    // 此方法不再使用，保留以兼容头文件声明
     return true;
 }
 
 void NextScene::shakeScreen(float duration, float intensity)
 {
-    auto scene = this->getScene();
-    if (!scene) return;
+    _isShaking = true;
+    _shakeDuration = duration;
+    _shakeElapsed = 0.0f;
+    _shakeIntensity = intensity;
+    _shakeOffset = Vec2::ZERO;
     
-    auto camera = scene->getDefaultCamera();
-    if (!camera) return;
-    
-    // 保存原始位置
-    Vec2 originalPos = camera->getPosition();
-    
-    // 创建震动序列
-    Vector<FiniteTimeAction*> shakeActions;
-    
-    int shakeCount = static_cast<int>(duration / 0.02f);
-    float singleDuration = duration / shakeCount;
-    
-    for (int i = 0; i < shakeCount; i++) {
-        // 随机偏移
-        float offsetX = (rand() % 100 / 100.0f - 0.5f) * 2 * intensity;
-        float offsetY = (rand() % 100 / 100.0f - 0.5f) * 2 * intensity;
-        
-        // 震动强度逐渐减弱
-        float factor = 1.0f - (float)i / shakeCount;
-        offsetX *= factor;
-        offsetY *= factor;
-        
-        auto moveBy = MoveBy::create(singleDuration, Vec2(offsetX, offsetY));
-        shakeActions.pushBack(moveBy);
-    }
-    
-    // 最后回到原点（通过 update 中的摄像机跟随会自动修正）
-    auto sequence = Sequence::create(shakeActions);
-    camera->runAction(sequence);
-}
-
-void NextScene::createTrapSprites(TMXTiledMap* map, const std::string& layerName, 
-                                   const std::string& trapType, const std::string& spritePath,
-                                   float scale, const Vec2& mapOffset)
-{
-    auto collisionGroup = map->getObjectGroup(layerName);
-    if (!collisionGroup) {
-        CCLOG("警告：地图中没有找到 %s 对象层", layerName.c_str());
-        return;
-    }
-
-    auto& objects = collisionGroup->getObjects();
-
-    for (auto& obj : objects)
-    {
-        auto& dict = obj.asValueMap();
-
-        // 获取类型（兼容 type 和 class 属性）
-        std::string type = "";
-        if (dict.find("type") != dict.end()) {
-            type = dict["type"].asString();
-        }
-        if (dict.find("class") != dict.end()) {
-            type = dict["class"].asString();
-        }
-
-        // 只处理指定类型的陷阱
-        if (type != trapType) {
-            continue;
-        }
-
-        float x = dict["x"].asFloat() * scale + mapOffset.x;
-        float y = (dict["y"].asFloat() + 166)* scale + mapOffset.y;
-        float width = dict["width"].asFloat() * scale;
-        float height = dict["height"].asFloat() * scale;
-
-        if (width > 0 && height > 0)
-        {
-            auto sprite = Sprite::create(spritePath);
-            if (sprite) {
-                // 设置精灵大小匹配对象区域
-                Size originalSize = sprite->getContentSize();
-                sprite->setScaleX(width / originalSize.width);
-                sprite->setScaleY(height / originalSize.height);
-                
-                // 设置位置（对象左下角 + 尺寸一半 = 中心点）
-                sprite->setPosition(Vec2(x + width / 2, y + height / 2));
-                
-                // 添加到场景，zOrder为1使其显示在地图之上但在玩家之下
-                this->addChild(sprite, 1);
-                
-                CCLOG("创建陷阱精灵: x=%.1f, y=%.1f, w=%.1f, h=%.1f", x, y, width, height);
-            }
-            else {
-                CCLOG("警告：无法加载精灵 %s", spritePath.c_str());
-            }
-        }
-    }
+    CCLOG("开始屏幕震动: duration=%.2f, intensity=%.1f", duration, intensity);
 }
 
 void NextScene::update(float dt)
 {
-    auto knight = this->getChildByName("Player");
+    auto knight = dynamic_cast<TheKnight*>(this->getChildByName("Player"));
     if (!knight) return;
 
-    // Layer 没有摄像机，获取父场景的摄像机
     auto scene = this->getScene();
     if (!scene) return;
 
     auto camera = scene->getDefaultCamera();
     if (!camera) return;
 
-    // 摄像机平滑跟随角色
     Vec2 knightPos = knight->getPosition();
+
+    // 检测骑士重落地状态触发震动
+    static bool wasHardLanding = false;
+    bool isHardLanding = knight->isHardLanding();
+    
+    // 当骑士刚进入重落地状态时触发震动
+    if (isHardLanding && !wasHardLanding)
+    {
+        shakeScreen(0.6f, 30.0f);
+        CCLOG("玩家重落地，触发屏幕震动");
+    }
+    wasHardLanding = isHardLanding;
+
+    // 更新震动效果
+    if (_isShaking)
+    {
+        _shakeElapsed += dt;
+        
+        if (_shakeElapsed >= _shakeDuration)
+        {
+            _isShaking = false;
+            _shakeOffset = Vec2::ZERO;
+            CCLOG("屏幕震动结束");
+        }
+        else
+        {
+            // 计算震动衰减因子（逐渐减弱）
+            float factor = 1.0f - (_shakeElapsed / _shakeDuration);
+            
+            // 随机偏移
+            float offsetX = ((rand() % 200) / 100.0f - 1.0f) * _shakeIntensity * factor;
+            float offsetY = ((rand() % 200) / 100.0f - 1.0f) * _shakeIntensity * factor;
+            
+            _shakeOffset = Vec2(offsetX, offsetY);
+        }
+    }
+
+    // 摄像机平滑跟随角色
     Vec2 cameraPos = camera->getPosition();
     
-    // 添加 Y 轴偏移
     float cameraOffsetY = 200.0f;
     Vec2 targetPos = Vec2(knightPos.x, knightPos.y + cameraOffsetY);
     
-    // 平滑插值
     float lerpFactor = 0.1f;
     Vec2 newPos = cameraPos + (targetPos - cameraPos) * lerpFactor;
     
+    // 应用震动偏移
+    newPos = newPos + _shakeOffset;
+    
     camera->setPosition(newPos);
     
-    // 检测交互
     checkInteractions();
 }
 
@@ -489,7 +418,6 @@ void NextScene::createCollisionFromTMX(TMXTiledMap* map, const std::string& laye
 
         if (width > 0 && height > 0)
         {
-            // 创建 Platform 结构体，与GameScene相同的碰撞方式
             Platform platform;
             platform.rect = Rect(x, y, width, height);
             platform.node = nullptr;
@@ -560,6 +488,58 @@ void NextScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
         else
         {
             CCLOG("警告：无法加载前景图片: %s", imagePath.c_str());
+        }
+    }
+}
+
+void NextScene::createTrapSprites(TMXTiledMap* map, const std::string& layerName, 
+                                   const std::string& trapType, const std::string& spritePath,
+                                   float scale, const Vec2& mapOffset)
+{
+    auto collisionGroup = map->getObjectGroup(layerName);
+    if (!collisionGroup) {
+        CCLOG("警告：地图中没有找到 %s 对象层", layerName.c_str());
+        return;
+    }
+
+    auto& objects = collisionGroup->getObjects();
+
+    for (auto& obj : objects)
+    {
+        auto& dict = obj.asValueMap();
+
+        std::string type = "";
+        if (dict.find("type") != dict.end()) {
+            type = dict["type"].asString();
+        }
+        if (dict.find("class") != dict.end()) {
+            type = dict["class"].asString();
+        }
+
+        if (type != trapType) {
+            continue;
+        }
+
+        float x = dict["x"].asFloat() * scale + mapOffset.x;
+        float y = (dict["y"].asFloat() + 166) * scale + mapOffset.y;
+        float width = dict["width"].asFloat() * scale;
+        float height = dict["height"].asFloat() * scale;
+
+        if (width > 0 && height > 0)
+        {
+            auto sprite = Sprite::create(spritePath);
+            if (sprite) {
+                Size originalSize = sprite->getContentSize();
+                sprite->setScaleX(width / originalSize.width);
+                sprite->setScaleY(height / originalSize.height);
+                sprite->setPosition(Vec2(x + width / 2, y + height / 2));
+                this->addChild(sprite, 1);
+                
+                CCLOG("创建陷阱精灵: x=%.1f, y=%.1f, w=%.1f, h=%.1f", x, y, width, height);
+            }
+            else {
+                CCLOG("警告：无法加载精灵 %s", spritePath.c_str());
+            }
         }
     }
 }

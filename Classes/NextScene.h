@@ -68,6 +68,13 @@ private:
     bool _isTransitioning = false;     // 是否正在场景切换
     bool _isNearExit = false;          // 是否靠近出口
     bool _isNearThorn = false;         // 是否靠近尖刺
+    
+    // 屏幕震动相关
+    bool _isShaking = false;           // 是否正在震动
+    float _shakeDuration = 0.0f;       // 震动持续时间
+    float _shakeElapsed = 0.0f;        // 震动已经过时间
+    float _shakeIntensity = 0.0f;      // 震动强度
+    cocos2d::Vec2 _shakeOffset;        // 震动偏移量
 };
 
 #endif // __NEXT_SCENE_H__

@@ -65,6 +65,10 @@ bool TheKnight::init()
     _hasDoubleJumped = false;     // 是否已经使用了二段跳
     _doubleJumpForce = 2000.0f;   // 二段跳力度（两倍高度）
     
+    // 下落距离追踪初始化
+    _fallStartY = 0.0f;
+    _hardLandThreshold = 500.0f;  // 下落超过500像素触发重落地
+    
     // 冲刺相关初始化
     _dashSpeed = 1600.0f;
     _dashDuration = 0.25f;
@@ -937,12 +941,13 @@ void TheKnight::update(float dt)
     
     // 只在非LANDING状态时检查是否还站在平台上
     // LANDING状态时不检查，避免边缘抽搐
-    if (_isOnGround && _state != KnightState::LANDING)
+    if (_isOnGround && _state != KnightState::LANDING && _state != KnightState::HARD_LANDING)
     {
         // 检查是否还站在平台上，如果走出平台边缘则开始下落
         if (!checkStillOnGround())
         {
             _isOnGround = false;
+            _fallStartY = this->getPositionY();  // 记录下落起始位置
             // 如果处于地图模式，强制退出
             if (_isMapMode)
             {

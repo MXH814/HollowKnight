@@ -20,6 +20,7 @@ enum class KnightState
     JUMPING,    // 跳跃上升状态
     FALLING,    // 下落状态
     LANDING,    // 落地状态
+    HARD_LANDING, // 重落地状态（高处落下）
     DASHING,    // 冲刺状态
     DASH_TO_IDLE, // 冲刺结束状态
     LOOKING_UP,   // 向上看状态
@@ -99,6 +100,9 @@ public:
     // 是否已死亡
     bool isDead() const { return _state == KnightState::DEAD; }
     
+    // 是否正在重落地
+    bool isHardLanding() const { return _state == KnightState::HARD_LANDING; }
+    
     // 获取生命值
     int getHP() const { return _hp; }
     
@@ -148,6 +152,7 @@ private:
     void onRunToIdleFinished();
     void onRunStartFinished();
     void onLandFinished();
+    void onHardLandFinished();   // 重落地动画完成回调
     void onFallAnimFinished();
     void onDashFinished();
     void onDashToIdleFinished();
@@ -292,6 +297,10 @@ private:
     bool _hasDoubleJumped;       // 是否已经二段跳过
     float _doubleJumpForce;      // 二段跳力度
     
+    // 下落距离追踪（用于重落地判定）
+    float _fallStartY;           // 开始下落时的Y坐标
+    float _hardLandThreshold;    // 触发重落地的下落距离阈值
+    
     // 攻击相关
     bool _isAttacking;           // 是否正在攻击
     KnightState _stateBeforeAttack; // 攻击前的状态（用于恢复）
@@ -389,6 +398,7 @@ private:
     Animation* _jumpPeakAnim;
     Animation* _jumpFallAnim;
     Animation* _landAnim;
+    Animation* _hardLandAnim;    // 重落地动画
     Animation* _dashAnim;        // 冲刺动画
     Animation* _dashToIdleAnim;  // 冲刺结束动画
     Animation* _dashEffectAnim;  // 冲刺特效动画
