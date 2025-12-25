@@ -1,4 +1,5 @@
 #include "BossScene.h"
+#include "CharmManager.h"
 
 USING_NS_CC;
 
@@ -56,6 +57,9 @@ bool BossScene::init()
         // 进入Boss场景时重置：HP满，Soul为0
         _knight->setHP(_knight->getMaxHP());
         _knight->setSoul(0);
+        
+        // 同步护符状态到玩家
+        CharmManager::getInstance()->syncToKnight(_knight);
         
         this->addChild(_knight, 10, "PlayerInstance");
     }
@@ -123,6 +127,29 @@ bool BossScene::init()
     // 初始化攻击冷却
     _knightAttackCooldown = 0.0f;
     _spellAttackCooldown = 0.0f;
+
+    // 添加键盘事件监听 (Q键打开护符面板)
+    auto keyboardListener = EventListenerKeyboard::create();
+    keyboardListener->onKeyPressed = [this](EventKeyboard::KeyCode keyCode, Event* event) {
+        if (keyCode == EventKeyboard::KeyCode::KEY_Q)
+        {
+            auto charmManager = CharmManager::getInstance();
+            if (charmManager->isPanelOpen())
+            {
+                charmManager->hideCharmPanel();
+                // 关闭面板后同步护符状态到玩家
+                if (_knight)
+                {
+                    charmManager->syncToKnight(_knight);
+                }
+            }
+            else
+            {
+                charmManager->showCharmPanel(this);
+            }
+        }
+    };
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(keyboardListener, this);
 
     // 直接移除黑层
     if (blackLayer && blackLayer->getParent()) {

@@ -2,6 +2,7 @@
 #include "TheKnight.h"
 #include "NextScene.h"
 #include <BossScene.h>
+#include "CharmManager.h"
 
 USING_NS_CC;
 
@@ -91,6 +92,9 @@ bool GameScene::init()
         _knight->setScale(1.0f);
         _knight->setPlatforms(_platforms);
         this->addChild(_knight, 5, "Player");
+        
+        // 同步护符状态到玩家
+        CharmManager::getInstance()->syncToKnight(_knight);
     }
 
     // 创建交互提示标签
@@ -102,7 +106,7 @@ bool GameScene::init()
     // 创建HP和Soul UI
     createHPAndSoulUI();
 
-    // 初始化摄像机偏移
+    // 初始化摄像头偏移
     _cameraOffsetY = 0.0f;
     _targetCameraOffsetY = 0.0f;
     
@@ -112,6 +116,28 @@ bool GameScene::init()
     // 添加键盘事件监听
     auto keyboardListener = EventListenerKeyboard::create();
     keyboardListener->onKeyPressed = [this](EventKeyboard::KeyCode keyCode, Event* event) {
+        // 按Q键打开/关闭护符面板
+        if (keyCode == EventKeyboard::KeyCode::KEY_Q)
+        {
+            auto charmManager = CharmManager::getInstance();
+            if (charmManager->isPanelOpen())
+            {
+                charmManager->hideCharmPanel();
+                // 关闭面板后同步护符状态到玩家
+                if (_knight)
+                {
+                    charmManager->syncToKnight(_knight);
+                }
+            }
+            else
+            {
+                // 根据骑士是否坐着决定能否装卸护符
+                bool canEquip = _knight && _knight->isSitting();
+                charmManager->showCharmPanel(this, canEquip);
+            }
+            return;
+        }
+        
         // 如果玩家靠近椅子并按W键时开始坐下
         if (_knight && _knight->isNearChair() && !_knight->isSitting())
         {

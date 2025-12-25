@@ -126,6 +126,16 @@ public:
     // 获取护符状态
     int getCharmSoulCatcher() const { return _charmSoulCatcher; }
     int getCharmShamanStone() const { return _charmShamanStone; }
+    int getCharmStalwartShell() const { return _charmStalwartShell; }
+    int getCharmSprintmaster() const { return _charmSprintmaster; }
+    int getCharmSteadyBody() const { return _charmSteadyBody; }
+    
+    // 设置护符状态
+    void setCharmSoulCatcher(int value) { _charmSoulCatcher = value; }
+    void setCharmShamanStone(int value) { _charmShamanStone = value; }
+    void setCharmStalwartShell(int value) { _charmStalwartShell = value; }
+    void setCharmSprintmaster(int value) { _charmSprintmaster = value; }
+    void setCharmSteadyBody(int value) { _charmSteadyBody = value; }
     
     // 设置受击后退方向（根据敌人位置）
     void setKnockbackDirection(bool fromRight);

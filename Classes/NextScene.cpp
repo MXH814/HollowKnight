@@ -1,6 +1,7 @@
 #include "NextScene.h"
 #include "TheKnight.h"
 #include "GameScene.h"
+#include "CharmManager.h"
 
 USING_NS_CC;
 
@@ -120,6 +121,9 @@ bool NextScene::init()
         knight->setScale(1.0f);
         knight->setPlatforms(_platforms);  // 传递碰撞平台
         this->addChild(knight, 5, "Player");
+        
+        // 同步护符状态到玩家
+        CharmManager::getInstance()->syncToKnight(knight);
     }
 
     // 创建HP和Soul UI
@@ -140,25 +144,51 @@ bool NextScene::init()
     // 添加键盘监听
     auto keyboardListener = EventListenerKeyboard::create();
     keyboardListener->onKeyPressed = [this](EventKeyboard::KeyCode keyCode, Event* event) {
-        if (keyCode == EventKeyboard::KeyCode::KEY_Q && _isNearExit && !_isTransitioning) {
-            _isTransitioning = true;
-            // 创建全黑过渡场景
-            auto blackScene = Scene::create();
-            auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255));
-            blackScene->addChild(blackLayer);
+        if (keyCode == EventKeyboard::KeyCode::KEY_Q)
+        {
+            auto charmManager = CharmManager::getInstance();
+            auto scene = this->getScene();
+            if (!scene) return;
+            
+            // 如果护符面板已打开，按Q关闭
+            if (charmManager->isPanelOpen())
+            {
+                charmManager->hideCharmPanel();
+                // 关闭面板后同步护符状态到玩家
+                auto knight = dynamic_cast<TheKnight*>(this->getChildByName("Player"));
+                if (knight)
+                {
+                    charmManager->syncToKnight(knight);
+                }
+                return;
+            }
+            
+            // 如果在出口附近且没有正在切换场景，则切换场景
+            if (_isNearExit && !_isTransitioning)
+            {
+                _isTransitioning = true;
+                // 创建全黑过渡场景
+                auto blackScene = Scene::create();
+                auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255));
+                blackScene->addChild(blackLayer);
 
-            // 先切换到黑屏，延迟后再进入目标场景
-            Director::getInstance()->replaceScene(TransitionFade::create(0.5f, blackScene));
+                // 先切换到黑屏，延迟后再进入目标场景
+                Director::getInstance()->replaceScene(TransitionFade::create(0.5f, blackScene));
 
-            // 延迟后进入真正的目标场景
-            blackLayer->runAction(Sequence::create(
-                DelayTime::create(1.0f),
-                CallFunc::create([]() {
-                    auto scene = GameScene::createScene();
-                    Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
-                }),
-                nullptr
-            ));
+                // 延迟后进入真正的目标场景
+                blackLayer->runAction(Sequence::create(
+                    DelayTime::create(1.0f),
+                    CallFunc::create([]() {
+                        auto gameScene = GameScene::createScene();
+                        Director::getInstance()->replaceScene(TransitionFade::create(0.5f, gameScene));
+                    }),
+                    nullptr
+                ));
+                return;
+            }
+            
+            // 否则打开护符面板
+            charmManager->showCharmPanel(scene);
         }
     };
     _eventDispatcher->addEventListenerWithSceneGraphPriority(keyboardListener, this);

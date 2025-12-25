@@ -4,6 +4,7 @@
  */
 
 #include "TheKnight.h"
+#include "CharmManager.h"
 
 TheKnight* TheKnight::create()
 {
@@ -391,6 +392,11 @@ bool TheKnight::checkWallSlideCollision(bool checkRight)
 
 void TheKnight::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
 {
+    // 如果护符面板打开，禁用角色控制
+    if (CharmManager::getInstance()->isPanelOpen()) {
+        return;
+    }
+    
     // If sitting and not in map mode, any key except Tab should exit sitting
     if (_isSitting && _state != KnightState::SIT_MAP_OPEN && _state != KnightState::SIT_MAP_CLOSE)
     {
@@ -628,6 +634,11 @@ void TheKnight::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
 
 void TheKnight::onKeyReleased(EventKeyboard::KeyCode keyCode, Event* event)
 {
+    // 如果护符面板打开，禁用角色控制
+    if (CharmManager::getInstance()->isPanelOpen()) {
+        return;
+    }
+    
     // 支持大小写 W/w 键 - 向上看释放
     if (keyCode == EventKeyboard::KeyCode::KEY_W || 
         keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_W)
