@@ -55,7 +55,7 @@ bool GameScene::init()
         Vec2 position;
     };
 
-    scale = 1.8f;
+    scale = 2.61f;  // 1.8f * 1.45f = 2.61f
 
     // 3个地图块的配置
     std::vector<MapChunk> chunks = {
@@ -231,16 +231,16 @@ void GameScene::createHPAndSoulUI()
     if (!_knight) return;
     
     // 创建UI层（固定在屏幕上，不随场景移动）
-//     _uiLayer = Node::create();
-//     if (!_uiLayer) return;
-//     this->addChild(_uiLayer, 1000);  // 最高层级
+    _uiLayer = Node::create();
+    if (!_uiLayer) return;
+    this->addChild(_uiLayer, 1000);  // 最高层级
     
     // 血条背景
     _hpBg = Sprite::create("Hp/hpbg.png");
     if (_hpBg)
     {
         _hpBg->setPosition(Vec2(200, 950));
-        this->addChild(_hpBg, 1001);
+        _uiLayer->addChild(_hpBg);
     }
     
     // 初始化血量和灵魂显示
@@ -259,7 +259,7 @@ void GameScene::createHPAndSoulUI()
     {
         _soulBg->setScale(0.9f);
         _soulBg->setPosition(Vec2(152, 935));
-        this->addChild(_soulBg, 1001);
+        _uiLayer->addChild(_soulBg);
         
         // 如果Soul为0，隐藏灵魂显示
         if (currentSoul <= 0)
@@ -304,7 +304,7 @@ void GameScene::createHPAndSoulUI()
             hpBar->setPosition(Vec2(260 + i * gap, 980));
             hpBar->setScale(0.5f);
             hpBar->setVisible(i < _lastDisplayedHP);  // 只显示当前血量
-            this->addChild(hpBar, 1001);
+            _uiLayer->addChild(hpBar);
             _hpBars.push_back(hpBar);
         }
     }
@@ -316,7 +316,7 @@ void GameScene::createHPAndSoulUI()
         _hpLose->setPosition(Vec2(260 + _lastDisplayedHP * gap, 978));
         _hpLose->setScale(0.5f);
         _hpLose->setVisible(_lastDisplayedHP < maxHp);
-        this->addChild(_hpLose, 1001);
+        _uiLayer->addChild(_hpLose);
     }
 }
 
@@ -501,7 +501,7 @@ void GameScene::loadInteractiveObjects(TMXTiledMap* map, float scale, const Vec2
             InteractiveObject chairObj;
             chairObj.position = Vec2(x + width / 2, y + height / 2);
             chairObj.name = "Chair";
-            chairObj.radius = 50.0f;
+            chairObj.radius = 72.5f;  // 50.0f * 1.45 = 72.5f
             
             _interactiveObjects.push_back(chairObj);
             
@@ -513,7 +513,7 @@ void GameScene::loadInteractiveObjects(TMXTiledMap* map, float scale, const Vec2
             InteractiveObject exitObj;
             exitObj.position = Vec2(x + width / 2, y + height / 2);
             exitObj.name = "Exit";
-            exitObj.radius = 150.0f;
+            exitObj.radius = 217.5f;  // 150.0f * 1.45 = 217.5f
             
             _interactiveObjects.push_back(exitObj);
             
@@ -600,9 +600,11 @@ void GameScene::updateCamera()
     float offsetLerpFactor = 0.05f;
     _cameraOffsetY += (_targetCameraOffsetY - _cameraOffsetY) * offsetLerpFactor;
     
-    // 计算摄像机目标位置（骑士在屏幕中心）
+    // 计算摄像机目标位置（骑士在屏幕下1/3处，水平居中）
+    // 将摄像机向上偏移 visibleSize.height / 6，使角色从中心移到下1/3处
+    float verticalOffset = visibleSize.height / 6.0f;
     float cameraX = knightPos.x;
-    float cameraY = knightPos.y + _cameraOffsetY;
+    float cameraY = knightPos.y + verticalOffset + _cameraOffsetY;
     
     // 限制摄像机范围，不要超出地图边界
     cameraX = std::max(cameraX, visibleSize.width / 2);

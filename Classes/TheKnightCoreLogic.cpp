@@ -68,7 +68,7 @@ bool TheKnight::init()
     
     // 下落距离追踪初始化
     _fallStartY = 0.0f;
-    _hardLandThreshold = 500.0f;  // 下落超过500像素触发重落地
+    _hardLandThreshold = 1500.0f;  // 下落超过1500像素触发重落地
     
     // 冲刺相关初始化
     _dashSpeed = 1600.0f;
@@ -797,10 +797,10 @@ void TheKnight::update(float dt)
     if (debugTimer >= 1.0f)
     {
         Vec2 pos = this->getPosition();
-        CCLOG("[TheKnight] 位置: (%.1f, %.1f), 状态: %d, 朝向: %s, 在地面: %s", 
+        CCLOG("[TheKnight] Position: (%.1f, %.1f), Statement: %d, Face: %s, OnGround: %s", 
               pos.x, pos.y, (int)_state, 
-              _facingRight ? "右" : "左",
-              _isOnGround ? "是" : "否");
+              _facingRight ? "Right" : "Left",
+              _isOnGround ? "1" : "0");
         debugTimer = 0.0f;
     }
     

@@ -12,12 +12,13 @@ Scene* NextScene::createScene()
     auto layer = NextScene::create();
     scene->addChild(layer);
 
-    // 设置摄像机初始位置（添加 Y 偏移）
+    // 设置摄像机初始位置（角色在屏幕下1/3处）
     auto knight = layer->getChildByName("Player");
     if (knight) {
-        float cameraOffsetY = 200.0f;
+        Size visibleSize = Director::getInstance()->getVisibleSize();
+        float verticalOffset = visibleSize.height / 6.0f;
         scene->getDefaultCamera()->setPosition(
-            Vec2(knight->getPositionX(), knight->getPositionY() + cameraOffsetY)
+            Vec2(knight->getPositionX(), knight->getPositionY() + verticalOffset)
         );
     }
 
@@ -66,7 +67,7 @@ bool NextScene::init()
         Vec2 position;
     };
 
-    float scale = 1.8f;
+    float scale = 2.61f;  // 1.8f * 1.45f = 2.61f
 
     // 4个地图块的配置（根据实际地图尺寸调整偏移量）
     std::vector<MapChunk> chunks = {
@@ -167,8 +168,8 @@ bool NextScene::init()
                     facingRight = knight->getScaleX() > 0;
                 }
                 
-                // 目标位置
-                Vec2 spawnPos(8606.7f, 300.0f);
+                // 目标位置（原坐标 * 1.45倍）
+                Vec2 spawnPos(12479.7f, 435.0f);
                 
                 // 创建全黑过渡场景
                 auto blackScene = Scene::create();
@@ -263,7 +264,7 @@ void NextScene::loadExitObjects(TMXTiledMap* map, float scale, const Vec2& mapOf
         
         ExitObject exitObj;
         exitObj.position = Vec2(x + width / 2, y + height / 2);
-        exitObj.radius = std::max(width, height) / 2 + 50.0f;
+        exitObj.radius = std::max(width, height) / 2 + 72.5f;  // 50.0f * 1.45 = 72.5f
         
         _exitObjects.push_back(exitObj);
         
@@ -304,7 +305,7 @@ void NextScene::loadThornObjects(TMXTiledMap* map, float scale, const Vec2& mapO
         
         ThornObject thornObj;
         thornObj.position = Vec2(x + width / 2, y + height / 2);
-        thornObj.size = Size(width + 50.0f, height + 50.0f);
+        thornObj.size = Size(width + 72.5f, height + 72.5f);  // 50.0f * 1.45 = 72.5f
         
         _thornObjects.push_back(thornObj);
         
@@ -540,6 +541,10 @@ void NextScene::update(float dt)
     if (!camera) return;
 
     Vec2 knightPos = knight->getPosition();
+    Size visibleSize = Director::getInstance()->getVisibleSize();
+    
+    // 计算垂直偏移，让角色在屏幕下1/3处
+    float verticalOffset = visibleSize.height / 6.0f;
     
     // 处理尖刺死亡流程
     if (_isInSpikeDeath)
@@ -548,8 +553,7 @@ void NextScene::update(float dt)
         
         // 尖刺死亡期间仍然更新摄像机位置
         Vec2 cameraPos = camera->getPosition();
-        float cameraOffsetY = 200.0f;
-        Vec2 targetPos = Vec2(knightPos.x, knightPos.y + cameraOffsetY);
+        Vec2 targetPos = Vec2(knightPos.x, knightPos.y + verticalOffset);
         float lerpFactor = 0.1f;
         Vec2 newPos = cameraPos + (targetPos - cameraPos) * lerpFactor;
         newPos = newPos + _shakeOffset;
@@ -635,11 +639,10 @@ void NextScene::update(float dt)
         }
     }
 
-    // 摄像机平滑跟随角色
+    // 摄像机平滑跟随角色（角色在屏幕下1/3处）
     Vec2 cameraPos = camera->getPosition();
     
-    float cameraOffsetY = 200.0f;
-    Vec2 targetPos = Vec2(knightPos.x, knightPos.y + cameraOffsetY);
+    Vec2 targetPos = Vec2(knightPos.x, knightPos.y + verticalOffset);
     
     float lerpFactor = 0.1f;
     Vec2 newPos = cameraPos + (targetPos - cameraPos) * lerpFactor;
@@ -912,7 +915,7 @@ void NextScene::updateHPAndSoulUI(float dt)
     auto knight = dynamic_cast<TheKnight*>(this->getChildByName("Player"));
     if (!knight || !_uiLayer) return;
     
-    // 更新UI层位置跟随摄像机
+    // 更新UI层位置跟随摄像头
     auto scene = this->getScene();
     if (scene)
     {
