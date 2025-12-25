@@ -27,8 +27,14 @@ private:
         const cocos2d::Vec2& mapOffset);
     void checkInteractions();
     
-    // 摄像机更新
+    // 摄像机相关
     void updateCamera();
+    
+    // HP和Soul UI相关
+    void createHPAndSoulUI();
+    void updateHPAndSoulUI(float dt);
+    void startHPRecoveryAnimation();  // 开始血量恢复动画
+    void updateHPRecoveryAnimation(float dt);  // 更新血量恢复动画
 
     // 交互对象
     struct InteractiveObject {
@@ -44,19 +50,38 @@ private:
     // 玩家
     TheKnight* _knight = nullptr;
     
-    // UI 提示标签
+    // UI 显示标签
     cocos2d::Label* _interactionLabel = nullptr;
     
-    // 防止重复切换场景
+    // 禁止重复切换场景
     bool _isTransitioning = false;
     
     // 地图信息
     float scale = 1.8f;
     cocos2d::Size _mapSize;
     
-    // 摄像机偏移（看向上/下）
+    // 摄像机偏移（上看/下看）
     float _cameraOffsetY = 0.0f;
     float _targetCameraOffsetY = 0.0f;
+    
+    // HP和Soul UI
+    cocos2d::Node* _uiLayer = nullptr;           // UI层（跟随摄像机）
+    cocos2d::Sprite* _hpBg = nullptr;            // 血条背景
+    cocos2d::Sprite* _soulBg = nullptr;          // 灵魂背景
+    std::vector<cocos2d::Sprite*> _hpBars;       // 血量图标
+    cocos2d::Sprite* _hpLose = nullptr;          // 失去血量图标
+    int _lastDisplayedHP = 0;                    // 上次显示的HP
+    int _lastDisplayedSoul = 0;                  // 上次显示的灵魂值
+    
+    // 血量恢复动画相关
+    bool _isHPRecovering = false;                // 是否正在恢复血量
+    int _hpRecoverTarget = 0;                    // 目标血量
+    int _hpRecoverCurrent = 0;                   // 当前恢复到的血量
+    float _hpRecoverTimer = 0.0f;                // 恢复计时器
+    float _hpRecoverInterval = 0.3f;             // 每个血量恢复间隔
+    
+    // 坐下状态追踪
+    bool _wasSitting = false;                    // 上一帧是否坐着
 };
 
 #endif // __GAME_SCENE_H__

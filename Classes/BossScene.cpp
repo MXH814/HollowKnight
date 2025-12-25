@@ -21,17 +21,16 @@ bool BossScene::init()
     this->addChild(blackLayer, 10, "LoadingBlack");
 
     // 加载 TMX 地图
-    scale = 1.0f;  // 不缩放，与原项目保持一致
+    scale = 1.0f;
     _map = TMXTiledMap::create("Maps/Bossroom.tmx");
     CCASSERT(_map != nullptr, "TMX 地图加载失败");
 
-    // 【关键点】锚点和位置必须是 (0,0)
     _map->setAnchorPoint(Vec2::ZERO);
     _map->setPosition(origin);
     _map->setScale(scale);
     this->addChild(_map, 0);
     
-    // 计算地图尺寸
+    // 保存地图尺寸
     auto mapContentSize = _map->getContentSize();
     _mapSize = Size(mapContentSize.width * scale, mapContentSize.height * scale);
 
@@ -53,6 +52,11 @@ bool BossScene::init()
         _knight->setPosition(Vec2(startX, startY));
         _knight->setScale(1.0f);
         _knight->setPlatforms(_platforms);
+        
+        // 进入Boss场景时重置：HP满，Soul为0
+        _knight->setHP(_knight->getMaxHP());
+        _knight->setSoul(0);
+        
         this->addChild(_knight, 10, "PlayerInstance");
     }
 
@@ -60,8 +64,6 @@ bool BossScene::init()
     _hornet = HornetBoss::createWithFolder("Hornet");
     if (_hornet)
     {
-        // 【关键】使用原项目中固定的边界值
-        // groundY = 180.0f, minX = 500.0f, maxX = 1900.0f
         float groundY = 180.0f;
         float minX = 500.0f;
         float maxX = 1900.0f;
@@ -70,14 +72,12 @@ bool BossScene::init()
         _hornet->setName("HornetBoss");
         this->addChild(_hornet, 9);
         
-        // 启动Boss AI，传入玩家节点
         if (_knight)
         {
             _hornet->startAI(_knight);
         }
         else
         {
-            // 保险起见，如果没有玩家也让他先入场
             _hornet->playEntryAnimation(600, 800);
         }
         
@@ -103,25 +103,8 @@ bool BossScene::init()
     menu->setPosition(Vec2::ZERO);
     this->addChild(menu, 100);
 
-    // 创建HP显示标签
-    _hpLabel = Label::createWithTTF("HP: 5", "fonts/Marker Felt.ttf", 32);
-    if (_hpLabel)
-    {
-        _hpLabel->setAnchorPoint(Vec2(0, 1));
-        _hpLabel->setPosition(Vec2(origin.x + 20, origin.y + visibleSize.height - 20));
-        _hpLabel->setTextColor(Color4B(255, 255, 255, 255));
-        this->addChild(_hpLabel, 100);
-    }
-    
-    // 创建Soul显示标签
-    _soulLabel = Label::createWithTTF("Soul: 0/6", "fonts/Marker Felt.ttf", 32);
-    if (_soulLabel)
-    {
-        _soulLabel->setAnchorPoint(Vec2(1, 1));
-        _soulLabel->setPosition(Vec2(origin.x + visibleSize.width - 20, origin.y + visibleSize.height - 20));
-        _soulLabel->setTextColor(Color4B(200, 200, 255, 255));
-        this->addChild(_soulLabel, 100);
-    }
+    // 创建HP和Soul UI
+    createHPAndSoulUI();
     
     // 创建Boss HP显示标签
     _bossHPLabel = Label::createWithTTF("HORNET", "fonts/Marker Felt.ttf", 28);
@@ -146,7 +129,6 @@ bool BossScene::init()
         blackLayer->removeFromParent();
     }
     
-    // 输出地图信息（调试用）
     CCLOG("Map Size: %f x %f", _mapSize.width, _mapSize.height);
     CCLOG("Screen Size: %f x %f", visibleSize.width, visibleSize.height);
 
@@ -154,6 +136,181 @@ bool BossScene::init()
     this->scheduleUpdate();
 
     return true;
+}
+
+void BossScene::createHPAndSoulUI()
+{
+    if (!_knight) return;
+    
+    // 创建UI层
+    _uiLayer = Node::create();
+    if (!_uiLayer) return;
+    this->addChild(_uiLayer, 1000);
+    
+    // 血条背景
+    _hpBg = Sprite::create("Hp/hpbg.png");
+    if (_hpBg)
+    {
+        _hpBg->setPosition(Vec2(200, 950));
+        _uiLayer->addChild(_hpBg);
+    }
+    
+    // 初始化血量显示
+    _lastDisplayedHP = _knight->getHP();
+    _lastDisplayedSoul = -1;  // 初始化为-1，确保第一次更新时会触发
+    
+    // 灵魂背景 - Boss场景初始Soul为0，使用soul_1作为默认图像但隐藏
+    int currentSoul = _knight->getSoul();
+    
+    _soulBg = Sprite::create("Hp/soul_1_0.png");  // 使用soul_1作为默认
+    if (_soulBg)
+    {
+        _soulBg->setScale(0.9f);
+        _soulBg->setPosition(Vec2(152, 935));
+        _uiLayer->addChild(_soulBg);
+        
+        // Soul为0时隐藏
+        if (currentSoul <= 0)
+        {
+            _soulBg->setVisible(false);
+        }
+        else
+        {
+            int soulLevel = currentSoul;
+            if (soulLevel > 6) soulLevel = 6;
+            
+            Vector<SpriteFrame*> soulFrames;
+            for (int i = 0; i <= 2; i++) {
+                std::string frameName = "Hp/soul_" + std::to_string(soulLevel) + "_" + std::to_string(i) + ".png";
+                auto texture = Director::getInstance()->getTextureCache()->addImage(frameName);
+                if (texture) {
+                    auto frame = SpriteFrame::createWithTexture(texture, Rect(0, 0, texture->getContentSize().width, texture->getContentSize().height));
+                    if (frame) {
+                        soulFrames.pushBack(frame);
+                    }
+                }
+            }
+            
+            if (!soulFrames.empty())
+            {
+                auto soulAnimation = Animation::createWithSpriteFrames(soulFrames, 0.25f);
+                auto soulAnimate = Animate::create(soulAnimation);
+                _soulBg->runAction(RepeatForever::create(soulAnimate));
+            }
+        }
+        
+        _lastDisplayedSoul = currentSoul;
+    }
+    
+    int maxHp = _knight->getMaxHP();
+    float gap = 50;
+    
+    // 创建血量图标
+    for (int i = 0; i < maxHp; i++)
+    {
+        auto hpBar = Sprite::create("Hp/hp1.png");
+        if (hpBar)
+        {
+            hpBar->setPosition(Vec2(260 + i * gap, 980));
+            hpBar->setScale(0.5f);
+            hpBar->setVisible(i < _lastDisplayedHP);
+            _uiLayer->addChild(hpBar);
+            _hpBars.push_back(hpBar);
+        }
+    }
+    
+    // 失去血量图标
+    _hpLose = Sprite::create("Hp/hp8.png");
+    if (_hpLose)
+    {
+        _hpLose->setPosition(Vec2(260 + _lastDisplayedHP * gap, 978));
+        _hpLose->setScale(0.5f);
+        _hpLose->setVisible(_lastDisplayedHP < maxHp);
+        _uiLayer->addChild(_hpLose);
+    }
+}
+
+void BossScene::updateHPAndSoulUI(float dt)
+{
+    if (!_knight || !_uiLayer) return;
+    
+    // 更新UI层位置跟随摄像机
+    auto camera = this->getDefaultCamera();
+    if (camera)
+    {
+        Vec2 camPos = camera->getPosition();
+        Size visibleSize = Director::getInstance()->getVisibleSize();
+        _uiLayer->setPosition(Vec2(camPos.x - visibleSize.width / 2, camPos.y - visibleSize.height / 2));
+        
+        // 更新Boss HP标签位置
+        if (_bossHPLabel)
+        {
+            _bossHPLabel->setPosition(Vec2(camPos.x, camPos.y - visibleSize.height / 2 + 50));
+        }
+    }
+    
+    int currentHP = _knight->getHP();
+    int currentSoul = _knight->getSoul();
+    int maxHp = _knight->getMaxHP();
+    float gap = 50;
+    
+    // 更新血量显示
+    if (currentHP != _lastDisplayedHP)
+    {
+        for (int i = 0; i < (int)_hpBars.size(); i++)
+        {
+            _hpBars[i]->setVisible(i < currentHP);
+        }
+        
+        if (_hpLose)
+        {
+            _hpLose->setPosition(Vec2(260 + currentHP * gap, 978));
+            _hpLose->setVisible(currentHP < maxHp);
+        }
+        
+        _lastDisplayedHP = currentHP;
+    }
+    
+    // 更新灵魂显示
+    if (_soulBg && currentSoul != _lastDisplayedSoul)
+    {
+        _lastDisplayedSoul = currentSoul;
+        
+        _soulBg->stopAllActions();
+        
+        // Soul为0时隐藏，否则显示对应等级的动画
+        if (currentSoul <= 0)
+        {
+            _soulBg->setVisible(false);
+        }
+        else
+        {
+            _soulBg->setVisible(true);
+            
+            // Soul值1-6对应资源文件soul_1到soul_6
+            int soulLevel = currentSoul;
+            if (soulLevel > 6) soulLevel = 6;
+            
+            Vector<SpriteFrame*> soulFrames;
+            for (int i = 0; i <= 2; i++) {
+                std::string frameName = "Hp/soul_" + std::to_string(soulLevel) + "_" + std::to_string(i) + ".png";
+                auto texture = Director::getInstance()->getTextureCache()->addImage(frameName);
+                if (texture) {
+                    auto frame = SpriteFrame::createWithTexture(texture, Rect(0, 0, texture->getContentSize().width, texture->getContentSize().height));
+                    if (frame) {
+                        soulFrames.pushBack(frame);
+                    }
+                }
+            }
+            
+            if (!soulFrames.empty())
+            {
+                auto soulAnimation = Animation::createWithSpriteFrames(soulFrames, 0.25f);
+                auto soulAnimate = Animate::create(soulAnimation);
+                _soulBg->runAction(RepeatForever::create(soulAnimate));
+            }
+        }
+    }
 }
 
 void BossScene::parseCollisionLayer()
@@ -186,7 +343,7 @@ void BossScene::parseCollisionLayer()
               name.c_str(), x, y, width, height);
     }
     
-    CCLOG("共创建 %zu 个碰撞平台", _platforms.size());
+    CCLOG("创建了 %zu 个碰撞平台", _platforms.size());
 }
 
 void BossScene::updateCamera()
@@ -196,7 +353,6 @@ void BossScene::updateCamera()
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 knightPos = _knight->getPosition();
     
-    // 根据看向状态调整目标偏移
     float lookOffset = 150.0f;
     if (_knight->isLookingUp())
     {
@@ -211,22 +367,18 @@ void BossScene::updateCamera()
         _targetCameraOffsetY = 0.0f;
     }
     
-    // 平滑插值看向偏移
     float offsetLerpFactor = 0.05f;
     _cameraOffsetY += (_targetCameraOffsetY - _cameraOffsetY) * offsetLerpFactor;
     
-    // 计算摄像机目标位置（骑士在屏幕中心）
     float cameraX = knightPos.x;
     float cameraY = knightPos.y + _cameraOffsetY;
     
-    // 限制摄像机范围，不要超出地图边界
     cameraX = std::max(cameraX, visibleSize.width / 2);
     cameraX = std::min(cameraX, _mapSize.width - visibleSize.width / 2);
     
     cameraY = std::max(cameraY, visibleSize.height / 2);
     cameraY = std::min(cameraY, _mapSize.height - visibleSize.height / 2);
     
-    // 平滑移动摄像机
     auto camera = this->getDefaultCamera();
     Vec2 currentCamPos = camera->getPosition();
     float lerpFactor = 0.1f;
@@ -235,42 +387,6 @@ void BossScene::updateCamera()
     float newY = currentCamPos.y + (cameraY - currentCamPos.y) * lerpFactor;
     
     camera->setPosition(Vec2(newX, newY));
-    
-    // 更新UI位置（UI需要跟随摄像机）
-    if (_hpLabel)
-    {
-        _hpLabel->setPosition(Vec2(newX - visibleSize.width / 2 + 20, 
-                                   newY + visibleSize.height / 2 - 20));
-    }
-    if (_soulLabel)
-    {
-        _soulLabel->setPosition(Vec2(newX + visibleSize.width / 2 - 20, 
-                                     newY + visibleSize.height / 2 - 20));
-    }
-    if (_bossHPLabel)
-    {
-        _bossHPLabel->setPosition(Vec2(newX, newY - visibleSize.height / 2 + 50));
-    }
-}
-
-void BossScene::updateHPLabel()
-{
-    if (_hpLabel && _knight)
-    {
-        char hpText[32];
-        sprintf(hpText, "HP: %d", _knight->getHP());
-        _hpLabel->setString(hpText);
-    }
-}
-
-void BossScene::updateSoulLabel()
-{
-    if (_soulLabel && _knight)
-    {
-        char soulText[32];
-        sprintf(soulText, "Soul: %d/%d", _knight->getSoul(), _knight->getMaxSoul());
-        _soulLabel->setString(soulText);
-    }
 }
 
 void BossScene::checkCombatCollisions()
@@ -284,14 +400,12 @@ void BossScene::checkCombatCollisions()
         Rect knightRect = _knight->getBoundingBox();
         bool knightHit = false;
         
-        // 检测Boss本体碰撞
         Rect bossRect = _hornet->getBossHitRect();
         if (knightRect.intersectsRect(bossRect))
         {
             knightHit = true;
         }
         
-        // 检测投掷武器碰撞（Attack2）
         if (!knightHit)
         {
             Rect weaponRect = _hornet->getWeaponRect();
@@ -301,7 +415,6 @@ void BossScene::checkCombatCollisions()
             }
         }
         
-        // 检测乱舞攻击碰撞（Attack4）
         if (!knightHit)
         {
             Rect attack4Rect = _hornet->getAttack4Rect();
@@ -311,10 +424,8 @@ void BossScene::checkCombatCollisions()
             }
         }
         
-        // 如果被击中
         if (knightHit)
         {
-            // 设置后退方向（根据Boss位置）
             bool fromRight = (_hornet->getPositionX() > _knight->getPositionX());
             _knight->setKnockbackDirection(fromRight);
             _knight->takeDamage(1);
@@ -324,7 +435,6 @@ void BossScene::checkCombatCollisions()
     // ========== 2. 检测TheKnight对Hornet的伤害 ==========
     Rect bossHurtRect = _hornet->getBossHitRect();
     
-    // 更新冷却计时器
     float dt = Director::getInstance()->getDeltaTime();
     if (_knightAttackCooldown > 0)
     {
@@ -335,7 +445,6 @@ void BossScene::checkCombatCollisions()
         _spellAttackCooldown -= dt;
     }
     
-    // 检测骑士斩击（Slash）碰撞
     if (_knightAttackCooldown <= 0)
     {
         Rect slashRect;
@@ -345,7 +454,6 @@ void BossScene::checkCombatCollisions()
             {
                 _hornet->onDamaged();
                 
-                // 增加灵魂值（考虑灵魂捕手护符）
                 int soulGain = 1;
                 if (_knight->getCharmSoulCatcher())
                 {
@@ -353,16 +461,13 @@ void BossScene::checkCombatCollisions()
                 }
                 _knight->addSoul(soulGain);
                 
-                // 下劈命中敌人后弹反
                 _knight->bounceFromDownSlash();
                 
-                // 设置攻击冷却，防止一次攻击多次伤害
                 _knightAttackCooldown = 0.3f;
             }
         }
     }
     
-    // 检测法术（Vengeful Spirit）碰撞
     if (_spellAttackCooldown <= 0)
     {
         Sprite* spellEffect = _knight->getVengefulSpiritEffect();
@@ -377,15 +482,12 @@ void BossScene::checkCombatCollisions()
             
             if (spellRect.intersectsRect(bossHurtRect))
             {
-                // 法术伤害（考虑萨满之石护符）
                 _hornet->onDamaged();
                 if (_knight->getCharmShamanStone())
                 {
-                    // 萨满之石额外伤害
                     _hornet->onDamaged();
                 }
                 
-                // 设置法术冷却
                 _spellAttackCooldown = 0.2f;
             }
         }
@@ -395,8 +497,7 @@ void BossScene::checkCombatCollisions()
 void BossScene::update(float dt)
 {
     updateCamera();
-    updateHPLabel();
-    updateSoulLabel();
+    updateHPAndSoulUI(dt);
     
     // 碰撞检测
     checkCombatCollisions();

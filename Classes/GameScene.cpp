@@ -60,20 +60,20 @@ bool GameScene::init()
         totalMapWidth = std::max(totalMapWidth, mapRight);
         maxMapHeight = std::max(maxMapHeight, mapTop);
 
-        // 创建碰撞平台（使用 Platform 结构，与 BossScene 相同）
+        // 创建碰撞平台
         createCollisionFromTMX(map, "Collision", scale, mapPos);
         
-        // 加载交互对象（如椅子、出口）
+        // 加载交互对象（椅子、出口）
         loadInteractiveObjects(map, scale, mapPos);
 
-        // 加载前景对象（bg类，显示在角色上层）
+        // 加载前景对象
         loadForegroundObjects(map, scale, mapPos);
     }
     
     // 保存地图尺寸
     _mapSize = Size(totalMapWidth, maxMapHeight);
 
-    // 从地图块获取玩家起始点
+    // 从地图获取玩家起始点
     auto firstMap = TMXTiledMap::create("Maps/Dirtmouth2.tmx");
     auto objectGroup = firstMap->getObjectGroup("Objects");
     CCASSERT(objectGroup != nullptr, "地图缺少对象层 Objects");
@@ -83,30 +83,36 @@ bool GameScene::init()
     float startX = startPoint["x"].asFloat() * scale + mapOffsetX;
     float startY = startPoint["y"].asFloat() * scale;
 
-    // 创建玩家（使用 TheKnight，与 BossScene 相同）
+    // 创建玩家
     _knight = TheKnight::create();
     if (_knight)
     {
         _knight->setPosition(Vec2(startX, startY));
         _knight->setScale(1.0f);
-        _knight->setPlatforms(_platforms);  // 设置碰撞平台
+        _knight->setPlatforms(_platforms);
         this->addChild(_knight, 5, "Player");
     }
 
-    // 创建交互提示标签（跟随摄像机，初始隐藏）
+    // 创建交互提示标签
     _interactionLabel = Label::createWithSystemFont(u8"休息", "fonts/ZCOOLXiaoWei-Regular.ttf", 24);
     _interactionLabel->setTextColor(Color4B::WHITE);
     _interactionLabel->setVisible(false);
     this->addChild(_interactionLabel, 100, "InteractionLabel");
 
+    // 创建HP和Soul UI
+    createHPAndSoulUI();
+
     // 初始化摄像机偏移
     _cameraOffsetY = 0.0f;
     _targetCameraOffsetY = 0.0f;
+    
+    // 初始化坐下状态追踪
+    _wasSitting = false;
 
-    // 添加键盘事件监听器用于触发椅子交互
+    // 添加键盘事件监听
     auto keyboardListener = EventListenerKeyboard::create();
     keyboardListener->onKeyPressed = [this](EventKeyboard::KeyCode keyCode, Event* event) {
-        // 当靠近椅子且按W键时开始坐下
+        // 如果玩家靠近椅子并按W键时开始坐下
         if (_knight && _knight->isNearChair() && !_knight->isSitting())
         {
             if (keyCode == EventKeyboard::KeyCode::KEY_W || 
@@ -118,7 +124,7 @@ bool GameScene::init()
     };
     _eventDispatcher->addEventListenerWithSceneGraphPriority(keyboardListener, this);
 
-    // 启用 update 实现摄像机跟随
+    // 启用 update
     this->scheduleUpdate();
 
     // 移除黑层
@@ -126,9 +132,261 @@ bool GameScene::init()
         blackLayer1->removeFromParent();
     }
     
-    CCLOG("加载了 %zu 个碰撞平台", _platforms.size());
+    CCLOG("创建了 %zu 个碰撞平台", _platforms.size());
 
     return true;
+}
+
+void GameScene::createHPAndSoulUI()
+{
+    if (!_knight) return;
+    
+    // 创建UI层（固定在屏幕上，不随场景移动）
+    _uiLayer = Node::create();
+    if (!_uiLayer) return;
+    this->addChild(_uiLayer, 1000);  // 最高层级
+    
+    // 血条背景
+    _hpBg = Sprite::create("Hp/hpbg.png");
+    if (_hpBg)
+    {
+        _hpBg->setPosition(Vec2(200, 950));
+        _uiLayer->addChild(_hpBg);
+    }
+    
+    // 初始化血量和灵魂显示
+    _lastDisplayedHP = _knight->getHP();
+    _lastDisplayedSoul = -1;  // 初始化为-1，确保第一次更新时会触发动画
+    
+    // 灵魂背景 - 根据当前灵魂值选择对应资源
+    int currentSoul = _knight->getSoul();
+    int soulLevel = currentSoul;
+    if (soulLevel > 6) soulLevel = 6;
+    if (soulLevel < 1) soulLevel = 1;  // 最小为1，因为没有soul_0资源
+    
+    std::string soulImage = "Hp/soul_" + std::to_string(soulLevel) + "_0.png";
+    _soulBg = Sprite::create(soulImage);
+    if (_soulBg)
+    {
+        _soulBg->setScale(0.9f);
+        _soulBg->setPosition(Vec2(152, 935));
+        _uiLayer->addChild(_soulBg);
+        
+        // 如果Soul为0，隐藏灵魂显示
+        if (currentSoul <= 0)
+        {
+            _soulBg->setVisible(false);
+        }
+        else
+        {
+            // 初始化灵魂动画
+            Vector<SpriteFrame*> soulFrames;
+            for (int i = 0; i <= 2; i++) {
+                std::string frameName = "Hp/soul_" + std::to_string(soulLevel) + "_" + std::to_string(i) + ".png";
+                auto texture = Director::getInstance()->getTextureCache()->addImage(frameName);
+                if (texture) {
+                    auto frame = SpriteFrame::createWithTexture(texture, Rect(0, 0, texture->getContentSize().width, texture->getContentSize().height));
+                    if (frame) {
+                        soulFrames.pushBack(frame);
+                    }
+                }
+            }
+            
+            if (!soulFrames.empty())
+            {
+                auto soulAnimation = Animation::createWithSpriteFrames(soulFrames, 0.25f);
+                auto soulAnimate = Animate::create(soulAnimation);
+                _soulBg->runAction(RepeatForever::create(soulAnimate));
+            }
+        }
+        
+        _lastDisplayedSoul = currentSoul;
+    }
+    
+    int maxHp = _knight->getMaxHP();
+    float gap = 50;
+    
+    // 创建血量图标
+    for (int i = 0; i < maxHp; i++)
+    {
+        auto hpBar = Sprite::create("Hp/hp1.png");
+        if (hpBar)
+        {
+            hpBar->setPosition(Vec2(260 + i * gap, 980));
+            hpBar->setScale(0.5f);
+            hpBar->setVisible(i < _lastDisplayedHP);  // 只显示当前血量
+            _uiLayer->addChild(hpBar);
+            _hpBars.push_back(hpBar);
+        }
+    }
+    
+    // 失去血量图标
+    _hpLose = Sprite::create("Hp/hp8.png");
+    if (_hpLose)
+    {
+        _hpLose->setPosition(Vec2(260 + _lastDisplayedHP * gap, 978));
+        _hpLose->setScale(0.5f);
+        _hpLose->setVisible(_lastDisplayedHP < maxHp);
+        _uiLayer->addChild(_hpLose);
+    }
+}
+
+void GameScene::updateHPAndSoulUI(float dt)
+{
+    if (!_knight || !_uiLayer) return;
+    
+    // 更新UI层位置跟随摄像机
+    auto camera = this->getDefaultCamera();
+    if (camera)
+    {
+        Vec2 camPos = camera->getPosition();
+        Size visibleSize = Director::getInstance()->getVisibleSize();
+        // UI层左上角对齐
+        _uiLayer->setPosition(Vec2(camPos.x - visibleSize.width / 2, camPos.y - visibleSize.height / 2));
+    }
+    
+    // 更新血量恢复动画
+    if (_isHPRecovering)
+    {
+        updateHPRecoveryAnimation(dt);
+    }
+    
+    int currentHP = _knight->getHP();
+    int currentSoul = _knight->getSoul();
+    int maxHp = _knight->getMaxHP();
+    float gap = 50;
+    
+    // 如果不在恢复动画中，正常更新血量显示
+    if (!_isHPRecovering && currentHP != _lastDisplayedHP)
+    {
+        // 更新血量图标显示
+        for (int i = 0; i < (int)_hpBars.size(); i++)
+        {
+            _hpBars[i]->setVisible(i < currentHP);
+        }
+        
+        // 更新失去血量图标位置
+        if (_hpLose)
+        {
+            _hpLose->setPosition(Vec2(260 + currentHP * gap, 978));
+            _hpLose->setVisible(currentHP < maxHp);
+        }
+        
+        // 更新灵魂显示
+        if (_soulBg && currentSoul != _lastDisplayedSoul)
+        {
+            _lastDisplayedSoul = currentSoul;
+            
+            // 停止之前的动画
+            _soulBg->stopAllActions();
+            
+            // Soul为0时隐藏，否则显示对应等级的动画
+            if (currentSoul <= 0)
+            {
+                _soulBg->setVisible(false);
+            }
+            else
+            {
+                _soulBg->setVisible(true);
+                
+                // Soul值1-6对应资源文件soul_1到soul_6
+                int soulLevel = currentSoul;
+                if (soulLevel > 6) soulLevel = 6;
+                
+                // 创建灵魂动画帧
+                Vector<SpriteFrame*> soulFrames;
+                for (int i = 0; i <= 2; i++) {
+                    std::string frameName = "Hp/soul_" + std::to_string(soulLevel) + "_" + std::to_string(i) + ".png";
+                    auto texture = Director::getInstance()->getTextureCache()->addImage(frameName);
+                    if (texture) {
+                        auto frame = SpriteFrame::createWithTexture(texture, Rect(0, 0, texture->getContentSize().width, texture->getContentSize().height));
+                        if (frame) {
+                            soulFrames.pushBack(frame);
+                        }
+                    }
+                }
+                
+                if (!soulFrames.empty())
+                {
+                    auto soulAnimation = Animation::createWithSpriteFrames(soulFrames, 0.25f);
+                    auto soulAnimate = Animate::create(soulAnimation);
+                    _soulBg->runAction(RepeatForever::create(soulAnimate));
+                }
+            }
+        }
+        
+        _lastDisplayedHP = currentHP;
+    }
+}
+
+void GameScene::startHPRecoveryAnimation()
+{
+    if (!_knight) return;
+    
+    int maxHP = _knight->getMaxHP();
+    int currentHP = _knight->getHP();
+    
+    // 如果已经满血，不需要恢复动画
+    if (currentHP >= maxHP) return;
+    
+    // 设置骑士血量为满血
+    _knight->setHP(maxHP);
+    
+    // 开始恢复动画
+    _isHPRecovering = true;
+    _hpRecoverCurrent = _lastDisplayedHP;  // 从当前显示的血量开始
+    _hpRecoverTarget = maxHP;
+    _hpRecoverTimer = 0.0f;
+    
+    CCLOG("开始血量恢复动画: %d -> %d", _hpRecoverCurrent, _hpRecoverTarget);
+}
+
+void GameScene::updateHPRecoveryAnimation(float dt)
+{
+    if (!_isHPRecovering) return;
+    
+    _hpRecoverTimer += dt;
+    
+    // 每隔一段时间恢复一点血量显示
+    if (_hpRecoverTimer >= _hpRecoverInterval)
+    {
+        _hpRecoverTimer = 0.0f;
+        _hpRecoverCurrent++;
+        
+        // 更新血量图标显示
+        if (_hpRecoverCurrent - 1 < (int)_hpBars.size())
+        {
+            auto hpBar = _hpBars[_hpRecoverCurrent - 1];
+            hpBar->setVisible(true);
+            
+            // 添加一个小的缩放动画效果
+            hpBar->setScale(0.0f);
+            hpBar->runAction(Sequence::create(
+                ScaleTo::create(0.15f, 0.6f),
+                ScaleTo::create(0.1f, 0.5f),
+                nullptr
+            ));
+        }
+        
+        // 更新失去血量图标位置
+        float gap = 50;
+        if (_hpLose)
+        {
+            _hpLose->setPosition(Vec2(260 + _hpRecoverCurrent * gap, 978));
+            _hpLose->setVisible(_hpRecoverCurrent < _hpRecoverTarget);
+        }
+        
+        _lastDisplayedHP = _hpRecoverCurrent;
+        
+        CCLOG("血量恢复: %d / %d", _hpRecoverCurrent, _hpRecoverTarget);
+        
+        // 检查是否恢复完成
+        if (_hpRecoverCurrent >= _hpRecoverTarget)
+        {
+            _isHPRecovering = false;
+            CCLOG("血量恢复完成");
+        }
+    }
 }
 
 void GameScene::loadInteractiveObjects(TMXTiledMap* map, float scale, const Vec2& mapOffset)
@@ -279,6 +537,23 @@ void GameScene::update(float dt)
 {
     // 更新摄像机
     updateCamera();
+    
+    // 更新HP和Soul UI
+    updateHPAndSoulUI(dt);
+    
+    // 检测坐下状态变化（坐下时自动回血）
+    if (_knight)
+    {
+        bool isSitting = _knight->isSitting();
+        
+        // 刚坐下时触发回血
+        if (isSitting && !_wasSitting)
+        {
+            startHPRecoveryAnimation();
+        }
+        
+        _wasSitting = isSitting;
+    }
     
     // 检测交互
     checkInteractions();

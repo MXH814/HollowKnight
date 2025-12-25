@@ -105,81 +105,10 @@ bool MainMenuScene::init()
     this->addChild(menu);
 
     // 播放菜单背景音乐（循环）
-    // 资源路径示例：Resources/Audio/menu_bgm.mp3
     SimpleAudioEngine::getInstance()->playBackgroundMusic("Music/Title.wav", true);
 
-    // ===== 血量初始化 =====
-    int maxHp = 5;
-    int currentHp = 5;
-
-    // 血条背景
-    auto hpBg = Sprite::create("Hp/hpbg.png");
-    hpBg->setPosition(Vec2(200, 950));
-    this->addChild(hpBg);
-
-    static int soul = 4;
-
-    auto soulbg = Sprite::create("Hp/soul_1_0.png");
-    soulbg->setScale(0.9f);
-    soulbg->setPosition(Vec2(152, 935));
-    this->addChild(soulbg);
-
-
-    // 创建灵魂动画帧
-    Vector<SpriteFrame*> soulFrames;
-    for (int i = 0; i <= 2; i++) {
-        std::string frameName = "Hp/soul_"+ std::to_string(soul) + "_" + std::to_string(i) + ".png";
-        auto frame = SpriteFrame::create(frameName, Rect(0, 0,
-            soulbg->getContentSize().width, soulbg->getContentSize().height));
-        if (frame) {
-            soulFrames.pushBack(frame);
-        }
-    }
-
-    // 创建并播放循环动画
-    auto soulAnimation = Animation::createWithSpriteFrames(soulFrames, 0.25f);
-    auto soulAnimate = Animate::create(soulAnimation);
-    auto repeatForever = RepeatForever::create(soulAnimate);
-    soulbg->runAction(repeatForever);
-
-    // 当前血量条
-    float startX = 20;
-    float gap = 50;
-
-    for (int i = 0; i < maxHp; i++)
-    {
-        auto hpBar = Sprite::create("Hp/hp1.png");
-        hpBar->setPosition(Vec2(260 + i * gap, 980));
-        hpBar->setScale(0.5f);
-        this->addChild(hpBar);
-    }
-
-    int lost = currentHp - maxHp;
-    if (lost < 0)
-    {
-        auto hplose = Sprite::create("Hp/hp8.png");
-        hplose->setPosition(Vec2(260 + currentHp * gap, 978));
-        hplose->setScale(0.5f);
-        this->addChild(hplose);
-    }
-
-    auto coin = Sprite::create("Hp/coin.png");
-    coin->setPosition(Vec2(260, 900));
-    this->addChild(coin);
-
-    int coins;
-    coins = 14;
-
-    cocos2d::Label* coinsnum;
-    coinsnum = Label::createWithTTF(
-        std::to_string(coins),
-        "fonts/Perpetua.ttf",
-        50
-    );
-
-    coinsnum->setColor(Color3B::WHITE);
-    coinsnum->setPosition(Vec2(350, 900));
-    this->addChild(coinsnum);
+    // 注意：血量和灵魂UI已移至GameScene中显示
+    // 主菜单不显示这些UI，因为没有角色
 
     // 添加键盘事件监听
     auto listener = EventListenerKeyboard::create();

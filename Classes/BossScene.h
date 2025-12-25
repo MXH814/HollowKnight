@@ -18,21 +18,21 @@ public:
     CREATE_FUNC(BossScene);
 
 private:
-    // 从地图碰撞层解析平台
+    // 从地图解析碰撞平台
     void parseCollisionLayer();
     
     // 更新摄像机
     void updateCamera();
     
-    // 更新UI
-    void updateHPLabel();
-    void updateSoulLabel();
+    // HP和Soul UI相关
+    void createHPAndSoulUI();
+    void updateHPAndSoulUI(float dt);
     
     // 碰撞检测
     void checkCombatCollisions();
     
     // 玩家
-    TheKnight* _knight;
+    TheKnight* _knight = nullptr;
     
     // Boss
     HornetBoss* _hornet = nullptr;
@@ -41,17 +41,24 @@ private:
     std::vector<Platform> _platforms;
     
     // 地图相关
-    cocos2d::TMXTiledMap* _map;
-    float scale;
+    cocos2d::TMXTiledMap* _map = nullptr;
+    float scale = 1.0f;
     cocos2d::Size _mapSize;
     
     // 摄像机相关
-    float _cameraOffsetY;
-    float _targetCameraOffsetY;
+    float _cameraOffsetY = 0.0f;
+    float _targetCameraOffsetY = 0.0f;
     
-    // UI标签
-    cocos2d::Label* _hpLabel;
-    cocos2d::Label* _soulLabel;
+    // HP和Soul UI
+    cocos2d::Node* _uiLayer = nullptr;
+    cocos2d::Sprite* _hpBg = nullptr;
+    cocos2d::Sprite* _soulBg = nullptr;
+    std::vector<cocos2d::Sprite*> _hpBars;
+    cocos2d::Sprite* _hpLose = nullptr;
+    int _lastDisplayedHP = 0;
+    int _lastDisplayedSoul = 0;
+    
+    // Boss HP标签
     cocos2d::Label* _bossHPLabel = nullptr;
     
     // 攻击命中冷却（防止一次攻击多次伤害）

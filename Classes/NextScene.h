@@ -54,6 +54,10 @@ private:
     // 屏幕震动效果
     void shakeScreen(float duration, float intensity);
     
+    // HP和Soul UI相关
+    void createHPAndSoulUI();
+    void updateHPAndSoulUI(float dt);
+    
     // 物理碰撞回调
     bool onContactBegin(cocos2d::PhysicsContact& contact);
     
@@ -75,6 +79,15 @@ private:
     float _shakeElapsed = 0.0f;        // 震动已经过时间
     float _shakeIntensity = 0.0f;      // 震动强度
     cocos2d::Vec2 _shakeOffset;        // 震动偏移量
+    
+    // HP和Soul UI
+    cocos2d::Node* _uiLayer = nullptr;
+    cocos2d::Sprite* _hpBg = nullptr;
+    cocos2d::Sprite* _soulBg = nullptr;
+    std::vector<cocos2d::Sprite*> _hpBars;
+    cocos2d::Sprite* _hpLose = nullptr;
+    int _lastDisplayedHP = 0;
+    int _lastDisplayedSoul = 0;
 };
 
 #endif // __NEXT_SCENE_H__

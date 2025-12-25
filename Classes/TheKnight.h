@@ -105,10 +105,17 @@ public:
     
     // 获取生命值
     int getHP() const { return _hp; }
+    int getMaxHP() const { return _maxHP; }
+    
+    // 设置生命值（用于恢复）
+    void setHP(int hp) { _hp = std::min(hp, _maxHP); }
     
     // 获取灵魂值
     int getSoul() const { return _soul; }
     int getMaxSoul() const { return _maxSoul; }
+    
+    // 设置灵魂值（用于重置）
+    void setSoul(int soul) { _soul = std::max(0, std::min(soul, _maxSoul)); }
     
     // 增加灵魂值（攻击命中时调用）
     void addSoul(int amount);

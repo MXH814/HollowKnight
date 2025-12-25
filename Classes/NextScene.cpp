@@ -43,6 +43,10 @@ bool NextScene::init()
     _shakeElapsed = 0.0f;
     _shakeIntensity = 0.0f;
     _shakeOffset = Vec2::ZERO;
+    
+    // 初始化UI相关变量
+    _lastDisplayedHP = 0;
+    _lastDisplayedSoul = 0;
 
     // 在加载地图之前添加全黑遮罩层
     auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255));
@@ -117,6 +121,9 @@ bool NextScene::init()
         knight->setPlatforms(_platforms);  // 传递碰撞平台
         this->addChild(knight, 5, "Player");
     }
+
+    // 创建HP和Soul UI
+    createHPAndSoulUI();
 
     // 创建出口提示标签
     _exitLabel = Label::createWithSystemFont(u8"按 Q 离开", "Arial", 24);
@@ -382,6 +389,9 @@ void NextScene::update(float dt)
     
     camera->setPosition(newPos);
     
+    // 更新HP和Soul UI
+    updateHPAndSoulUI(dt);
+    
     checkInteractions();
 }
 
@@ -539,6 +549,181 @@ void NextScene::createTrapSprites(TMXTiledMap* map, const std::string& layerName
             }
             else {
                 CCLOG("警告：无法加载精灵 %s", spritePath.c_str());
+            }
+        }
+    }
+}
+
+void NextScene::createHPAndSoulUI()
+{
+    auto knight = dynamic_cast<TheKnight*>(this->getChildByName("Player"));
+    if (!knight) return;
+    
+    // 创建UI层
+    _uiLayer = Node::create();
+    if (!_uiLayer) return;
+    this->addChild(_uiLayer, 1000);
+    
+    // 血条背景
+    _hpBg = Sprite::create("Hp/hpbg.png");
+    if (_hpBg)
+    {
+        _hpBg->setPosition(Vec2(200, 950));
+        _uiLayer->addChild(_hpBg);
+    }
+    
+    // 初始化血量和灵魂显示
+    _lastDisplayedHP = knight->getHP();
+    _lastDisplayedSoul = -1;  // 初始化为-1，确保第一次更新时会触发
+    
+    // 灵魂背景 - 使用soul_1作为默认图像
+    int currentSoul = knight->getSoul();
+    
+    _soulBg = Sprite::create("Hp/soul_1_0.png");
+    if (_soulBg)
+    {
+        _soulBg->setScale(0.9f);
+        _soulBg->setPosition(Vec2(152, 935));
+        _uiLayer->addChild(_soulBg);
+        
+        // Soul为0时隐藏
+        if (currentSoul <= 0)
+        {
+            _soulBg->setVisible(false);
+        }
+        else
+        {
+            int soulLevel = currentSoul;
+            if (soulLevel > 6) soulLevel = 6;
+            
+            Vector<SpriteFrame*> soulFrames;
+            for (int i = 0; i <= 2; i++) {
+                std::string frameName = "Hp/soul_" + std::to_string(soulLevel) + "_" + std::to_string(i) + ".png";
+                auto texture = Director::getInstance()->getTextureCache()->addImage(frameName);
+                if (texture) {
+                    auto frame = SpriteFrame::createWithTexture(texture, Rect(0, 0, texture->getContentSize().width, texture->getContentSize().height));
+                    if (frame) {
+                        soulFrames.pushBack(frame);
+                    }
+                }
+            }
+            
+            if (!soulFrames.empty())
+            {
+                auto soulAnimation = Animation::createWithSpriteFrames(soulFrames, 0.25f);
+                auto soulAnimate = Animate::create(soulAnimation);
+                _soulBg->runAction(RepeatForever::create(soulAnimate));
+            }
+        }
+        
+        _lastDisplayedSoul = currentSoul;
+    }
+    
+    int maxHp = knight->getMaxHP();
+    float gap = 50;
+    
+    // 创建血量图标
+    for (int i = 0; i < maxHp; i++)
+    {
+        auto hpBar = Sprite::create("Hp/hp1.png");
+        if (hpBar)
+        {
+            hpBar->setPosition(Vec2(260 + i * gap, 980));
+            hpBar->setScale(0.5f);
+            hpBar->setVisible(i < _lastDisplayedHP);
+            _uiLayer->addChild(hpBar);
+            _hpBars.push_back(hpBar);
+        }
+    }
+    
+    // 失去血量图标
+    _hpLose = Sprite::create("Hp/hp8.png");
+    if (_hpLose)
+    {
+        _hpLose->setPosition(Vec2(260 + _lastDisplayedHP * gap, 978));
+        _hpLose->setScale(0.5f);
+        _hpLose->setVisible(_lastDisplayedHP < maxHp);
+        _uiLayer->addChild(_hpLose);
+    }
+}
+
+void NextScene::updateHPAndSoulUI(float dt)
+{
+    auto knight = dynamic_cast<TheKnight*>(this->getChildByName("Player"));
+    if (!knight || !_uiLayer) return;
+    
+    // 更新UI层位置跟随摄像机
+    auto scene = this->getScene();
+    if (scene)
+    {
+        auto camera = scene->getDefaultCamera();
+        if (camera)
+        {
+            Vec2 camPos = camera->getPosition();
+            Size visibleSize = Director::getInstance()->getVisibleSize();
+            _uiLayer->setPosition(Vec2(camPos.x - visibleSize.width / 2, camPos.y - visibleSize.height / 2));
+        }
+    }
+    
+    int currentHP = knight->getHP();
+    int currentSoul = knight->getSoul();
+    int maxHp = knight->getMaxHP();
+    float gap = 50;
+    
+    // 更新血量显示
+    if (currentHP != _lastDisplayedHP)
+    {
+        for (int i = 0; i < (int)_hpBars.size(); i++)
+        {
+            _hpBars[i]->setVisible(i < currentHP);
+        }
+        
+        if (_hpLose)
+        {
+            _hpLose->setPosition(Vec2(260 + currentHP * gap, 978));
+            _hpLose->setVisible(currentHP < maxHp);
+        }
+        
+        _lastDisplayedHP = currentHP;
+    }
+    
+    // 更新灵魂显示
+    if (_soulBg && currentSoul != _lastDisplayedSoul)
+    {
+        _lastDisplayedSoul = currentSoul;
+        
+        _soulBg->stopAllActions();
+        
+        // Soul为0时隐藏，否则显示对应等级的动画
+        if (currentSoul <= 0)
+        {
+            _soulBg->setVisible(false);
+        }
+        else
+        {
+            _soulBg->setVisible(true);
+            
+            // Soul值1-6对应资源文件soul_1到soul_6
+            int soulLevel = currentSoul;
+            if (soulLevel > 6) soulLevel = 6;
+            
+            Vector<SpriteFrame*> soulFrames;
+            for (int i = 0; i <= 2; i++) {
+                std::string frameName = "Hp/soul_" + std::to_string(soulLevel) + "_" + std::to_string(i) + ".png";
+                auto texture = Director::getInstance()->getTextureCache()->addImage(frameName);
+                if (texture) {
+                    auto frame = SpriteFrame::createWithTexture(texture, Rect(0, 0, texture->getContentSize().width, texture->getContentSize().height));
+                    if (frame) {
+                        soulFrames.pushBack(frame);
+                    }
+                }
+            }
+            
+            if (!soulFrames.empty())
+            {
+                auto soulAnimation = Animation::createWithSpriteFrames(soulFrames, 0.25f);
+                auto soulAnimate = Animate::create(soulAnimation);
+                _soulBg->runAction(RepeatForever::create(soulAnimate));
             }
         }
     }
