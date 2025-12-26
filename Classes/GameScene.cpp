@@ -1,12 +1,13 @@
-#include "GameScene.h"
+ï»¿#include "GameScene.h"
 #include "TheKnight.h"
 #include "NextScene.h"
 #include <BossScene.h>
 #include "CharmManager.h"
+#include "Monster/CrawlidMonster.h"
 
 USING_NS_CC;
 
-// ¾²Ì¬±äÁ¿³õÊ¼»¯
+// é™æ€å˜é‡åˆå§‹åŒ–
 bool GameScene::s_hasCustomSpawn = false;
 Vec2 GameScene::s_customSpawnPos = Vec2::ZERO;
 bool GameScene::s_spawnFacingRight = true;
@@ -14,7 +15,6 @@ bool GameScene::s_spawnDoJump = false;
 
 Scene* GameScene::createScene()
 {
-    // ÖØÖÃ¾²Ì¬±äÁ¿
     s_hasCustomSpawn = false;
     s_customSpawnPos = Vec2::ZERO;
     s_spawnFacingRight = true;
@@ -25,13 +25,12 @@ Scene* GameScene::createScene()
 
 Scene* GameScene::createSceneWithSpawn(const Vec2& spawnPos, bool facingRight)
 {
-    // ÉèÖÃ¾²Ì¬±äÁ¿£¨ÔÚcreate/initÖ®Ç°£©
     s_hasCustomSpawn = true;
     s_customSpawnPos = spawnPos;
     s_spawnFacingRight = facingRight;
     s_spawnDoJump = true;
     
-    CCLOG("GameScene::createSceneWithSpawn - ÉèÖÃÉú³É²ÎÊı: pos(%.1f, %.1f), facingRight=%d", 
+    CCLOG("GameScene::createSceneWithSpawn - è®¾ç½®è‡ªå®šä¹‰å‡ºç”Ÿç‚¹: pos(%.1f, %.1f), facingRight=%d", 
           spawnPos.x, spawnPos.y, facingRight);
     
     return GameScene::create();
@@ -45,33 +44,28 @@ bool GameScene::init()
     Size visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-    // ÔÚ¼ÓÔØµØÍ¼Ö®Ç°Ìí¼ÓÈ«ºÚÕÚÕÖ²ã
     auto blackLayer1 = LayerColor::create(Color4B(0, 0, 0, 255));
     this->addChild(blackLayer1, 10, "LoadingBlack");
 
-    // ¶¨ÒåµØÍ¼¿éĞÅÏ¢
     struct MapChunk {
         std::string file;
         Vec2 position;
     };
 
-    scale = 2.61f;  // 1.8f * 1.45f = 2.61f
+    scale = 2.61f;
 
-    // 3¸öµØÍ¼¿éµÄÅäÖÃ
     std::vector<MapChunk> chunks = {
         {"Maps/Dirtmouth1.tmx", Vec2(0, 0)},
         {"Maps/Dirtmouth2.tmx", Vec2(150 * 16, 0)},
         {"Maps/Dirtmouth3.tmx", Vec2(290 * 16, 0)}
     };
 
-    // ¼ÆËã×ÜµØÍ¼³ß´ç
     float totalMapWidth = 0.0f;
     float maxMapHeight = 0.0f;
 
-    // ¼ÓÔØËùÓĞµØÍ¼¿é²¢´´½¨Åö×²Ìå
     for (const auto& chunk : chunks) {
         auto map = TMXTiledMap::create(chunk.file);
-        CCASSERT(map != nullptr, ("µØÍ¼¼ÓÔØÊ§°Ü: " + chunk.file).c_str());
+        CCASSERT(map != nullptr, ("åœ°å›¾åŠ è½½å¤±è´¥: " + chunk.file).c_str());
 
         map->setScale(scale);
         map->setAnchorPoint(Vec2::ZERO);
@@ -80,49 +74,38 @@ bool GameScene::init()
         map->setPosition(mapPos);
         this->addChild(map, 0);
 
-        // ¸üĞÂµØÍ¼×Ü³ß´ç
         auto mapContentSize = map->getContentSize();
         float mapRight = mapPos.x + mapContentSize.width * scale;
         float mapTop = mapPos.y + mapContentSize.height * scale;
         totalMapWidth = std::max(totalMapWidth, mapRight);
         maxMapHeight = std::max(maxMapHeight, mapTop);
 
-        // ´´½¨Åö×²Æ½Ì¨
         createCollisionFromTMX(map, "Collision", scale, mapPos);
-        
-        // ¼ÓÔØ½»»¥¶ÔÏó£¨ÒÎ×Ó¡¢³ö¿Ú£©
         loadInteractiveObjects(map, scale, mapPos);
-
-        // ¼ÓÔØÇ°¾°¶ÔÏó
         loadForegroundObjects(map, scale, mapPos);
     }
     
-    // ±£´æµØÍ¼³ß´ç
     _mapSize = Size(totalMapWidth, maxMapHeight);
 
-    // ´ÓµØÍ¼»ñÈ¡Íæ¼ÒÆğÊ¼µã
     auto firstMap = TMXTiledMap::create("Maps/Dirtmouth2.tmx");
     auto objectGroup = firstMap->getObjectGroup("Objects");
-    CCASSERT(objectGroup != nullptr, "µØÍ¼È±ÉÙ¶ÔÏó²ã Objects");
+    CCASSERT(objectGroup != nullptr, "åœ°å›¾ç¼ºå°‘å¯¹è±¡å±‚ Objects");
 
     auto startPoint = objectGroup->getObject("PlayerStart");
     float mapOffsetX = 150 * 16 * scale;
     float startX = startPoint["x"].asFloat() * scale + mapOffsetX;
     float startY = startPoint["y"].asFloat() * scale;
 
-    // ´´½¨Íæ¼Ò
     _knight = TheKnight::create();
     if (_knight)
     {
-        // Èç¹ûÓĞ×Ô¶¨ÒåÉú³ÉÎ»ÖÃ£¬Ê¹ÓÃ×Ô¶¨ÒåÎ»ÖÃ
         if (s_hasCustomSpawn)
         {
-            CCLOG("Ê¹ÓÃ×Ô¶¨ÒåÉú³ÉÎ»ÖÃ: (%.1f, %.1f), ³¯Ïò: %s", 
+            CCLOG("ä½¿ç”¨è‡ªå®šä¹‰å‡ºç”Ÿç‚¹ä½ç½®: (%.1f, %.1f), æœå‘: %s", 
                   s_customSpawnPos.x, s_customSpawnPos.y, 
-                  s_spawnFacingRight ? "ÓÒ" : "×ó");
+                  s_spawnFacingRight ? "å³" : "å·¦");
             
             _knight->setPosition(s_customSpawnPos);
-            // ÉèÖÃ³¯Ïò£¨Í¨¹ısetScaleX£©
             float scaleValue = s_spawnFacingRight ? 1.0f : -1.0f;
             _knight->setScaleX(scaleValue);
             _knight->setScaleY(1.0f);
@@ -136,57 +119,43 @@ bool GameScene::init()
         _knight->setPlatforms(_platforms);
         this->addChild(_knight, 5, "Player");
         
-        // Í¬²½»¤·û×´Ì¬µ½Íæ¼Ò
         CharmManager::getInstance()->syncToKnight(_knight);
         
-        // Èç¹ûĞèÒªÌøÔ¾¶¯×÷
         if (s_hasCustomSpawn && s_spawnDoJump)
         {
-            // ¼ÆËãÌøÔ¾Ë®Æ½ËÙ¶È£¬¸ù¾İ³¯Ïò
             float horizontalSpeed = s_spawnFacingRight ? 1.0f : -1.0f;
-            
-            // Ê¹ÓÃÆïÊ¿×Ô¼ºµÄÌøÔ¾ÏµÍ³
             _knight->triggerJumpFromExternal(horizontalSpeed);
             
-            CCLOG("Íæ¼Ò´ÓNextScene·µ»Ø£¬Î»ÖÃ(%.1f, %.1f)£¬³¯Ïò%s£¬´¥·¢ÌøÔ¾¶¯×÷", 
+            CCLOG("ç©å®¶ä»NextSceneè¿”å›ï¼šä½ç½®(%.1f, %.1f)ï¼Œæœå‘%sï¼Œè§¦å‘è·³è·ƒåŠ¨ä½œ", 
                   s_customSpawnPos.x, s_customSpawnPos.y, 
-                  s_spawnFacingRight ? "ÓÒ" : "×ó");
+                  s_spawnFacingRight ? "å³" : "å·¦");
         }
         
-        // ÖØÖÃ¾²Ì¬±äÁ¿£¬±ÜÃâÓ°ÏìÏÂ´Î³¡¾°´´½¨
         s_hasCustomSpawn = false;
         s_customSpawnPos = Vec2::ZERO;
         s_spawnFacingRight = true;
         s_spawnDoJump = false;
     }
 
-    // ´´½¨½»»¥ÌáÊ¾±êÇ©
-    _interactionLabel = Label::createWithSystemFont(u8"ĞİÏ¢", "fonts/ZCOOLXiaoWei-Regular.ttf", 24);
+    _interactionLabel = Label::createWithSystemFont(u8"ä¼‘æ¯", "fonts/ZCOOLXiaoWei-Regular.ttf", 24);
     _interactionLabel->setTextColor(Color4B::WHITE);
     _interactionLabel->setVisible(false);
     this->addChild(_interactionLabel, 100, "InteractionLabel");
 
-    // ´´½¨HPºÍSoul UI
     createHPAndSoulUI();
 
-    // ³õÊ¼»¯ÉãÏñÍ·Æ«ÒÆ
     _cameraOffsetY = 0.0f;
     _targetCameraOffsetY = 0.0f;
-    
-    // ³õÊ¼»¯×øÏÂ×´Ì¬×·×Ù
     _wasSitting = false;
 
-    // Ìí¼Ó¼üÅÌÊÂ¼ş¼àÌı
     auto keyboardListener = EventListenerKeyboard::create();
     keyboardListener->onKeyPressed = [this](EventKeyboard::KeyCode keyCode, Event* event) {
-        // °´Q¼ü´ò¿ª/¹Ø±Õ»¤·ûÃæ°å
         if (keyCode == EventKeyboard::KeyCode::KEY_Q)
         {
             auto charmManager = CharmManager::getInstance();
             if (charmManager->isPanelOpen())
             {
                 charmManager->hideCharmPanel();
-                // ¹Ø±ÕÃæ°åºóÍ¬²½»¤·û×´Ì¬µ½Íæ¼Ò
                 if (_knight)
                 {
                     charmManager->syncToKnight(_knight);
@@ -194,14 +163,12 @@ bool GameScene::init()
             }
             else
             {
-                // ¸ù¾İÆïÊ¿ÊÇ·ñ×ø×Å¾ö¶¨ÄÜ·ñ×°Ğ¶»¤·û
                 bool canEquip = _knight && _knight->isSitting();
                 charmManager->showCharmPanel(this, canEquip);
             }
             return;
         }
         
-        // Èç¹ûÍæ¼Ò¿¿½üÒÎ×Ó²¢°´W¼üÊ±¿ªÊ¼×øÏÂ
         if (_knight && _knight->isNearChair() && !_knight->isSitting())
         {
             if (keyCode == EventKeyboard::KeyCode::KEY_W || 
@@ -213,15 +180,13 @@ bool GameScene::init()
     };
     _eventDispatcher->addEventListenerWithSceneGraphPriority(keyboardListener, this);
 
-    // ÆôÓÃ update
     this->scheduleUpdate();
 
-    // ÒÆ³ıºÚ²ã
     if (blackLayer1 && blackLayer1->getParent()) {
         blackLayer1->removeFromParent();
     }
     
-    CCLOG("´´½¨ÁË %zu ¸öÅö×²Æ½Ì¨", _platforms.size());
+    CCLOG("å…±åˆ›å»º %zu ä¸ªç¢°æ’å¹³å°", _platforms.size());
 
     return true;
 }
@@ -230,28 +195,28 @@ void GameScene::createHPAndSoulUI()
 {
     if (!_knight) return;
     
-    // ´´½¨UI²ã£¨¹Ì¶¨ÔÚÆÁÄ»ÉÏ£¬²»Ëæ³¡¾°ÒÆ¶¯£©
-    _uiLayer = Node::create();
-    if (!_uiLayer) return;
-    this->addChild(_uiLayer, 1000);  // ×î¸ß²ã¼¶
+    // åˆ›å»ºUIå±‚ï¼ˆå›ºå®šåœ¨å±å¹•ä¸Šï¼Œä¸éšåœºæ™¯ç§»åŠ¨ï¼‰
+//     _uiLayer = Node::create();
+//     if (!_uiLayer) return;
+//     this->addChild(_uiLayer, 1000);  // æœ€é«˜å±‚çº§
     
-    // ÑªÌõ±³¾°
+    // åˆ›å»ºè¡€æ¡èƒŒæ™¯
     _hpBg = Sprite::create("Hp/hpbg.png");
     if (_hpBg)
     {
         _hpBg->setPosition(Vec2(200, 950));
-        _uiLayer->addChild(_hpBg);
+        this->addChild(_hpBg, 1001);
     }
     
-    // ³õÊ¼»¯ÑªÁ¿ºÍÁé»êÏÔÊ¾
+    // åˆå§‹åŒ–è¡€é‡å’Œçµé­‚æ˜¾ç¤º
     _lastDisplayedHP = _knight->getHP();
-    _lastDisplayedSoul = -1;  // ³õÊ¼»¯Îª-1£¬È·±£µÚÒ»´Î¸üĞÂÊ±»á´¥·¢¶¯»­
+    _lastDisplayedSoul = -1;  // åˆå§‹åŒ–ä¸º-1ï¼Œç¡®ä¿ç¬¬ä¸€æ¬¡æ›´æ–°æ—¶ä¼šè§¦å‘åŠ¨ç”»
     
-    // Áé»ê±³¾° - ¸ù¾İµ±Ç°Áé»êÖµÑ¡Ôñ¶ÔÓ¦×ÊÔ´
+    // çµé­‚èƒŒæ™¯ - æ ¹æ®å½“å‰çµé­‚å€¼é€‰æ‹©å¯¹åº”èµ„æº
     int currentSoul = _knight->getSoul();
     int soulLevel = currentSoul;
     if (soulLevel > 6) soulLevel = 6;
-    if (soulLevel < 1) soulLevel = 1;  // ×îĞ¡Îª1£¬ÒòÎªÃ»ÓĞsoul_0×ÊÔ´
+    if (soulLevel < 1) soulLevel = 1;  // æœ€å°ä¸º1ï¼Œå› ä¸ºæ²¡æœ‰soul_0èµ„æº
     
     std::string soulImage = "Hp/soul_" + std::to_string(soulLevel) + "_0.png";
     _soulBg = Sprite::create(soulImage);
@@ -259,16 +224,16 @@ void GameScene::createHPAndSoulUI()
     {
         _soulBg->setScale(0.9f);
         _soulBg->setPosition(Vec2(152, 935));
-        _uiLayer->addChild(_soulBg);
+        this->addChild(_soulBg, 1001);
         
-        // Èç¹ûSoulÎª0£¬Òş²ØÁé»êÏÔÊ¾
+        // å¦‚æœSoulä¸º0ï¼Œéšè—çµé­‚æ˜¾ç¤º
         if (currentSoul <= 0)
         {
             _soulBg->setVisible(false);
         }
         else
         {
-            // ³õÊ¼»¯Áé»ê¶¯»­
+            // åˆå§‹åŒ–çµé­‚åŠ¨ç”»
             Vector<SpriteFrame*> soulFrames;
             for (int i = 0; i <= 2; i++) {
                 std::string frameName = "Hp/soul_" + std::to_string(soulLevel) + "_" + std::to_string(i) + ".png";
@@ -295,7 +260,7 @@ void GameScene::createHPAndSoulUI()
     int maxHp = _knight->getMaxHP();
     float gap = 50;
     
-    // ´´½¨ÑªÁ¿Í¼±ê
+    // åˆ›å»ºè¡€é‡å›¾æ ‡
     for (int i = 0; i < maxHp; i++)
     {
         auto hpBar = Sprite::create("Hp/hp1.png");
@@ -303,20 +268,20 @@ void GameScene::createHPAndSoulUI()
         {
             hpBar->setPosition(Vec2(260 + i * gap, 980));
             hpBar->setScale(0.5f);
-            hpBar->setVisible(i < _lastDisplayedHP);  // Ö»ÏÔÊ¾µ±Ç°ÑªÁ¿
-            _uiLayer->addChild(hpBar);
+            hpBar->setVisible(i < _lastDisplayedHP);  // åªæ˜¾ç¤ºå½“å‰è¡€é‡
+            this->addChild(hpBar, 1001);
             _hpBars.push_back(hpBar);
         }
     }
     
-    // Ê§È¥ÑªÁ¿Í¼±ê
+    // å¤±å»è¡€é‡å›¾æ ‡
     _hpLose = Sprite::create("Hp/hp8.png");
     if (_hpLose)
     {
         _hpLose->setPosition(Vec2(260 + _lastDisplayedHP * gap, 978));
         _hpLose->setScale(0.5f);
         _hpLose->setVisible(_lastDisplayedHP < maxHp);
-        _uiLayer->addChild(_hpLose);
+        this->addChild(_hpLose, 1001);
     }
 }
 
@@ -324,17 +289,17 @@ void GameScene::updateHPAndSoulUI(float dt)
 {
     if (!_knight || !_uiLayer) return;
     
-    // ¸üĞÂUI²ãÎ»ÖÃ¸úËæÉãÏñ»ú
+    // æ›´æ–°UIå±‚ä½ç½®è·Ÿéšæ‘„åƒæœº
     auto camera = this->getDefaultCamera();
     if (camera)
     {
         Vec2 camPos = camera->getPosition();
         Size visibleSize = Director::getInstance()->getVisibleSize();
-        // UI²ã×óÉÏ½Ç¶ÔÆë
+        // UIå±‚å·¦ä¸Šè§’å¯¹é½
         _uiLayer->setPosition(Vec2(camPos.x - visibleSize.width / 2, camPos.y - visibleSize.height / 2));
     }
     
-    // ¸üĞÂÑªÁ¿»Ö¸´¶¯»­
+    // æ›´æ–°è¡€é‡æ¢å¤åŠ¨ç”»
     if (_isHPRecovering)
     {
         updateHPRecoveryAnimation(dt);
@@ -345,31 +310,31 @@ void GameScene::updateHPAndSoulUI(float dt)
     int maxHp = _knight->getMaxHP();
     float gap = 50;
     
-    // Èç¹û²»ÔÚ»Ö¸´¶¯»­ÖĞ£¬Õı³£¸üĞÂÑªÁ¿ÏÔÊ¾
+    // å¦‚æœä¸åœ¨æ¢å¤åŠ¨ç”»ä¸­ï¼Œæ­£å¸¸æ›´æ–°è¡€é‡æ˜¾ç¤º
     if (!_isHPRecovering && currentHP != _lastDisplayedHP)
     {
-        // ¸üĞÂÑªÁ¿Í¼±êÏÔÊ¾
+        // æ›´æ–°è¡€é‡å›¾æ ‡æ˜¾ç¤º
         for (int i = 0; i < (int)_hpBars.size(); i++)
         {
             _hpBars[i]->setVisible(i < currentHP);
         }
         
-        // ¸üĞÂÊ§È¥ÑªÁ¿Í¼±êÎ»ÖÃ
+        // æ›´æ–°å¤±å»è¡€é‡å›¾æ ‡ä½ç½®
         if (_hpLose)
         {
             _hpLose->setPosition(Vec2(260 + currentHP * gap, 978));
             _hpLose->setVisible(currentHP < maxHp);
         }
         
-        // ¸üĞÂÁé»êÏÔÊ¾
+        // æ›´æ–°çµé­‚æ˜¾ç¤º
         if (_soulBg && currentSoul != _lastDisplayedSoul)
         {
             _lastDisplayedSoul = currentSoul;
             
-            // Í£Ö¹Ö®Ç°µÄ¶¯»­
+            // åœæ­¢ä¹‹å‰çš„åŠ¨ç”»
             _soulBg->stopAllActions();
             
-            // SoulÎª0Ê±Òş²Ø£¬·ñÔòÏÔÊ¾¶ÔÓ¦µÈ¼¶µÄ¶¯»­
+            // Soulä¸º0æ—¶éšè—ï¼Œå¦åˆ™æ˜¾ç¤ºå¯¹åº”ç­‰çº§çš„åŠ¨ç”»
             if (currentSoul <= 0)
             {
                 _soulBg->setVisible(false);
@@ -378,11 +343,11 @@ void GameScene::updateHPAndSoulUI(float dt)
             {
                 _soulBg->setVisible(true);
                 
-                // SoulÖµ1-6¶ÔÓ¦×ÊÔ´ÎÄ¼şsoul_1µ½soul_6
+                // Soulå€¼1-6å¯¹åº”èµ„æºæ–‡ä»¶soul_1åˆ°soul_6
                 int soulLevel = currentSoul;
                 if (soulLevel > 6) soulLevel = 6;
                 
-                // ´´½¨Áé»ê¶¯»­Ö¡
+                // åˆ›å»ºçµé­‚åŠ¨ç”»å¸§
                 Vector<SpriteFrame*> soulFrames;
                 for (int i = 0; i <= 2; i++) {
                     std::string frameName = "Hp/soul_" + std::to_string(soulLevel) + "_" + std::to_string(i) + ".png";
@@ -415,19 +380,19 @@ void GameScene::startHPRecoveryAnimation()
     int maxHP = _knight->getMaxHP();
     int currentHP = _knight->getHP();
     
-    // Èç¹ûÒÑ¾­ÂúÑª£¬²»ĞèÒª»Ö¸´¶¯»­
+    // å¦‚æœå·²ç»æ»¡è¡€ï¼Œä¸éœ€è¦æ¢å¤åŠ¨ç”»
     if (currentHP >= maxHP) return;
     
-    // ÉèÖÃÆïÊ¿ÑªÁ¿ÎªÂúÑª
+    // è®¾ç½®éª‘å£«è¡€é‡ä¸ºæ»¡è¡€
     _knight->setHP(maxHP);
     
-    // ¿ªÊ¼»Ö¸´¶¯»­
+    // å¼€å§‹æ¢å¤åŠ¨ç”»
     _isHPRecovering = true;
-    _hpRecoverCurrent = _lastDisplayedHP;  // ´Óµ±Ç°ÏÔÊ¾µÄÑªÁ¿¿ªÊ¼
+    _hpRecoverCurrent = _lastDisplayedHP;  // ä»å½“å‰æ˜¾ç¤ºçš„è¡€é‡å¼€å§‹
     _hpRecoverTarget = maxHP;
     _hpRecoverTimer = 0.0f;
     
-    CCLOG("¿ªÊ¼ÑªÁ¿»Ö¸´¶¯»­: %d -> %d", _hpRecoverCurrent, _hpRecoverTarget);
+    CCLOG("å¼€å§‹è¡€é‡æ¢å¤åŠ¨ç”»: %d -> %d", _hpRecoverCurrent, _hpRecoverTarget);
 }
 
 void GameScene::updateHPRecoveryAnimation(float dt)
@@ -436,19 +401,19 @@ void GameScene::updateHPRecoveryAnimation(float dt)
     
     _hpRecoverTimer += dt;
     
-    // Ã¿¸ôÒ»¶ÎÊ±¼ä»Ö¸´Ò»µãÑªÁ¿ÏÔÊ¾
+    // æ¯éš”ä¸€æ®µæ—¶é—´æ¢å¤ä¸€ç‚¹è¡€é‡æ˜¾ç¤º
     if (_hpRecoverTimer >= _hpRecoverInterval)
     {
         _hpRecoverTimer = 0.0f;
         _hpRecoverCurrent++;
         
-        // ¸üĞÂÑªÁ¿Í¼±êÏÔÊ¾
+        // æ›´æ–°è¡€é‡å›¾æ ‡æ˜¾ç¤º
         if (_hpRecoverCurrent - 1 < (int)_hpBars.size())
         {
             auto hpBar = _hpBars[_hpRecoverCurrent - 1];
             hpBar->setVisible(true);
             
-            // Ìí¼ÓÒ»¸öĞ¡µÄËõ·Å¶¯»­Ğ§¹û
+            // æ·»åŠ ä¸€ä¸ªå°çš„ç¼©æ”¾åŠ¨ç”»æ•ˆæœ
             hpBar->setScale(0.0f);
             hpBar->runAction(Sequence::create(
                 ScaleTo::create(0.15f, 0.6f),
@@ -457,7 +422,7 @@ void GameScene::updateHPRecoveryAnimation(float dt)
             ));
         }
         
-        // ¸üĞÂÊ§È¥ÑªÁ¿Í¼±êÎ»ÖÃ
+        // æ›´æ–°å¤±å»è¡€é‡å›¾æ ‡ä½ç½®
         float gap = 50;
         if (_hpLose)
         {
@@ -467,13 +432,13 @@ void GameScene::updateHPRecoveryAnimation(float dt)
         
         _lastDisplayedHP = _hpRecoverCurrent;
         
-        CCLOG("ÑªÁ¿»Ö¸´: %d / %d", _hpRecoverCurrent, _hpRecoverTarget);
+        CCLOG("è¡€é‡æ¢å¤: %d / %d", _hpRecoverCurrent, _hpRecoverTarget);
         
-        // ¼ì²éÊÇ·ñ»Ö¸´Íê³É
+        // æ£€æŸ¥æ˜¯å¦æ¢å¤å®Œæˆ
         if (_hpRecoverCurrent >= _hpRecoverTarget)
         {
             _isHPRecovering = false;
-            CCLOG("ÑªÁ¿»Ö¸´Íê³É");
+            CCLOG("è¡€é‡æ¢å¤å®Œæˆ");
         }
     }
 }
@@ -495,7 +460,7 @@ void GameScene::loadInteractiveObjects(TMXTiledMap* map, float scale, const Vec2
         float width = dict["width"].asFloat() * scale;
         float height = dict["height"].asFloat() * scale;
         
-        // ¼ì²âÒÎ×Ó¶ÔÏó
+        // æ£€æµ‹æ¤…å­å¯¹è±¡
         if (name == "Chair")
         {
             InteractiveObject chairObj;
@@ -505,9 +470,9 @@ void GameScene::loadInteractiveObjects(TMXTiledMap* map, float scale, const Vec2
             
             _interactiveObjects.push_back(chairObj);
             
-            CCLOG("¼ÓÔØ½»»¥¶ÔÏó: %s at (%.1f, %.1f)", name.c_str(), chairObj.position.x, chairObj.position.y);
+            CCLOG("åŠ è½½äº¤äº’å¯¹è±¡: %s at (%.1f, %.1f)", name.c_str(), chairObj.position.x, chairObj.position.y);
         }
-        // ¼ì²â³ö¿Ú¶ÔÏó
+        // æ£€æµ‹å‡ºå£å¯¹è±¡
         else if (name == "Exit")
         {
             InteractiveObject exitObj;
@@ -517,7 +482,7 @@ void GameScene::loadInteractiveObjects(TMXTiledMap* map, float scale, const Vec2
             
             _interactiveObjects.push_back(exitObj);
             
-            CCLOG("¼ÓÔØ³ö¿Ú¶ÔÏó: %s at (%.1f, %.1f)", name.c_str(), exitObj.position.x, exitObj.position.y);
+            CCLOG("åŠ è½½å‡ºå£å¯¹è±¡: %s at (%.1f, %.1f)", name.c_str(), exitObj.position.x, exitObj.position.y);
         }
     }
 }
@@ -544,13 +509,13 @@ void GameScene::checkInteractions()
                 if (!_knight->isSitting())
                 {
                     showPrompt = true;
-                    _interactionLabel->setString(u8"ĞİÏ¢");
+                    _interactionLabel->setString(u8"ä¼‘æ¯");
                     _interactionLabel->setPosition(Vec2(playerPos.x, playerPos.y + 80));
                 }
             }
             else if (obj.name == "Exit")
             {
-                // ½øÈë³ö¿Ú£¬ÇĞ»»µ½ NextScene
+                // è¿›å…¥å‡ºå£ï¼Œåˆ‡æ¢åˆ° NextScene
                 _isTransitioning = true;
 
                 auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 0));
@@ -581,7 +546,7 @@ void GameScene::updateCamera()
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 knightPos = _knight->getPosition();
     
-    // ¸ù¾İ¿´Ïò×´Ì¬µ÷ÕûÄ¿±êÆ«ÒÆ
+    // æ ¹æ®çœ‹å‘çŠ¶æ€è°ƒæ•´ç›®æ ‡åç§»
     float lookOffset = 150.0f;
     if (_knight->isLookingUp())
     {
@@ -596,24 +561,23 @@ void GameScene::updateCamera()
         _targetCameraOffsetY = 0.0f;
     }
     
-    // Æ½»¬²åÖµ¿´ÏòÆ«ÒÆ
+    // å¹³æ»‘æ’å€¼çœ‹å‘åç§»
     float offsetLerpFactor = 0.05f;
     _cameraOffsetY += (_targetCameraOffsetY - _cameraOffsetY) * offsetLerpFactor;
     
-    // ¼ÆËãÉãÏñ»úÄ¿±êÎ»ÖÃ£¨ÆïÊ¿ÔÚÆÁÄ»ÏÂ1/3´¦£¬Ë®Æ½¾ÓÖĞ£©
-    // ½«ÉãÏñ»úÏòÉÏÆ«ÒÆ visibleSize.height / 6£¬Ê¹½ÇÉ«´ÓÖĞĞÄÒÆµ½ÏÂ1/3´¦
-    float verticalOffset = visibleSize.height / 6.0f;
+    // è®¡ç®—æ‘„åƒæœºç›®æ ‡ä½ç½®ï¼ˆéª‘å£«åœ¨å±å¹•ä¸‹1/3å¤„ï¼Œæ°´å¹³å±…ä¸­ï¼‰
+//     float verticalOffset = visibleSize.height / 6.0f;
     float cameraX = knightPos.x;
-    float cameraY = knightPos.y + verticalOffset + _cameraOffsetY;
+    float cameraY = knightPos.y + visibleSize.height / 3.0f + _cameraOffsetY;
     
-    // ÏŞÖÆÉãÏñ»ú·¶Î§£¬²»Òª³¬³öµØÍ¼±ß½ç
+    // é™åˆ¶æ‘„åƒæœºèŒƒå›´ï¼Œä¸è¦è¶…å‡ºåœ°å›¾è¾¹ç•Œ
     cameraX = std::max(cameraX, visibleSize.width / 2);
     cameraX = std::min(cameraX, _mapSize.width - visibleSize.width / 2);
     
     cameraY = std::max(cameraY, visibleSize.height / 2);
     cameraY = std::min(cameraY, _mapSize.height - visibleSize.height / 2);
     
-    // Æ½»¬ÒÆ¶¯ÉãÏñ»ú
+    // å¹³æ»‘ç§»åŠ¨æ‘„åƒæœº
     auto camera = this->getDefaultCamera();
     Vec2 currentCamPos = camera->getPosition();
     float lerpFactor = 0.1f;
@@ -626,18 +590,18 @@ void GameScene::updateCamera()
 
 void GameScene::update(float dt)
 {
-    // ¸üĞÂÉãÏñ»ú
+    // æ›´æ–°æ‘„åƒæœº
     updateCamera();
     
-    // ¸üĞÂHPºÍSoul UI
+    // æ›´æ–°HPå’ŒSoul UI
     updateHPAndSoulUI(dt);
     
-    // ¼ì²â×øÏÂ×´Ì¬±ä»¯£¨×øÏÂÊ±×Ô¶¯»ØÑª£©
+    // æ£€æµ‹åä¸‹çŠ¶æ€å˜åŒ–ï¼ˆåä¸‹æ—¶è‡ªåŠ¨å›è¡€ï¼‰
     if (_knight)
     {
         bool isSitting = _knight->isSitting();
         
-        // ¸Õ×øÏÂÊ±´¥·¢»ØÑª
+        // åˆšåä¸‹æ—¶è§¦å‘å›è¡€
         if (isSitting && !_wasSitting)
         {
             startHPRecoveryAnimation();
@@ -646,7 +610,7 @@ void GameScene::update(float dt)
         _wasSitting = isSitting;
     }
     
-    // ¼ì²â½»»¥
+    // æ£€æµ‹äº¤äº’
     checkInteractions();
 }
 
@@ -654,7 +618,7 @@ void GameScene::createCollisionFromTMX(TMXTiledMap* map, const std::string& laye
 {
     auto collisionGroup = map->getObjectGroup(layerName);
     if (!collisionGroup) {
-        CCLOG("¾¯¸æ£ºµØÍ¼ÖĞÃ»ÓĞÕÒµ½ %s ¶ÔÏó²ã", layerName.c_str());
+        CCLOG("è­¦å‘Šï¼šåœ°å›¾ä¸­æ²¡æœ‰æ‰¾åˆ° %s å¯¹è±¡å±‚", layerName.c_str());
         return;
     }
 
@@ -664,7 +628,8 @@ void GameScene::createCollisionFromTMX(TMXTiledMap* map, const std::string& laye
     {
         auto& dict = obj.asValueMap();
 
-        // ¼ì²éÀàĞÍ£¨Ö§³Ö type »ò class ÊôĞÔ£©
+        // æ£€æŸ¥ç±»å‹ï¼ˆæ”¯æŒ type æˆ– class å±æ€§ï¼‰
+//         std::string type = dict["type"].asString();
         std::string type = "";
         if (dict.find("type") != dict.end()) {
             type = dict["type"].asString();
@@ -673,7 +638,7 @@ void GameScene::createCollisionFromTMX(TMXTiledMap* map, const std::string& laye
             type = dict["class"].asString();
         }
 
-        // Ö»´¦Àí crash ÀàĞÍµÄÅö×²Ìå
+        // åªå¤„ç† crash ç±»å‹çš„ç¢°æ’ä½“
         if (type != "crash") {
             continue;
         }
@@ -685,13 +650,13 @@ void GameScene::createCollisionFromTMX(TMXTiledMap* map, const std::string& laye
 
         if (width > 0 && height > 0)
         {
-            // ´´½¨ Platform ½á¹¹£¨Óë BossScene ÏàÍ¬µÄÅö×²·½Ê½£©
+            // åˆ›å»º Platform ç»“æ„ï¼ˆä¸ BossScene ç›¸åŒçš„ç¢°æ’æ–¹å¼ï¼‰
             Platform platform;
             platform.rect = Rect(x, y, width, height);
             platform.node = nullptr;
             _platforms.push_back(platform);
 
-            CCLOG("´´½¨Åö×²Æ½Ì¨: x=%.1f, y=%.1f, w=%.1f, h=%.1f", x, y, width, height);
+            CCLOG("åˆ›å»ºç¢°æ’å¹³å°: x=%.1f, y=%.1f, w=%.1f, h=%.1f", x, y, width, height);
         }
     }
 }
@@ -700,7 +665,7 @@ void GameScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
 {
     auto objectGroup = map->getObjectGroup("Objects");
     if (!objectGroup) {
-        CCLOG("¾¯¸æ£ºÎ´ÕÒµ½ Objects ¶ÔÏó²ã");
+        CCLOG("è­¦å‘Šï¼šæœªæ‰¾åˆ° Objects å¯¹è±¡å±‚");
         return;
     }
 
@@ -710,7 +675,7 @@ void GameScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
     {
         auto& dict = obj.asValueMap();
 
-        // »ñÈ¡¶ÔÏóµÄclass»òtypeÊôĞÔ
+        // è·å–å¯¹è±¡çš„classæˆ–typeå±æ€§
         std::string objClass = "";
         if (dict.find("class") != dict.end()) {
             objClass = dict["class"].asString();
@@ -719,25 +684,25 @@ void GameScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
             objClass = dict["type"].asString();
         }
 
-        // Ö»´¦ÀíbgÀàµÄ¶ÔÏó
+        // åªå¤„ç†bgç±»çš„å¯¹è±¡
         if (objClass != "bg") {
             continue;
         }
 
-        // »ñÈ¡¶ÔÏóÃû³Æ×÷ÎªÍ¼Æ¬ÎÄ¼şÃû
+        // è·å–å¯¹è±¡åç§°ä½œä¸ºå›¾ç‰‡æ–‡ä»¶å
         std::string name = dict["name"].asString();
         if (name.empty()) {
-            CCLOG("¾¯¸æ£ºbgÀà¶ÔÏóÃ»ÓĞÃû³Æ£¬Ìø¹ı");
+            CCLOG("è­¦å‘Šï¼šbgç±»å¯¹è±¡æ²¡æœ‰åç§°ï¼Œè·³è¿‡");
             continue;
         }
 
-        // »ñÈ¡¶ÔÏóÔÚµØÍ¼ÖĞµÄÔ­Ê¼Î»ÖÃ£¨Î´Ëõ·Å£©
+        // è·å–å¯¹è±¡åœ¨åœ°å›¾ä¸­çš„åŸå§‹ä½ç½®ï¼ˆæœªç¼©æ”¾ï¼‰
         float objX = dict["x"].asFloat();
         float objY = dict["y"].asFloat();
         float objWidth = dict["width"].asFloat();
         float objHeight = dict["height"].asFloat();
 
-        // Ê¹ÓÃ¶ÔÏóÃû³Æ + .png ×÷ÎªÍ¼Æ¬Â·¾¶
+        // ä½¿ç”¨å¯¹è±¡åç§° + .png ä½œä¸ºå›¾ç‰‡è·¯å¾„
         std::string imagePath = "Maps/" + name + ".png";
         auto fgSprite = Sprite::create(imagePath);
 
@@ -748,23 +713,23 @@ void GameScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
         float spriteHeight = fgSprite->getContentSize().height;
         if (fgSprite)
         {
-            // ¼ÆËãÊÀ½ç×ø±êÎ»ÖÃ
+            // è®¡ç®—ä¸–ç•Œåæ ‡ä½ç½®
             float worldX = objX * scale + mapOffset.x;
             float worldY = (objY + spriteHeight) * scale + mapOffset.y;
 
-            // TMX ¶ÔÏóµÄ y ×ø±êÊÇ¶ÔÏóµ×²¿£¬ÃªµãÉèÎª×óÏÂ½Ç
+            // TMX å¯¹è±¡çš„ y åæ ‡æ˜¯å¯¹è±¡åº•éƒ¨ï¼Œé”šç‚¹è®¾ä¸ºå·¦ä¸‹è§’
             fgSprite->setAnchorPoint(Vec2(0, 0));
             fgSprite->setPosition(Vec2(worldX, worldY));
             fgSprite->setScale(scale);
 
-            // Ìí¼Óµ½±È½ÇÉ«¸ü¸ßµÄz-order²ã£¨½ÇÉ«ÊÇ5£¬Ç°¾°ÓÃ10£©
+            // æ·»åŠ åˆ°æ¯”è§’è‰²æ›´é«˜çš„z-orderå±‚ï¼ˆè§’è‰²æ˜¯5ï¼Œå‰æ™¯ç”¨10ï¼‰
             this->addChild(fgSprite, 10);
 
-            CCLOG("¼ÓÔØÇ°¾°¶ÔÏó: %s at (%.1f, %.1f)", imagePath.c_str(), worldX, worldY);
+            CCLOG("åŠ è½½å‰æ™¯å¯¹è±¡: %s at (%.1f, %.1f)", imagePath.c_str(), worldX, worldY);
         }
         else
         {
-            CCLOG("¾¯¸æ£ºÎŞ·¨¼ÓÔØÇ°¾°Í¼Æ¬: %s", imagePath.c_str());
+            CCLOG("è­¦å‘Šï¼šæ— æ³•åŠ è½½å‰æ™¯å›¾ç‰‡: %s", imagePath.c_str());
         }
     }
 }

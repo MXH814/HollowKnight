@@ -1,7 +1,12 @@
-#include "NextScene.h"
+ï»¿#include "NextScene.h"
 #include "TheKnight.h"
 #include "GameScene.h"
 #include "CharmManager.h"
+#include "Monster/MonsterSpawner.h"
+#include "Monster/CrawlidMonster.h"
+#include "Monster/TiktikMonster.h"
+#include "Monster/GruzzerMonster.h" // ã€æ–°å¢ã€‘æ·»åŠ  GruzzerMonster å¤´æ–‡ä»¶
+#include "Monster/VengeflyMonster.h" // ã€æ–°å¢ã€‘æ·»åŠ  VengeflyMonster å¤´æ–‡ä»¶
 
 USING_NS_CC;
 
@@ -12,7 +17,6 @@ Scene* NextScene::createScene()
     auto layer = NextScene::create();
     scene->addChild(layer);
 
-    // ÉèÖÃÉãÏñ»ú³õÊ¼Î»ÖÃ£¨½ÇÉ«ÔÚÆÁÄ»ÏÂ1/3´¦£©
     auto knight = layer->getChildByName("Player");
     if (knight) {
         Size visibleSize = Director::getInstance()->getVisibleSize();
@@ -33,43 +37,40 @@ bool NextScene::init()
     Size visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-    // ³õÊ¼»¯±êÖ¾
     _hasLandedOnce = false;
     _isTransitioning = false;
     _isNearExit = false;
     _isNearThorn = false;
     
-    // ³õÊ¼»¯¼â´ÌÉËº¦Ïà¹Ø±äÁ¿
     _isInSpikeDeath = false;
     _lastSafePosition = Vec2::ZERO;
     _spikeDeathTimer = 0.0f;
     _spikeDeathPhase = 0;
     _blackScreen = nullptr;
     
-    // ³õÊ¼»¯Õğ¶¯Ïà¹Ø±äÁ¿
     _isShaking = false;
     _shakeDuration = 0.0f;
     _shakeElapsed = 0.0f;
     _shakeIntensity = 0.0f;
     _shakeOffset = Vec2::ZERO;
     
-    // ³õÊ¼»¯UIÏà¹Ø±äÁ¿
     _lastDisplayedHP = 0;
     _lastDisplayedSoul = 0;
+    
+    // åˆå§‹åŒ–æ”»å‡»å†·å´æ—¶é—´
+    _knightAttackCooldown = 0.0f;
+    _spellAttackCooldown = 0.0f;
 
-    // ÔÚ¼ÓÔØµØÍ¼Ö®Ç°Ìí¼ÓÈ«ºÚÕÚÕÖ²ã
     auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255));
     this->addChild(blackLayer, 10, "LoadingBlack");
 
-    // ¶¨ÒåµØÍ¼¿éĞÅÏ¢
     struct MapChunk {
         std::string file;
         Vec2 position;
     };
 
-    float scale = 2.61f;  // 1.8f * 1.45f = 2.61f
+    float scale = 2.61f;
 
-    // 4¸öµØÍ¼¿éµÄÅäÖÃ£¨¸ù¾İÊµ¼ÊµØÍ¼³ß´çµ÷ÕûÆ«ÒÆÁ¿£©
     std::vector<MapChunk> chunks = {
         {"Maps/Forgotten Crossroads1.tmx", Vec2(0, 0)},
         {"Maps/Forgotten Crossroads2.tmx", Vec2(120 * 16, 0)},
@@ -77,10 +78,9 @@ bool NextScene::init()
         {"Maps/Forgotten Crossroads4.tmx", Vec2(120 * 16, 105 * 16)}
     };
 
-    // ¼ÓÔØËùÓĞµØÍ¼¿é²¢´´½¨Åö×²Ìå
     for (const auto& chunk : chunks) {
         auto map = TMXTiledMap::create(chunk.file);
-        CCASSERT(map != nullptr, ("µØÍ¼¼ÓÔØÊ§°Ü: " + chunk.file).c_str());
+        CCASSERT(map != nullptr, ("åœ°å›¾åŠ è½½å¤±è´¥: " + chunk.file).c_str());
 
         map->setScale(scale);
         map->setAnchorPoint(Vec2::ZERO);
@@ -90,77 +90,80 @@ bool NextScene::init()
         this->addChild(map, 0);
 
         createCollisionFromTMX(map, "Collision", scale, mapPos);
-        
-        // ¼ÓÔØÇ°¾°¶ÔÏó£¨bgÀà£¬ÏÔÊ¾ÔÚ½ÇÉ«ÉÏ²ã£©
         loadForegroundObjects(map, scale, mapPos);
         
-        // ÎªµØÍ¼1´´½¨trap1±³¾°¾«ÁéºÍ¼ÓÔØ¼â´Ì¶ÔÏó
         if (chunk.file == "Maps/Forgotten Crossroads1.tmx") {
             createTrapSprites(map, "Collision", "trap1", "Maps/solidtrap.png", scale, mapPos);
-            // ´ÓµØÍ¼1¼ÓÔØ¼â´Ì¶ÔÏó
             loadThornObjects(map, scale, mapPos);
         }
         
-        // ´ÓµØÍ¼4¼ÓÔØ³ö¿Ú¶ÔÏó
         if (chunk.file == "Maps/Forgotten Crossroads4.tmx") {
             loadExitObjects(map, scale, mapPos);
         }
     }
 
-    // ´ÓµÚËÄ¸öµØÍ¼¿é»ñÈ¡Íæ¼ÒÆğÊ¼µã£¨ĞèÒª¼ÓÉÏµØÍ¼4µÄÆ«ÒÆÁ¿£©
     auto fourthMap = TMXTiledMap::create("Maps/Forgotten Crossroads4.tmx");
     auto objectGroup = fourthMap->getObjectGroup("Objects");
-    CCASSERT(objectGroup != nullptr, "µØÍ¼È±ÉÙ¶ÔÏó²ã Objects");
+    CCASSERT(objectGroup != nullptr, "åœ°å›¾ç¼ºå°‘å¯¹è±¡å±‚ Objects");
 
     auto startPoint = objectGroup->getObject("PlayerStart");
     
-    // ĞŞ¸´£º¼ÓÉÏµØÍ¼4µÄÆ«ÒÆÁ¿
     Vec2 map4Offset = Vec2(120 * 16 * scale, 120 * 16 * scale);
     float startX = startPoint["x"].asFloat() * scale + origin.x + map4Offset.x;
     float startY = startPoint["y"].asFloat() * scale + origin.y + map4Offset.y;
 
-    CCLOG("Íæ¼ÒÆğÊ¼Î»ÖÃ: x=%.1f, y=%.1f", startX, startY);
+    CCLOG("ç©å®¶èµ·å§‹ä½ç½®: x=%.1f, y=%.1f", startX, startY);
 
-    // ´´½¨TheKnight½ÇÉ«£¬ÓëGameSceneÊµÏÖÒ»ÖÂ
     auto knight = TheKnight::create();
     if (knight)
     {
         knight->setPosition(Vec2(startX, startY));
         knight->setScale(1.0f);
-        knight->setPlatforms(_platforms);  // ´«µİÅö×²Æ½Ì¨
+        knight->setPlatforms(_platforms);
         this->addChild(knight, 5, "Player");
         
-        // Í¬²½»¤·û×´Ì¬µ½Íæ¼Ò
+        // ã€æ–°å¢ã€‘ä¿å­˜ Knight å¼•ç”¨åˆ°æˆå‘˜å˜é‡
+        _player = knight;
+        
         CharmManager::getInstance()->syncToKnight(knight);
     }
 
-    // ´´½¨HPºÍSoul UI
+    // ç”Ÿæˆæ‰€æœ‰æ€ªç‰©å’Œ NPC
+    MonsterSpawner::spawnAllCrawlidsInNextScene(this);
+
+    // ã€ä¿®æ”¹ã€‘è·å– Cornifer NPC çš„å¼•ç”¨ - æ·»åŠ æ›´è¯¦ç»†çš„è°ƒè¯•ä¿¡æ¯
+    _cornifer = this->getChildByName<CorniferNPC*>("NPC_Cornifer");
+    if (_cornifer)
+    {
+        CCLOG("[NextScene] âœ“ æˆåŠŸè·å– Cornifer NPC å¼•ç”¨");
+        CCLOG("    Cornifer ä½ç½®: (%.1f, %.1f)", _cornifer->getPositionX(), _cornifer->getPositionY());
+    }
+    else
+    {
+        CCLOG("[NextScene] âœ— è­¦å‘Š: æœªæ‰¾åˆ° Cornifer NPCï¼");
+        CCLOG("    æ£€æŸ¥ MonsterSpawner æ˜¯å¦æˆåŠŸç”Ÿæˆäº† Cornifer");
+    }
+    
     createHPAndSoulUI();
 
-    // ´´½¨³ö¿ÚÌáÊ¾±êÇ©
-    _exitLabel = Label::createWithSystemFont(u8"°´ W ½øÈë", "Arial", 24);
+    _exitLabel = Label::createWithSystemFont(u8"æŒ‰ W è¿›å…¥", "Arial", 24);
     _exitLabel->setTextColor(Color4B::WHITE);
     _exitLabel->setVisible(false);
     this->addChild(_exitLabel, 100, "ExitLabel");
 
-    // ´´½¨¼â´Ì¾¯¸æ±êÇ©
-    _thornLabel = Label::createWithSystemFont(u8"Î£ÏÕ£¡Ç°·½ÓĞ¼â´Ì", "Arial", 24);
+    _thornLabel = Label::createWithSystemFont(u8"å±é™©ï¼å‰æ–¹æœ‰å°–åˆº", "Arial", 24);
     _thornLabel->setTextColor(Color4B::RED);
     _thornLabel->setVisible(false);
     this->addChild(_thornLabel, 100, "ThornLabel");
 
-    // Ìí¼Ó¼üÅÌ¼àÌı
     auto keyboardListener = EventListenerKeyboard::create();
     keyboardListener->onKeyPressed = [this](EventKeyboard::KeyCode keyCode, Event* event) {
-        // °´W¼ü´¦Àí³ö¿Ú½»»¥
         if (keyCode == EventKeyboard::KeyCode::KEY_W || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_W)
         {
-            // Èç¹ûÔÚ³ö¿Ú¸½½üÇÒÃ»ÓĞÕıÔÚÇĞ»»³¡¾°£¬ÔòÇĞ»»³¡¾°
             if (_isNearExit && !_isTransitioning)
             {
                 _isTransitioning = true;
                 
-                // »ñÈ¡ÆïÊ¿µÄ³¯Ïò
                 auto knight = dynamic_cast<TheKnight*>(this->getChildByName("Player"));
                 bool facingRight = true;
                 if (knight)
@@ -168,18 +171,14 @@ bool NextScene::init()
                     facingRight = knight->getScaleX() > 0;
                 }
                 
-                // Ä¿±êÎ»ÖÃ£¨Ô­×ø±ê * 1.45±¶£©
                 Vec2 spawnPos(12479.7f, 435.0f);
                 
-                // ´´½¨È«ºÚ¹ı¶É³¡¾°
                 auto blackScene = Scene::create();
                 auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255));
                 blackScene->addChild(blackLayer);
 
-                // ÏÈÇĞ»»µ½ºÚÆÁ£¬ÑÓ³ÙºóÔÙ½øÈëÄ¿±ê³¡¾°
                 Director::getInstance()->replaceScene(TransitionFade::create(0.5f, blackScene));
 
-                // ÑÓ³Ùºó½øÈëÕæÕıµÄÄ¿±ê³¡¾°
                 blackLayer->runAction(Sequence::create(
                     DelayTime::create(1.0f),
                     CallFunc::create([spawnPos, facingRight]() {
@@ -192,18 +191,15 @@ bool NextScene::init()
             }
         }
         
-        // °´Q¼ü´¦Àí»¤·ûÃæ°å
         if (keyCode == EventKeyboard::KeyCode::KEY_Q)
         {
             auto charmManager = CharmManager::getInstance();
             auto scene = this->getScene();
             if (!scene) return;
             
-            // Èç¹û»¤·ûÃæ°åÒÑ´ò¿ª£¬°´Q¹Ø±Õ
             if (charmManager->isPanelOpen())
             {
                 charmManager->hideCharmPanel();
-                // ¹Ø±ÕÃæ°åºóÍ¬²½»¤·û×´Ì¬µ½Íæ¼Ò
                 auto knight = dynamic_cast<TheKnight*>(this->getChildByName("Player"));
                 if (knight)
                 {
@@ -212,19 +208,13 @@ bool NextScene::init()
                 return;
             }
             
-            // ·ñÔò´ò¿ª»¤·ûÃæ°å
             charmManager->showCharmPanel(scene);
         }
     };
     _eventDispatcher->addEventListenerWithSceneGraphPriority(keyboardListener, this);
 
-    // ÆôÓÃ update ÊµÏÖÉãÏñ»ú¸úËæ
+    // å¯ç”¨ update
     this->scheduleUpdate();
-
-    // ÒÆ³ıºÚ²ã
-    if (blackLayer && blackLayer->getParent()) {
-        blackLayer->removeFromParent();
-    }
 
     return true;
 }
@@ -233,7 +223,7 @@ void NextScene::loadExitObjects(TMXTiledMap* map, float scale, const Vec2& mapOf
 {
     auto objectGroup = map->getObjectGroup("Objects");
     if (!objectGroup) {
-        CCLOG("¾¯¸æ£ºµØÍ¼ÖĞÃ»ÓĞÕÒµ½ Objects ¶ÔÏó²ã");
+        CCLOG("è­¦å‘Šï¼šåœ°å›¾ä¸­æ²¡æœ‰æ‰¾åˆ° Objects å¯¹è±¡å±‚");
         return;
     }
 
@@ -243,7 +233,7 @@ void NextScene::loadExitObjects(TMXTiledMap* map, float scale, const Vec2& mapOf
     {
         auto& dict = obj.asValueMap();
         
-        // »ñÈ¡¶ÔÏóµÄ class »ò type ÊôĞÔ
+        // è·å–å¯¹è±¡çš„ class æˆ– type å±æ€§
         std::string objClass = "";
         if (dict.find("class") != dict.end()) {
             objClass = dict["class"].asString();
@@ -252,7 +242,7 @@ void NextScene::loadExitObjects(TMXTiledMap* map, float scale, const Vec2& mapOf
             objClass = dict["type"].asString();
         }
         
-        // Ö»´¦Àí Exit ÀàµÄ¶ÔÏó
+        // åªå¤„ç† Exit ç±»çš„å¯¹è±¡
         if (objClass != "Exit") {
             continue;
         }
@@ -268,7 +258,7 @@ void NextScene::loadExitObjects(TMXTiledMap* map, float scale, const Vec2& mapOf
         
         _exitObjects.push_back(exitObj);
         
-        CCLOG("¼ÓÔØ³ö¿Ú¶ÔÏó: at (%.1f, %.1f), radius=%.1f", exitObj.position.x, exitObj.position.y, exitObj.radius);
+        CCLOG("åŠ è½½å‡ºå£å¯¹è±¡: at (%.1f, %.1f), radius=%.1f", exitObj.position.x, exitObj.position.y, exitObj.radius);
     }
 }
 
@@ -276,7 +266,7 @@ void NextScene::loadThornObjects(TMXTiledMap* map, float scale, const Vec2& mapO
 {
     auto objectGroup = map->getObjectGroup("Objects");
     if (!objectGroup) {
-        CCLOG("¾¯¸æ£ºµØÍ¼ÖĞÃ»ÓĞÕÒµ½ Objects ¶ÔÏó²ã");
+        CCLOG("è­¦å‘Šï¼šåœ°å›¾ä¸­æ²¡æœ‰æ‰¾åˆ° Objects å¯¹è±¡å±‚");
         return;
     }
 
@@ -309,7 +299,7 @@ void NextScene::loadThornObjects(TMXTiledMap* map, float scale, const Vec2& mapO
         
         _thornObjects.push_back(thornObj);
         
-        CCLOG("¼ÓÔØ¼â´Ì¶ÔÏó: at (%.1f, %.1f), size=(%.1f, %.1f)", 
+        CCLOG("åŠ è½½å°–åˆºå¯¹è±¡: at (%.1f, %.1f), size=(%.1f, %.1f)", 
               thornObj.position.x, thornObj.position.y, 
               thornObj.size.width, thornObj.size.height);
     }
@@ -324,7 +314,7 @@ void NextScene::checkInteractions()
 
     Vec2 knightPos = knight->getPosition();
     
-    // ¼ì²â³ö¿Ú
+    // æ£€æµ‹å‡ºå£
     _isNearExit = false;
     if (_exitLabel) {
         for (auto& exitObj : _exitObjects)
@@ -341,7 +331,7 @@ void NextScene::checkInteractions()
         _exitLabel->setVisible(_isNearExit);
     }
 
-    // ¼ì²â¼â´Ì£¨½öÓÃÓÚÏÔÊ¾¾¯¸æ±êÇ©£¬Êµ¼ÊÅö×²¼ì²âÔÚupdateÖĞ£©
+    // æ£€æµ‹å°–åˆºï¼ˆä»…ç”¨äºæ˜¾ç¤ºè­¦å‘Šæ ‡ç­¾ï¼Œå®é™…ç¢°æ’æ£€æµ‹åœ¨updateä¸­ï¼‰`
     _isNearThorn = false;
     if (_thornLabel) {
         for (auto& thornObj : _thornObjects)
@@ -372,10 +362,10 @@ void NextScene::startSpikeDeath(TheKnight* knight)
     _spikeDeathPhase = 1;
     _spikeDeathTimer = 0.0f;
     
-    // µ÷ÓÃÆïÊ¿µÄ¼â´ÌËÀÍöº¯Êı
+    // è°ƒç”¨éª‘å£«çš„å°–åˆºæ­»äº¡å‡½æ•°
     knight->startSpikeDeath();
     
-    CCLOG("¼â´ÌËÀÍöÁ÷³Ì¿ªÊ¼£¬½×¶Î1£º²¥·ÅSpikeDeath¶¯»­");
+    CCLOG("å°–åˆºæ­»äº¡æµç¨‹å¼€å§‹ï¼Œé˜¶æ®µ1ï¼šæ’­æ”¾SpikeDeathåŠ¨ç”»");
 }
 
 void NextScene::updateSpikeDeath(float dt, TheKnight* knight)
@@ -384,18 +374,18 @@ void NextScene::updateSpikeDeath(float dt, TheKnight* knight)
     
     switch (_spikeDeathPhase)
     {
-        case 1:  // ½×¶Î1£ºµÈ´ıSpikeDeath¶¯»­Íê³É
+        case 1:  // é˜¶æ®µ1ï¼šç­‰å¾…SpikeDeathåŠ¨ç”»å®Œæˆ
         {
-            // SpikeDeath¶¯»­8Ö¡£¬Ã¿Ö¡0.08Ãë£¬¹²0.64Ãë
+            // SpikeDeathåŠ¨ç”»8å¸§ï¼Œæ¯å¸§0.08ç§’ï¼Œå…±0.64ç§’
             if (_spikeDeathTimer >= 0.64f)
             {
-                // ´´½¨È«ÆÁºÚÆÁ - Ê¹ÓÃ×ã¹»´óµÄ³ß´çÈ·±£¸²¸ÇÕû¸ö¿ÉÊÓÇøÓò
+                // åˆ›å»ºå…¨å±é»‘å± - ä½¿ç”¨è¶³å¤Ÿå¤§çš„å°ºå¯¸ç¡®ä¿è¦†ç›–æ•´ä¸ªå¯è§†åŒºåŸŸ
                 Size visibleSize = Director::getInstance()->getVisibleSize();
                 _blackScreen = LayerColor::create(Color4B(0, 0, 0, 0), visibleSize.width * 3, visibleSize.height * 3);
                 _blackScreen->setIgnoreAnchorPointForPosition(false);
                 _blackScreen->setAnchorPoint(Vec2(0.5f, 0.5f));
                 
-                // ½«ºÚÆÁ·ÅÖÃÔÚÉãÏñ»úÎ»ÖÃ
+                // å°†é»‘å±æ”¾ç½®åœ¨æ‘„åƒæœºä½ç½®
                 auto scene = this->getScene();
                 if (scene)
                 {
@@ -408,19 +398,19 @@ void NextScene::updateSpikeDeath(float dt, TheKnight* knight)
                 
                 this->addChild(_blackScreen, 1000, "SpikeDeathBlack");
                 
-                // ºÚÆÁµ­Èë
+                // é»‘å±æ·¡å…¥
                 _blackScreen->runAction(FadeTo::create(0.3f, 255));
                 
                 _spikeDeathPhase = 2;
                 _spikeDeathTimer = 0.0f;
-                CCLOG("¼â´ÌËÀÍöÁ÷³Ì½×¶Î2£ººÚÆÁµ­Èë");
+                CCLOG("å°–åˆºæ­»äº¡æµç¨‹é˜¶æ®µ2ï¼šé»‘å±æ·¡å…¥");
             }
             break;
         }
         
-        case 2:  // ½×¶Î2£ººÚÆÁÏÔÊ¾
+        case 2:  // é˜¶æ®µ2ï¼šé»‘å±æ˜¾ç¤º
         {
-            // ¸üĞÂºÚÆÁÎ»ÖÃ¸úËæÉãÏñ»ú
+            // æ›´æ–°é»‘å±ä½ç½®è·Ÿéšæ‘„åƒæœº
             if (_blackScreen)
             {
                 auto scene = this->getScene();
@@ -434,32 +424,32 @@ void NextScene::updateSpikeDeath(float dt, TheKnight* knight)
                 }
             }
             
-            if (_spikeDeathTimer >= 0.5f)  // ºÚÆÁ0.5Ãë
+            if (_spikeDeathTimer >= 0.5f)  // é»‘å±0.5ç§’
             {
-                // ½«ÆïÊ¿ÒÆ¶¯µ½°²È«Î»ÖÃ
+                // å°†éª‘å£«ç§»åŠ¨åˆ°å®‰å…¨ä½ç½®
                 Vec2 respawnPos = _lastSafePosition;
                 if (respawnPos == Vec2::ZERO)
                 {
-                    // Èç¹ûÃ»ÓĞ¼ÇÂ¼°²È«Î»ÖÃ£¬Ê¹ÓÃ³õÊ¼Î»ÖÃ
+                    // å¦‚æœæ²¡æœ‰è®°å½•å®‰å…¨ä½ç½®ï¼Œä½¿ç”¨åˆå§‹ä½ç½®
                     respawnPos = knight->getPosition();
                 }
                 
-                // Òş²ØÆïÊ¿£¬×¼±¸ÖØÉú
+                // éšè—éª‘å£«ï¼Œå‡†å¤‡é‡ç”Ÿ
                 knight->setVisible(false);
                 
-                // ¿ªÊ¼ÖØÉú¶¯»­
+                // å¼€å§‹é‡ç”ŸåŠ¨ç”»
                 knight->startHazardRespawn(respawnPos);
                 
                 _spikeDeathPhase = 3;
                 _spikeDeathTimer = 0.0f;
-                CCLOG("¼â´ÌËÀÍöÁ÷³Ì½×¶Î3£º¿ªÊ¼ÖØÉú£¬Î»ÖÃ(%.1f, %.1f)", respawnPos.x, respawnPos.y);
+                CCLOG("å°–åˆºæ­»äº¡æµç¨‹é˜¶æ®µ3ï¼šå¼€å§‹é‡ç”Ÿï¼Œä½ç½®(%.1f, %.1f)", respawnPos.x, respawnPos.y);
             }
             break;
         }
         
-        case 3:  // ½×¶Î3£ºµÈ´ıÒ»Ğ¡¶ÎÊ±¼äÈ»ºóµ­³öºÚÆÁ
+        case 3:  // é˜¶æ®µ3ï¼šç­‰å¾…ä¸€å°æ®µæ—¶é—´ç„¶åæ·¡å‡ºé»‘å±
         {
-            // ¸üĞÂºÚÆÁÎ»ÖÃ¸úËæÉãÏñ»ú
+            // æ›´æ–°é»‘å±ä½ç½®è·Ÿéšæ‘„åƒæœº
             if (_blackScreen)
             {
                 auto scene = this->getScene();
@@ -475,10 +465,10 @@ void NextScene::updateSpikeDeath(float dt, TheKnight* knight)
             
             if (_spikeDeathTimer >= 0.1f)
             {
-                // ÏÔÊ¾ÆïÊ¿
+                // æ˜¾ç¤ºéª‘å£«
                 knight->setVisible(true);
                 
-                // ºÚÆÁµ­³ö
+                // é»‘å±æ·¡å‡º
                 if (_blackScreen)
                 {
                     _blackScreen->runAction(Sequence::create(
@@ -491,21 +481,21 @@ void NextScene::updateSpikeDeath(float dt, TheKnight* knight)
                 
                 _spikeDeathPhase = 4;
                 _spikeDeathTimer = 0.0f;
-                CCLOG("¼â´ÌËÀÍöÁ÷³Ì½×¶Î4£ººÚÆÁµ­³ö");
+                CCLOG("å°–åˆºæ­»äº¡æµç¨‹é˜¶æ®µ4ï¼šé»‘å±æ·¡å‡º");
             }
             break;
         }
         
-        case 4:  // ½×¶Î4£ºµÈ´ıHazardRespawn¶¯»­Íê³É
+        case 4:  // é˜¶æ®µ4ï¼šç­‰å¾…HazardRespawnåŠ¨ç”»å®Œæˆ
         {
-            // HazardRespawn¶¯»­20Ö¡£¬Ã¿Ö¡0.05Ãë£¬¹²1.0Ãë
+            // HazardRespawnåŠ¨ç”»20å¸§ï¼Œæ¯å¸§0.05ç§’ï¼Œå…±1.0ç§’
             if (_spikeDeathTimer >= 1.0f || !knight->isHazardRespawnState())
             {
-                // ÖØÉúÍê³É
+                // é‡ç”Ÿå®Œæˆ
                 _isInSpikeDeath = false;
                 _spikeDeathPhase = 0;
                 _spikeDeathTimer = 0.0f;
-                CCLOG("¼â´ÌËÀÍöÁ÷³ÌÍê³É");
+                CCLOG("å°–åˆºæ­»äº¡æµç¨‹å®Œæˆ");
             }
             break;
         }
@@ -514,7 +504,7 @@ void NextScene::updateSpikeDeath(float dt, TheKnight* knight)
 
 bool NextScene::onContactBegin(PhysicsContact& contact)
 {
-    // ´Ë·½·¨²»ÔÙÊ¹ÓÃ£¬±£ÁôÒÔ¼æÈİÍ·ÎÄ¼şÉùÃ÷
+    // æ­¤æ–¹æ³•ä¸å†ä½¿ç”¨ï¼Œä¿ç•™ä»¥å…¼å®¹å¤´æ–‡ä»¶å£°æ˜
     return true;
 }
 
@@ -526,7 +516,590 @@ void NextScene::shakeScreen(float duration, float intensity)
     _shakeIntensity = intensity;
     _shakeOffset = Vec2::ZERO;
     
-    CCLOG("¿ªÊ¼ÆÁÄ»Õğ¶¯: duration=%.2f, intensity=%.1f", duration, intensity);
+    CCLOG("å¼€å§‹å±å¹•éœ‡åŠ¨: duration=%.2f, intensity=%.1f", duration, intensity);
+}
+
+// === ä¿®æ­£ï¼šå‚è€ƒBossSceneçš„æˆ˜æ–—ç¢°æ’æ£€æµ‹æ–¹æ³• ===
+void NextScene::checkCombatCollisions()
+{
+    auto knight = dynamic_cast<TheKnight*>(this->getChildByName("Player"));
+    if (!knight || knight->isDead()) return;
+    
+    Vec2 knightPos = knight->getPosition();
+    
+    // æ›´æ–°æ”»å‡»å†·å´æ—¶é—´
+    float dt = Director::getInstance()->getDeltaTime();
+    if (_knightAttackCooldown > 0)
+    {
+        _knightAttackCooldown -= dt;
+    }
+    if (_spellAttackCooldown > 0)
+    {
+        _spellAttackCooldown -= dt;
+    }
+    
+    // ã€ä¿®å¤ã€‘ä½¿ç”¨å®‰å…¨çš„éå†æ–¹å¼ - å…ˆæ”¶é›†éœ€è¦å¤„ç†çš„æ€ªç‰©
+    std::vector<CrawlidMonster*> crawlids;
+    std::vector<TiktikMonster*> tiktiks;
+    std::vector<GruzzerMonster*> gruzzers;  // ã€æ–°å¢ã€‘
+    std::vector<VengeflyMonster*> vengeflies; // ã€æ–°å¢ã€‘
+    
+    auto& children = this->getChildren();
+    for (auto child : children)
+    {
+        auto crawlid = dynamic_cast<CrawlidMonster*>(child);
+        if (crawlid && crawlid->_health > 0) {
+            crawlids.push_back(crawlid);
+        }
+        
+        auto tiktik = dynamic_cast<TiktikMonster*>(child);
+        if (tiktik && tiktik->_health > 0) {
+            tiktiks.push_back(tiktik);
+        }
+        
+        // ã€æ–°å¢ã€‘æ”¶é›† Gruzzer
+        auto gruzzer = dynamic_cast<GruzzerMonster*>(child);
+        if (gruzzer && gruzzer->_health > 0) {
+            gruzzers.push_back(gruzzer);
+        }
+        
+        // ã€æ–°å¢ã€‘æ”¶é›† Vengefly
+        auto vengefly = dynamic_cast<VengeflyMonster*>(child);
+        if (vengefly && vengefly->_health > 0) {
+            vengeflies.push_back(vengefly);
+        }
+    }
+    
+    // ========== å¤„ç† Crawlid ==========
+    for (auto crawlid : crawlids)
+    {
+        Vec2 crawlidPos = crawlid->getPosition();
+        Rect crawlidBox = crawlid->getBoundingBox();
+        
+        // Knight æ”»å‡» Crawlid (æ™®é€šæ”»å‡»)
+        if (_knightAttackCooldown <= 0)
+        {
+            Rect slashRect;
+            if (knight->getSlashEffectBoundingBox(slashRect))
+            {
+                if (slashRect.intersectsRect(crawlidBox) && !crawlid->_isStunned)
+                {
+                    CCLOG("Knight Slash å‘½ä¸­ %s!", crawlid->getName().c_str());
+                    
+                    int knockbackDir = (knightPos.x < crawlidPos.x) ? 1 : -1;
+                    crawlid->takeDamage(1, 100.0f, knockbackDir);
+                    
+                    int soulGain = 1;
+                    if (knight->getCharmSoulCatcher())
+                    {
+                        soulGain += 1;
+                    }
+                    knight->addSoul(soulGain);
+                    knight->bounceFromDownSlash();
+                    
+                    _knightAttackCooldown = 0.3f;
+                }
+            }
+        }
+        
+        // Knight æ³•æœ¯æ”»å‡» Crawlid
+        if (_spellAttackCooldown <= 0)
+        {
+            Sprite* spellEffect = knight->getVengefulSpiritEffect();
+            if (spellEffect)
+            {
+                auto effectSize = spellEffect->getContentSize();
+                auto effectPos = spellEffect->getPosition();
+                Rect spellRect(effectPos.x - effectSize.width / 2,
+                               effectPos.y - effectSize.height / 2,
+                               effectSize.width,
+                               effectSize.height);
+                
+                if (spellRect.intersectsRect(crawlidBox))
+                {
+                    CCLOG("Knight Vengeful Spirit å‘½ä¸­ %s!", crawlid->getName().c_str());
+                    
+                    int knockbackDir = (knightPos.x < crawlidPos.x) ? 1 : -1;
+                    
+                    crawlid->takeDamage(1, 100.0f, knockbackDir);
+                    
+                    this->runAction(Sequence::create(
+                        DelayTime::create(0.05f),
+                        CallFunc::create([crawlid, knockbackDir]() {
+                            if (crawlid && crawlid->_health > 0) {
+                                bool wasStunned = crawlid->_isStunned;
+                                crawlid->_isStunned = false;
+                                crawlid->takeDamage(1, 100.0f, knockbackDir);
+                                if (wasStunned) {
+                                    crawlid->_isStunned = true;
+                                }
+                            }
+                        }),
+                        nullptr
+                    ));
+                    
+                    if (knight->getCharmShamanStone())
+                    {
+                        this->runAction(Sequence::create(
+                            DelayTime::create(0.10f),
+                            CallFunc::create([crawlid, knockbackDir]() {
+                                if (crawlid && crawlid->_health > 0) {
+                                    bool wasStunned = crawlid->_isStunned;
+                                    crawlid->_isStunned = false;
+                                    crawlid->takeDamage(1, 100.0f, knockbackDir);
+                                    if (wasStunned) {
+                                        crawlid->_isStunned = true;
+                                    }
+                                }
+                            }),
+                            nullptr
+                        ));
+                        
+                        this->runAction(Sequence::create(
+                            DelayTime::create(0.15f),
+                            CallFunc::create([crawlid, knockbackDir]() {
+                                if (crawlid && crawlid->_health > 0) {
+                                    bool wasStunned = crawlid->_isStunned;
+                                    crawlid->_isStunned = false;
+                                    crawlid->takeDamage(1, 100.0f, knockbackDir);
+                                    if (wasStunned) {
+                                        crawlid->_isStunned = true;
+                                    }
+                                }
+                            }),
+                            nullptr
+                        ));
+                        
+                        CCLOG("  -> Shaman Stone åŠ æˆ! æ€»ä¼¤å®³: 4ç‚¹");
+                    }
+                    else
+                    {
+                        CCLOG("  -> åŸºç¡€æ³•æœ¯ä¼¤å®³: 2ç‚¹");
+                    }
+                    
+                    _spellAttackCooldown = 0.2f;
+                }
+            }
+        }
+        
+        // Crawlid æ”»å‡» Knight
+        if (!knight->isInvincible() && !knight->isSpikeDeathState())
+        {
+            if (!crawlid->_isStunned)
+            {
+                Rect knightBox = knight->getBoundingBox();
+                
+                if (knightBox.intersectsRect(crawlidBox))
+                {
+                    CCLOG("%s æ¥è§¦ä¼¤å®³å‘½ä¸­ Knight!", crawlid->getName().c_str());
+                    
+                    bool knockbackFromRight = (crawlidPos.x > knightPos.x);
+                    
+                    knight->setKnockbackDirection(knockbackFromRight);
+                    knight->takeDamage(1);
+                }
+            }
+        }
+    }
+    
+    // ========== å¤„ç† Tiktik ==========
+    for (auto tiktik : tiktiks)
+    {
+        Vec2 tiktikPos = tiktik->getPosition();
+        Rect tiktikBox = tiktik->getBoundingBox();
+        
+        // Knight æ”»å‡» Tiktik (æ™®é€šæ”»å‡»)
+        if (_knightAttackCooldown <= 0)
+        {
+            Rect slashRect;
+            if (knight->getSlashEffectBoundingBox(slashRect))
+            {
+                if (slashRect.intersectsRect(tiktikBox) && !tiktik->_isStunned)
+                {
+                    CCLOG("Knight Slash å‘½ä¸­ %s!", tiktik->getName().c_str());
+                    
+                    int knockbackDir = (knightPos.x < tiktikPos.x) ? 1 : -1;
+                    tiktik->takeDamage(1, 100.0f, knockbackDir);
+                    
+                    int soulGain = 1;
+                    if (knight->getCharmSoulCatcher())
+                    {
+                        soulGain += 1;
+                    }
+                    knight->addSoul(soulGain);
+                    knight->bounceFromDownSlash();
+                    
+                    _knightAttackCooldown = 0.3f;
+                }
+            }
+        }
+        
+        // Knight æ³•æœ¯æ”»å‡» Tiktik
+        if (_spellAttackCooldown <= 0)
+        {
+            Sprite* spellEffect = knight->getVengefulSpiritEffect();
+            if (spellEffect)
+            {
+                auto effectSize = spellEffect->getContentSize();
+                auto effectPos = spellEffect->getPosition();
+                Rect spellRect(effectPos.x - effectSize.width / 2,
+                               effectPos.y - effectSize.height / 2,
+                               effectSize.width,
+                               effectSize.height);
+                
+                if (spellRect.intersectsRect(tiktikBox))
+                {
+                    CCLOG("Knight Vengeful Spirit å‘½ä¸­ %s!", tiktik->getName().c_str());
+                    
+                    int knockbackDir = (knightPos.x < tiktikPos.x) ? 1 : -1;
+                    
+                    tiktik->takeDamage(1, 100.0f, knockbackDir);
+                    
+                    this->runAction(Sequence::create(
+                        DelayTime::create(0.05f),
+                        CallFunc::create([tiktik, knockbackDir]() {
+                            if (tiktik && tiktik->_health > 0) {
+                                bool wasStunned = tiktik->_isStunned;
+                                tiktik->_isStunned = false;
+                                tiktik->takeDamage(1, 100.0f, knockbackDir);
+                                if (wasStunned) {
+                                    tiktik->_isStunned = true;
+                                }
+                            }
+                        }),
+                        nullptr
+                    ));
+                    
+                    if (knight->getCharmShamanStone())
+                    {
+                        this->runAction(Sequence::create(
+                            DelayTime::create(0.10f),
+                            CallFunc::create([tiktik, knockbackDir]() {
+                                if (tiktik && tiktik->_health > 0) {
+                                    bool wasStunned = tiktik->_isStunned;
+                                    tiktik->_isStunned = false;
+                                    tiktik->takeDamage(1, 100.0f, knockbackDir);
+                                    if (wasStunned) {
+                                        tiktik->_isStunned = true;
+                                    }
+                                }
+                            }),
+                            nullptr
+                        ));
+                        
+                        this->runAction(Sequence::create(
+                            DelayTime::create(0.15f),
+                            CallFunc::create([tiktik, knockbackDir]() {
+                                if (tiktik && tiktik->_health > 0) {
+                                    bool wasStunned = tiktik->_isStunned;
+                                    tiktik->_isStunned = false;
+                                    tiktik->takeDamage(1, 100.0f, knockbackDir);
+                                    if (wasStunned) {
+                                        tiktik->_isStunned = true;
+                                    }
+                                }
+                            }),
+                            nullptr
+                        ));
+                        
+                        CCLOG("  -> Shaman Stone åŠ æˆ! æ€»ä¼¤å®³: 4ç‚¹");
+                    }
+                    else
+                    {
+                        CCLOG("  -> åŸºç¡€æ³•æœ¯ä¼¤å®³: 2ç‚¹");
+                    }
+                    
+                    _spellAttackCooldown = 0.2f;
+                }
+            }
+        }
+        
+        // Tiktik æ”»å‡» Knight
+        if (!knight->isInvincible() && !knight->isSpikeDeathState())
+        {
+            if (!tiktik->_isStunned)
+            {
+                Rect knightBox = knight->getBoundingBox();
+                
+                if (knightBox.intersectsRect(tiktikBox))
+                {
+                    CCLOG("%s æ¥è§¦ä¼¤å®³å‘½ä¸­ Knight!", tiktik->getName().c_str());
+                    
+                    bool knockbackFromRight = (tiktikPos.x > knightPos.x);
+                    
+                    knight->setKnockbackDirection(knockbackFromRight);
+                    knight->takeDamage(1);
+                }
+            }
+        }
+    }
+    
+    // ========== ã€æ–°å¢ã€‘å¤„ç† Gruzzer ==========
+    for (auto gruzzer : gruzzers)
+    {
+        Vec2 gruzzerPos = gruzzer->getPosition();
+        Rect gruzzerBox = gruzzer->getBoundingBox();
+        
+        // Knight æ”»å‡» Gruzzer (æ™®é€šæ”»å‡»)
+        if (_knightAttackCooldown <= 0)
+        {
+            Rect slashRect;
+            if (knight->getSlashEffectBoundingBox(slashRect))
+            {
+                if (slashRect.intersectsRect(gruzzerBox) && !gruzzer->_isStunned)
+                {
+                    CCLOG("Knight Slash å‘½ä¸­ %s!", gruzzer->getName().c_str());
+                    
+                    int knockbackDir = (knightPos.x < gruzzerPos.x) ? 1 : -1;
+                    gruzzer->takeDamage(1, 100.0f, knockbackDir);
+                    
+                    int soulGain = 1;
+                    if (knight->getCharmSoulCatcher())
+                    {
+                        soulGain += 1;
+                    }
+                    knight->addSoul(soulGain);
+                    knight->bounceFromDownSlash();
+                    
+                    _knightAttackCooldown = 0.3f;
+                }
+            }
+        }
+        
+        // Knight æ³•æœ¯æ”»å‡» Gruzzer
+        if (_spellAttackCooldown <= 0)
+        {
+            Sprite* spellEffect = knight->getVengefulSpiritEffect();
+            if (spellEffect)
+            {
+                auto effectSize = spellEffect->getContentSize();
+                auto effectPos = spellEffect->getPosition();
+                Rect spellRect(effectPos.x - effectSize.width / 2,
+                               effectPos.y - effectSize.height / 2,
+                               effectSize.width,
+                               effectSize.height);
+                
+                if (spellRect.intersectsRect(gruzzerBox))
+                {
+                    CCLOG("Knight Vengeful Spirit å‘½ä¸­ %s!", gruzzer->getName().c_str());
+                    
+                    int knockbackDir = (knightPos.x < gruzzerPos.x) ? 1 : -1;
+                    
+                    gruzzer->takeDamage(1, 100.0f, knockbackDir);
+                    
+                    this->runAction(Sequence::create(
+                        DelayTime::create(0.05f),
+                        CallFunc::create([gruzzer, knockbackDir]() {
+                            if (gruzzer && gruzzer->_health > 0) {
+                                bool wasStunned = gruzzer->_isStunned;
+                                gruzzer->_isStunned = false;
+                                gruzzer->takeDamage(1, 100.0f, knockbackDir);
+                                if (wasStunned) {
+                                    gruzzer->_isStunned = true;
+                                }
+                            }
+                        }),
+                        nullptr
+                    ));
+                    
+                    if (knight->getCharmShamanStone())
+                    {
+                        this->runAction(Sequence::create(
+                            DelayTime::create(0.10f),
+                            CallFunc::create([gruzzer, knockbackDir]() {
+                                if (gruzzer && gruzzer->_health > 0) {
+                                    bool wasStunned = gruzzer->_isStunned;
+                                    gruzzer->_isStunned = false;
+                                    gruzzer->takeDamage(1, 100.0f, knockbackDir);
+                                    if (wasStunned) {
+                                        gruzzer->_isStunned = true;
+                                    }
+                                }
+                            }),
+                            nullptr
+                        ));
+                        
+                        this->runAction(Sequence::create(
+                            DelayTime::create(0.15f),
+                            CallFunc::create([gruzzer, knockbackDir]() {
+                                if (gruzzer && gruzzer->_health > 0) {
+                                    bool wasStunned = gruzzer->_isStunned;
+                                    gruzzer->_isStunned = false;
+                                    gruzzer->takeDamage(1, 100.0f, knockbackDir);
+                                    if (wasStunned) {
+                                        gruzzer->_isStunned = true;
+                                    }
+                                }
+                            }),
+                            nullptr
+                        ));
+                        
+                        CCLOG("  -> Shaman Stone åŠ æˆ! æ€»ä¼¤å®³: 4ç‚¹");
+                    }
+                    else
+                    {
+                        CCLOG("  -> åŸºç¡€æ³•æœ¯ä¼¤å®³: 2ç‚¹");
+                    }
+                    
+                    _spellAttackCooldown = 0.2f;
+                }
+            }
+        }
+        
+        // Gruzzer æ”»å‡» Knight
+        if (!knight->isInvincible() && !knight->isSpikeDeathState())
+        {
+            if (!gruzzer->_isStunned)
+            {
+                Rect knightBox = knight->getBoundingBox();
+                
+                if (knightBox.intersectsRect(gruzzerBox))
+                {
+                    CCLOG("%s æ¥è§¦ä¼¤å®³å‘½ä¸­ Knight!", gruzzer->getName().c_str());
+                    
+                    bool knockbackFromRight = (gruzzerPos.x > knightPos.x);
+                    
+                    knight->setKnockbackDirection(knockbackFromRight);
+                    knight->takeDamage(1);
+                }
+            }
+        }
+    }
+    
+    // ========== ã€æ–°å¢ã€‘å¤„ç† Vengefly ==========
+    for (auto vengefly : vengeflies)
+    {
+        Vec2 vengeflyPos = vengefly->getPosition();
+        Rect vengeflyBox = vengefly->getBoundingBox();
+        
+        // ã€é‡è¦ã€‘æ›´æ–° Vengefly çš„ç©å®¶ä½ç½®ï¼ˆç”¨äºè¿½å‡»é€»è¾‘ï¼‰
+        vengefly->setPlayerPosition(knightPos);
+        
+        // Knight æ”»å‡» Vengefly (æ™®é€šæ”»å‡»)
+        if (_knightAttackCooldown <= 0)
+        {
+            Rect slashRect;
+            if (knight->getSlashEffectBoundingBox(slashRect))
+            {
+                if (slashRect.intersectsRect(vengeflyBox) && !vengefly->_isStunned)
+                {
+                    CCLOG("Knight Slash å‘½ä¸­ %s!", vengefly->getName().c_str());
+                    
+                    int knockbackDir = (knightPos.x < vengeflyPos.x) ? 1 : -1;
+                    vengefly->takeDamage(1, 100.0f, knockbackDir);
+                    
+                    int soulGain = 1;
+                    if (knight->getCharmSoulCatcher())
+                    {
+                        soulGain += 1;
+                    }
+                    knight->addSoul(soulGain);
+                    knight->bounceFromDownSlash();
+                    
+                    _knightAttackCooldown = 0.3f;
+                }
+            }
+        }
+        
+        // Knight æ³•æœ¯æ”»å‡» Vengefly
+        if (_spellAttackCooldown <= 0)
+        {
+            Sprite* spellEffect = knight->getVengefulSpiritEffect();
+            if (spellEffect)
+            {
+                auto effectSize = spellEffect->getContentSize();
+                auto effectPos = spellEffect->getPosition();
+                Rect spellRect(effectPos.x - effectSize.width / 2,
+                           effectPos.y - effectSize.height / 2,
+                           effectSize.width,
+                           effectSize.height);
+                
+                if (spellRect.intersectsRect(vengeflyBox))
+                {
+                    CCLOG("Knight Vengeful Spirit å‘½ä¸­ %s!", vengefly->getName().c_str());
+                    
+                    int knockbackDir = (knightPos.x < vengeflyPos.x) ? 1 : -1;
+                    
+                    vengefly->takeDamage(1, 100.0f, knockbackDir);
+                    
+                    this->runAction(Sequence::create(
+                        DelayTime::create(0.05f),
+                        CallFunc::create([vengefly, knockbackDir]() {
+                            if (vengefly && vengefly->_health > 0) {
+                                bool wasStunned = vengefly->_isStunned;
+                                vengefly->_isStunned = false;
+                                vengefly->takeDamage(1, 100.0f, knockbackDir);
+                                if (wasStunned) {
+                                    vengefly->_isStunned = true;
+                                }
+                            }
+                        }),
+                        nullptr
+                    ));
+                    
+                    if (knight->getCharmShamanStone())
+                    {
+                        this->runAction(Sequence::create(
+                            DelayTime::create(0.10f),
+                            CallFunc::create([vengefly, knockbackDir]() {
+                                if (vengefly && vengefly->_health > 0) {
+                                    bool wasStunned = vengefly->_isStunned;
+                                    vengefly->_isStunned = false;
+                                    vengefly->takeDamage(1, 100.0f, knockbackDir);
+                                    if (wasStunned) {
+                                        vengefly->_isStunned = true;
+                                    }
+                                }
+                            }),
+                            nullptr
+                        ));
+                        
+                        this->runAction(Sequence::create(
+                            DelayTime::create(0.15f),
+                            CallFunc::create([vengefly, knockbackDir]() {
+                                if (vengefly && vengefly->_health > 0) {
+                                    bool wasStunned = vengefly->_isStunned;
+                                    vengefly->_isStunned = false;
+                                    vengefly->takeDamage(1, 100.0f, knockbackDir);
+                                    if (wasStunned) {
+                                        vengefly->_isStunned = true;
+                                    }
+                                }
+                            }),
+                            nullptr
+                        ));
+                        
+                        CCLOG("  -> Shaman Stone åŠ æˆ! æ€»ä¼¤å®³: 4ç‚¹");
+                    }
+                    else
+                    {
+                        CCLOG("  -> åŸºç¡€æ³•æœ¯ä¼¤å®³: 2ç‚¹");
+                    }
+                    
+                    _spellAttackCooldown = 0.2f;
+                }
+            }
+        }
+        
+        // Vengefly æ”»å‡» Knight
+        if (!knight->isInvincible() && !knight->isSpikeDeathState())
+        {
+            if (!vengefly->_isStunned)
+            {
+                Rect knightBox = knight->getBoundingBox();
+                
+                if (knightBox.intersectsRect(vengeflyBox))
+                {
+                    CCLOG("%s æ¥è§¦ä¼¤å®³å‘½ä¸­ Knight!", vengefly->getName().c_str());
+                    
+                    bool knockbackFromRight = (vengeflyPos.x > knightPos.x);
+                    
+                    knight->setKnockbackDirection(knockbackFromRight);
+                    knight->takeDamage(1);
+                }
+            }
+        }
+    }
 }
 
 void NextScene::update(float dt)
@@ -543,15 +1116,56 @@ void NextScene::update(float dt)
     Vec2 knightPos = knight->getPosition();
     Size visibleSize = Director::getInstance()->getVisibleSize();
     
-    // ¼ÆËã´¹Ö±Æ«ÒÆ£¬ÈÃ½ÇÉ«ÔÚÆÁÄ»ÏÂ1/3´¦
+    // ==================== ã€è°ƒè¯•ã€‘å®æ—¶è¾“å‡ºæœ€è¿‘çš„å²©çŸ³å¹³å° ====================
+    static float debugTimer = 0.0f;
+    debugTimer += dt;
+    
+    if (debugTimer >= 1.0f)  // æ¯ç§’è¾“å‡ºä¸€æ¬¡
+    {
+        debugTimer = 0.0f;
+        
+        CCLOG(">>> Knight å®æ—¶ä½ç½®: (%.1f, %.1f)", knightPos.x, knightPos.y);
+        
+        // æŸ¥æ‰¾æœ€è¿‘çš„å¹³å°
+        float minDistance = 99999.0f;
+        const Platform* nearestPlatform = nullptr;
+        
+        for (const auto& platform : _platforms)
+        {
+            Vec2 platformCenter(
+                platform.rect.origin.x + platform.rect.size.width / 2,
+                platform.rect.origin.y + platform.rect.size.height / 2
+            );
+            
+            float distance = knightPos.distance(platformCenter);
+            
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                nearestPlatform = &platform;
+            }
+        }
+        
+        if (nearestPlatform)
+        {
+            auto& rect = nearestPlatform->rect;
+            Vec2 center(rect.getMidX(), rect.getMidY());
+            
+            CCLOG("    æœ€è¿‘å²©çŸ³ [è·ç¦»: %.1f]:", minDistance);
+            CCLOG("      å·¦ä¸‹è§’: (%.1f, %.1f)", rect.getMinX(), rect.getMinY());
+            CCLOG("      å³ä¸Šè§’: (%.1f, %.1f)", rect.getMaxX(), rect.getMaxY());
+            CCLOG("      ä¸­å¿ƒ: (%.1f, %.1f)", center.x, center.y);
+            CCLOG("      å°ºå¯¸: %.1f x %.1f", rect.size.width, rect.size.height);
+        }
+    }
+    // ==================== è°ƒè¯•ä»£ç ç»“æŸ ====================
+    
     float verticalOffset = visibleSize.height / 6.0f;
     
-    // ´¦Àí¼â´ÌËÀÍöÁ÷³Ì
     if (_isInSpikeDeath)
     {
         updateSpikeDeath(dt, knight);
         
-        // ¼â´ÌËÀÍöÆÚ¼äÈÔÈ»¸üĞÂÉãÏñ»úÎ»ÖÃ
         Vec2 cameraPos = camera->getPosition();
         Vec2 targetPos = Vec2(knightPos.x, knightPos.y + verticalOffset);
         float lerpFactor = 0.1f;
@@ -563,10 +1177,8 @@ void NextScene::update(float dt)
         return;
     }
     
-    // ¼ÇÂ¼°²È«Î»ÖÃ£¨µ±ÆïÊ¿ÔÚµØÃæÉÏÇÒ²»´¦ÓÚÌØÊâ×´Ì¬Ê±£©
     if (!knight->isDead() && !knight->isSpikeDeathState() && !knight->isHazardRespawnState())
     {
-        // ¼òµ¥ÅĞ¶Ï£ºÈç¹ûÆïÊ¿Y×ø±ê½Ó½üÄ³¸öÆ½Ì¨¶¥²¿£¬¾Í¼ÇÂ¼Îª°²È«Î»ÖÃ
         for (const auto& platform : _platforms)
         {
             float platformTop = platform.rect.getMaxY();
@@ -581,7 +1193,10 @@ void NextScene::update(float dt)
         }
     }
     
-    // ¼ì²â¼â´ÌÅö×²
+    // === ä½¿ç”¨æ–°çš„æˆ˜æ–—ç¢°æ’æ£€æµ‹æ–¹æ³•(å‚è€ƒBossScene) ===
+    checkCombatCollisions();
+    
+    // æ£€æµ‹å°–åˆºç¢°æ’
     if (!knight->isDead() && !knight->isSpikeDeathState() && !knight->isHazardRespawnState() && !knight->isInvincible())
     {
         for (auto& thornObj : _thornObjects)
@@ -595,27 +1210,23 @@ void NextScene::update(float dt)
             
             if (thornRect.containsPoint(knightPos))
             {
-                // ´¥·¢¼â´ÌËÀÍö
-                CCLOG("Íæ¼ÒÅöµ½¼â´Ì£¡¿ªÊ¼¼â´ÌËÀÍöÁ÷³Ì");
+                CCLOG("ç©å®¶ç¢°åˆ°å°–åˆºï¼å¼€å§‹å°–åˆºæ­»äº¡æµç¨‹");
                 startSpikeDeath(knight);
                 break;
             }
         }
     }
 
-    // ¼ì²âÆïÊ¿ÖØÂäµØ×´Ì¬´¥·¢Õğ¶¯
     static bool wasHardLanding = false;
     bool isHardLanding = knight->isHardLanding();
     
-    // µ±ÆïÊ¿¸Õ½øÈëÖØÂäµØ×´Ì¬Ê±´¥·¢Õğ¶¯
     if (isHardLanding && !wasHardLanding)
     {
         shakeScreen(0.6f, 30.0f);
-        CCLOG("Íæ¼ÒÖØÂäµØ£¬´¥·¢ÆÁÄ»Õğ¶¯");
+        CCLOG("ç©å®¶é‡è½åœ°ï¼Œè§¦å‘å±å¹•éœ‡åŠ¨");
     }
     wasHardLanding = isHardLanding;
 
-    // ¸üĞÂÕğ¶¯Ğ§¹û
     if (_isShaking)
     {
         _shakeElapsed += dt;
@@ -624,14 +1235,11 @@ void NextScene::update(float dt)
         {
             _isShaking = false;
             _shakeOffset = Vec2::ZERO;
-            CCLOG("ÆÁÄ»Õğ¶¯½áÊø");
+            CCLOG("å±å¹•éœ‡åŠ¨ç»“æŸ");
         }
         else
         {
-            // ¼ÆËãÕğ¶¯Ë¥¼õÒò×Ó£¨Öğ½¥¼õÈõ£©
             float factor = 1.0f - (_shakeElapsed / _shakeDuration);
-            
-            // Ëæ»úÆ«ÒÆ
             float offsetX = ((rand() % 200) / 100.0f - 1.0f) * _shakeIntensity * factor;
             float offsetY = ((rand() % 200) / 100.0f - 1.0f) * _shakeIntensity * factor;
             
@@ -639,30 +1247,51 @@ void NextScene::update(float dt)
         }
     }
 
-    // ÉãÏñ»úÆ½»¬¸úËæ½ÇÉ«£¨½ÇÉ«ÔÚÆÁÄ»ÏÂ1/3´¦£©
     Vec2 cameraPos = camera->getPosition();
-    
     Vec2 targetPos = Vec2(knightPos.x, knightPos.y + verticalOffset);
     
     float lerpFactor = 0.1f;
     Vec2 newPos = cameraPos + (targetPos - cameraPos) * lerpFactor;
-    
-    // Ó¦ÓÃÕğ¶¯Æ«ÒÆ
     newPos = newPos + _shakeOffset;
     
     camera->setPosition(newPos);
     
-    // ¸üĞÂHPºÍSoul UI
     updateHPAndSoulUI(dt);
-    
     checkInteractions();
+
+    // ã€ä¿®æ”¹ã€‘æ›´æ–° Cornifer çš„ Knight ä½ç½®ä¿¡æ¯ - ä½¿ç”¨ knight å˜é‡è€Œä¸æ˜¯ _player
+    if (_cornifer && knight)
+    {
+        // è·å– Knight çš„ä¸–ç•Œåæ ‡
+        Vec2 knightWorldPos = knight->getPosition();
+        
+        // ã€æ–°å¢ã€‘æ·»åŠ è°ƒè¯•æ—¥å¿—ï¼ˆæ¯ç§’è¾“å‡ºä¸€æ¬¡ï¼‰
+        static float corniferDebugTimer = 0.0f;
+        corniferDebugTimer += dt;
+        
+        if (corniferDebugTimer >= 2.0f)  // æ¯2ç§’è¾“å‡ºä¸€æ¬¡
+        {
+            corniferDebugTimer = 0.0f;
+            
+            Vec2 corniferPos = _cornifer->getPosition();
+            float distance = knightWorldPos.distance(corniferPos);
+            
+            CCLOG(">>> Cornifer äº¤äº’è°ƒè¯•:");
+            CCLOG("    Knight ä½ç½®: (%.1f, %.1f)", knightWorldPos.x, knightWorldPos.y);
+            CCLOG("    Cornifer ä½ç½®: (%.1f, %.1f)", corniferPos.x, corniferPos.y);
+            CCLOG("    è·ç¦»: %.1f (æ£€æµ‹èŒƒå›´: 300x200 çŸ©å½¢)", distance);
+        }
+        
+        // ä¼ é€’ç»™ Corniferï¼ˆCornifer ä¼šè‡ªåŠ¨å¤„ç†æ£€æµ‹å’ŒåŠ¨ç”»ï¼‰
+        _cornifer->setPlayerPosition(knightWorldPos);
+    }
 }
 
 void NextScene::createCollisionFromTMX(TMXTiledMap* map, const std::string& layerName, float scale, const Vec2& mapOffset)
 {
     auto collisionGroup = map->getObjectGroup(layerName);
     if (!collisionGroup) {
-        CCLOG("¾¯¸æ£ºµØÍ¼ÖĞÃ»ÓĞÕÒµ½ %s ¶ÔÏó²ã", layerName.c_str());
+        CCLOG("è­¦å‘Šï¼šåœ°å›¾ä¸­æ²¡æœ‰æ‰¾åˆ° %s å¯¹è±¡å±‚", layerName.c_str());
         return;
     }
 
@@ -696,7 +1325,7 @@ void NextScene::createCollisionFromTMX(TMXTiledMap* map, const std::string& laye
             platform.node = nullptr;
             _platforms.push_back(platform);
 
-            CCLOG("´´½¨Åö×²Æ½Ì¨: x=%.1f, y=%.1f, w=%.1f, h=%.1f", x, y, width, height);
+            CCLOG("åˆ›å»ºç¢°æ’å¹³å°: x=%.1f, y=%.1f, w=%.1f, h=%.1f", x, y, width, height);
         }
     }
 }
@@ -705,7 +1334,7 @@ void NextScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
 {
     auto objectGroup = map->getObjectGroup("Objects");
     if (!objectGroup) {
-        CCLOG("¾¯¸æ£ºÎ´ÕÒµ½ Objects ¶ÔÏó²ã");
+        CCLOG("è­¦å‘Šï¼šæœªæ‰¾åˆ° Objects å¯¹è±¡å±‚");
         return;
     }
 
@@ -729,7 +1358,7 @@ void NextScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
         
         std::string name = dict["name"].asString();
         if (name.empty()) {
-            CCLOG("¾¯¸æ£ºbgÀà¶ÔÏóÃ»ÓĞÃû³Æ£¬Ìø¹ı");
+            CCLOG("è­¦å‘Šï¼šbgç±»å¯¹è±¡æ²¡æœ‰åç§°ï¼Œè·³è¿‡");
             continue;
         }
         
@@ -756,11 +1385,11 @@ void NextScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
             
             this->addChild(fgSprite, 10);
             
-            CCLOG("¼ÓÔØÇ°¾°¶ÔÏó: %s at (%.1f, %.1f)", imagePath.c_str(), worldX, worldY);
+            CCLOG("åŠ è½½å‰æ™¯å¯¹è±¡: %s at (%.1f, %.1f)", imagePath.c_str(), worldX, worldY);
         }
         else
         {
-            CCLOG("¾¯¸æ£ºÎŞ·¨¼ÓÔØÇ°¾°Í¼Æ¬: %s", imagePath.c_str());
+            CCLOG("è­¦å‘Šï¼šæ— æ³•åŠ è½½å‰æ™¯å›¾ç‰‡: %s", imagePath.c_str());
         }
     }
 }
@@ -771,7 +1400,7 @@ void NextScene::createTrapSprites(TMXTiledMap* map, const std::string& layerName
 {
     auto collisionGroup = map->getObjectGroup(layerName);
     if (!collisionGroup) {
-        CCLOG("¾¯¸æ£ºµØÍ¼ÖĞÃ»ÓĞÕÒµ½ %s ¶ÔÏó²ã", layerName.c_str());
+        CCLOG("è­¦å‘Šï¼šåœ°å›¾ä¸­æ²¡æœ‰æ‰¾åˆ° %s å¯¹è±¡å±‚", layerName.c_str());
         return;
     }
 
@@ -808,10 +1437,10 @@ void NextScene::createTrapSprites(TMXTiledMap* map, const std::string& layerName
                 sprite->setPosition(Vec2(x + width / 2, y + height / 2));
                 this->addChild(sprite, 1);
                 
-                CCLOG("´´½¨ÏİÚå¾«Áé: x=%.1f, y=%.1f, w=%.1f, h=%.1f", x, y, width, height);
+                CCLOG("åˆ›å»ºé™·é˜±ç²¾çµ: x=%.1f, y=%.1f, w=%.1f, h=%.1f", x, y, width, height);
             }
             else {
-                CCLOG("¾¯¸æ£ºÎŞ·¨¼ÓÔØ¾«Áé %s", spritePath.c_str());
+                CCLOG("è­¦å‘Šï¼šæ— æ³•åŠ è½½ç²¾çµ %s", spritePath.c_str());
             }
         }
     }
@@ -822,12 +1451,12 @@ void NextScene::createHPAndSoulUI()
     auto knight = dynamic_cast<TheKnight*>(this->getChildByName("Player"));
     if (!knight) return;
     
-    // ´´½¨UI²ã
+    // åˆ›å»ºUIå±‚
     _uiLayer = Node::create();
     if (!_uiLayer) return;
     this->addChild(_uiLayer, 1000);
     
-    // ÑªÌõ±³¾°
+    // è¡€æ¡èƒŒæ™¯
     _hpBg = Sprite::create("Hp/hpbg.png");
     if (_hpBg)
     {
@@ -835,11 +1464,11 @@ void NextScene::createHPAndSoulUI()
         _uiLayer->addChild(_hpBg);
     }
     
-    // ³õÊ¼»¯ÑªÁ¿ºÍÁé»êÏÔÊ¾
+    // åˆå§‹åŒ–è¡€é‡å’Œçµé­‚æ˜¾ç¤º
     _lastDisplayedHP = knight->getHP();
-    _lastDisplayedSoul = -1;  // ³õÊ¼»¯Îª-1£¬È·±£µÚÒ»´Î¸üĞÂÊ±»á´¥·¢
+    _lastDisplayedSoul = -1;  // åˆå§‹åŒ–ä¸º-1ï¼Œç¡®ä¿ç¬¬ä¸€æ¬¡æ›´æ–°æ—¶ä¼šè§¦å‘
     
-    // Áé»ê±³¾° - Ê¹ÓÃsoul_1×÷ÎªÄ¬ÈÏÍ¼Ïñ
+    // çµé­‚èƒŒæ™¯ - ä½¿ç”¨soul_1ä½œä¸ºé»˜è®¤å›¾åƒ
     int currentSoul = knight->getSoul();
     
     _soulBg = Sprite::create("Hp/soul_1_0.png");
@@ -849,7 +1478,7 @@ void NextScene::createHPAndSoulUI()
         _soulBg->setPosition(Vec2(152, 935));
         _uiLayer->addChild(_soulBg);
         
-        // SoulÎª0Ê±Òş²Ø
+        // Soulä¸º0æ—¶éšè—
         if (currentSoul <= 0)
         {
             _soulBg->setVisible(false);
@@ -885,7 +1514,7 @@ void NextScene::createHPAndSoulUI()
     int maxHp = knight->getMaxHP();
     float gap = 50;
     
-    // ´´½¨ÑªÁ¿Í¼±ê
+    // åˆ›å»ºè¡€é‡å›¾æ ‡
     for (int i = 0; i < maxHp; i++)
     {
         auto hpBar = Sprite::create("Hp/hp1.png");
@@ -899,7 +1528,7 @@ void NextScene::createHPAndSoulUI()
         }
     }
     
-    // Ê§È¥ÑªÁ¿Í¼±ê
+    // å¤±å»è¡€é‡å›¾æ ‡
     _hpLose = Sprite::create("Hp/hp8.png");
     if (_hpLose)
     {
@@ -915,7 +1544,7 @@ void NextScene::updateHPAndSoulUI(float dt)
     auto knight = dynamic_cast<TheKnight*>(this->getChildByName("Player"));
     if (!knight || !_uiLayer) return;
     
-    // ¸üĞÂUI²ãÎ»ÖÃ¸úËæÉãÏñÍ·
+    // æ›´æ–°UIå±‚ä½ç½®è·Ÿéšæ‘„åƒå¤´
     auto scene = this->getScene();
     if (scene)
     {
@@ -933,7 +1562,7 @@ void NextScene::updateHPAndSoulUI(float dt)
     int maxHp = knight->getMaxHP();
     float gap = 50;
     
-    // ¸üĞÂÑªÁ¿ÏÔÊ¾
+    // æ›´æ–°è¡€é‡æ˜¾ç¤º
     if (currentHP != _lastDisplayedHP)
     {
         for (int i = 0; i < (int)_hpBars.size(); i++)
@@ -950,14 +1579,14 @@ void NextScene::updateHPAndSoulUI(float dt)
         _lastDisplayedHP = currentHP;
     }
     
-    // ¸üĞÂÁé»êÏÔÊ¾
+    // æ›´æ–°çµé­‚æ˜¾ç¤º
     if (_soulBg && currentSoul != _lastDisplayedSoul)
     {
         _lastDisplayedSoul = currentSoul;
         
         _soulBg->stopAllActions();
         
-        // SoulÎª0Ê±Òş²Ø£¬·ñÔòÏÔÊ¾¶ÔÓ¦µÈ¼¶µÄ¶¯»­
+        // Soulä¸º0æ—¶éšè—ï¼Œå¦åˆ™æ˜¾ç¤ºå¯¹åº”ç­‰çº§çš„åŠ¨ç”»
         if (currentSoul <= 0)
         {
             _soulBg->setVisible(false);
@@ -966,7 +1595,7 @@ void NextScene::updateHPAndSoulUI(float dt)
         {
             _soulBg->setVisible(true);
             
-            // SoulÖµ1-6¶ÔÓ¦×ÊÔ´ÎÄ¼şsoul_1µ½soul_6
+            // Soulå€¼1-6å¯¹åº”èµ„æºæ–‡ä»¶soul_1åˆ°soul_6
             int soulLevel = currentSoul;
             if (soulLevel > 6) soulLevel = 6;
             

@@ -1,1 +1,2 @@
 E:\Hollow Knight\HollowKnight\proj.win32\Debug.win32\HollowKnight.exe
+D:\Project\HollowKnight\proj.win32\Debug.win32\HollowKnight.exe

@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>frames</key>
+    <dict>
+        <!-- 精灵0 -->
+        <key>Crawlid - atlas0 #0070052_0.png</key>
+        <dict>
+            <key>frame</key>
+            <string>{{5,3},{110,79}}</string>
+            <key>offset</key>
+            <string>{0,0}</string>
+            <key>rotated</key>
+            <false/>
+            <key>sourceSize</key>
+            <string>{110,79}</string>
+            <key>anchor</key>
+            <string>{0.5,0.5}</string>
+        </dict>
+        
+        <!-- 精灵1 -->
+        <key>Crawlid - atlas0 #0070052_1.png</key>
+        <dict>
+            <key>frame</key>
+            <string>{{152,9},{89,84}}</string>
+            <key>offset</key>
+            <string>{0,0}</string>
+            <key>rotated</key>
+            <false/>
+            <key>sourceSize</key>
+            <string>{89,84}</string>
+            <key>anchor</key>
+            <string>{0.5,0.5}</string>
+        </dict>
+        
+        <!-- 精灵2 -->
+        <key>Crawlid - atlas0 #0070052_2.png</key>
+        <dict>
+            <key>frame</key>
+            <string>{{282,17},{96,67}}</string>
+            <key>offset</key>
+            <string>{0,0}</string>
+            <key>rotated</key>
+            <false/>
+            <key>sourceSize</key>
+            <string>{96,67}</string>
+            <key>anchor</key>
+            <string>{0.5,0.5}</string>
+        </dict>
+        
+        <!-- 精灵3 -->
+        <key>Crawlid - atlas0 #0070052_3.png</key>
+        <dict>
+            <key>frame</key>
+            <string>{{401,16},{88,69}}</string>
+            <key>offset</key>
+            <string>{0,0}</string>
+            <key>rotated</key>
+            <false/>
+            <key>sourceSize</key>
+            <string>{88,69}</string>
+            <key>anchor</key>
+            <string>{0.5,0.5}</string>
+        </dict>
+        
+        <!-- 精灵4 -->
+        <key>Crawlid - atlas0 #0070052_4.png</key>
+        <dict>
+            <key>frame</key>
+            <string>{{6,109},{96,75}}</string>
+            <key>offset</key>
+            <string>{0,0}</string>
+            <key>rotated</key>
+            <false/>
+            <key>sourceSize</key>
+            <string>{96,75}</string>
+            <key>anchor</key>
+            <string>{0.5,0.5}</string>
+        </dict>
+        
+        <!-- 精灵5 -->
+        <key>Crawlid - atlas0 #0070052_5.png</key>
+        <dict>
+            <key>frame</key>
+            <string>{{146,109},{105,80}}</string>
+            <key>offset</key>
+            <string>{0,0}</string>
+            <key>rotated</key>
+            <false/>
+            <key>sourceSize</key>
+            <string>{105,80}</string>
+            <key>anchor</key>
+            <string>{0.5,0.5}</string>
+        </dict>
+        
+        <!-- 精灵6 -->
+        <key>Crawlid - atlas0 #0070052_6.png</key>
+        <dict>
+            <key>frame</key>
+            <string>{{279,107},{114,78}}</string>
+            <key>offset</key>
+            <string>{0,0}</string>
+            <key>rotated</key>
+            <false/>
+            <key>sourceSize</key>
+            <string>{114,78}</string>
+            <key>anchor</key>
+            <string>{0.5,0.5}</string>
+        </dict>
+        
+        <!-- 精灵7 -->
+        <key>Crawlid - atlas0 #0070052_7.png</key>
+        <dict>
+            <key>frame</key>
+            <string>{{396,106},{111,80}}</string>
+            <key>offset</key>
+            <string>{0,0}</string>
+            <key>rotated</key>
+            <false/>
+            <key>sourceSize</key>
+            <string>{111,80}</string>
+            <key>anchor</key>
+            <string>{0.5,0.5}</string>
+        </dict>
+        
+        <!-- 精灵8 -->
+        <key>Crawlid - atlas0 #0070052_8.png</key>
+        <dict>
+            <key>frame</key>
+            <string>{{3,215},{128,74}}</string>
+            <key>offset</key>
+            <string>{0,0}</string>
+            <key>rotated</key>
+            <false/>
+            <key>sourceSize</key>
+            <string>{128,74}</string>
+            <key>anchor</key>
+            <string>{0.5,0.5}</string>
+        </dict>
+        
+        <!-- 精灵9 -->
+        <key>Crawlid - atlas0 #0070052_9.png</key>
+        <dict>
+            <key>frame</key>
+            <string>{{147,210},{106,90}}</string>
+            <key>offset</key>
+            <string>{0,0}</string>
+            <key>rotated</key>
+            <false/>
+            <key>sourceSize</key>
+            <string>{106,90}</string>
+            <key>anchor</key>
+            <string>{0.5,0.5}</string>
+        </dict>
+        
+        <!-- 精灵10 -->
+        <key>Crawlid - atlas0 #0070052_10.png</key>
+        <dict>
+            <key>frame</key>
+            <string>{{280,213},{120,84}}</string>
+            <key>offset</key>
+            <string>{0,0}</string>
+            <key>rotated</key>
+            <false/>
+            <key>sourceSize</key>
+            <string>{120,84}</string>
+            <key>anchor</key>
+            <string>{0.5,0.5}</string>
+        </dict>
+        
+        <!-- 精灵11 -->
+        <key>Crawlid - atlas0 #0070052_11.png</key>
+        <dict>
+            <key>frame</key>
+            <string>{{19,342},{7,7}}</string>
+            <key>offset</key>
+            <string>{0,0}</string>
+            <key>rotated</key>
+            <false/>
+            <key>sourceSize</key>
+            <string>{7,7}</string>
+            <key>anchor</key>
+            <string>{0.5,0.5}</string>
+        </dict>
+        
+        <!-- 精灵12 -->
+        <key>Crawlid - atlas0 #0070052_12.png</key>
+        <dict>
+            <key>frame</key>
+            <string>{{23,310},{110,84}}</string>
+            <key>offset</key>
+            <string>{0,0}</string>
+            <key>rotated</key>
+            <false/>
+            <key>sourceSize</key>
+            <string>{110,84}</string>
+            <key>anchor</key>
+            <string>{0.5,0.5}</string>
+        </dict>
+        
+        <!-- 精灵13 -->
+        <key>Crawlid - atlas0 #0070052_13.png</key>
+        <dict>
+            <key>frame</key>
+            <string>{{154,300},{109,99}}</string>
+            <key>offset</key>
+            <string>{0,0}</string>
+            <key>rotated</key>
+            <false/>
+            <key>sourceSize</key>
+            <string>{109,99}</string>
+            <key>anchor</key>
+            <string>{0.5,0.5}</string>
+        </dict>
+    </dict>
+    
+    <key>metadata</key>
+    <dict>
+        <key>format</key>
+        <integer>2</integer>
+        <key>realTextureFileName</key>
+        <string>Crawlid - atlas0 #0070052.png</string>
+        <key>size</key>
+        <string>{512,512}</string>
+        <key>textureFileName</key>
+        <string>Crawlid - atlas0 #0070052.png</string>
+    </dict>
+</dict>
+</plist>
