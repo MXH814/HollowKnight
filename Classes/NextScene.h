@@ -4,8 +4,7 @@
 #include "cocos2d.h"
 #include "TheKnight.h"
 #include "CorniferNPC.h"
-
-// 【修改】移除 Platform 重复定义，使用 TheKnight.h 中的定义
+#include "ShadowEnemy.h"  // 添加 Shadow 头文件
 
 // 【修改】ExitObject 结构体 - 根据 NextScene.cpp 的使用方式定义
 struct ExitObject {
@@ -31,7 +30,16 @@ class NextScene : public cocos2d::Layer
 {
 public:
     static cocos2d::Scene* createScene();
+    
+    // 新增：带重生标志的场景创建方法
+    static cocos2d::Scene* createSceneWithRespawn();
+    
     virtual bool init() override;
+    virtual void update(float dt) override;
+    
+    // 新增：Knight 死亡回调
+    void onKnightDeath(const cocos2d::Vec2& deathPos);
+    
     CREATE_FUNC(NextScene);
     
     // 【修改】获取碰撞平台数据（使用 TheKnight.h 中的 Platform 定义）
@@ -125,8 +133,17 @@ private:
     // 【新增】TheKnight 引用
     TheKnight* _player = nullptr;
     
-    // 【新增】update 函数声明
-    virtual void update(float dt) override;
+    // 新增：Shade 实例
+    ShadowEnemy* _shade = nullptr;
+    
+    // 新增：重生相关静态变量
+    static bool s_isRespawning;
+    static cocos2d::Vec2 s_shadePosition;
+    
+    // 新增：Shade 相关方法
+    void spawnShade(const cocos2d::Vec2& position);
+    void removeShade();
+    void updateShade(float dt);
 };
 
 #endif // __NEXT_SCENE_H__

@@ -36,6 +36,18 @@ Scene* GameScene::createSceneWithSpawn(const Vec2& spawnPos, bool facingRight)
     return GameScene::create();
 }
 
+Scene* GameScene::createSceneForRespawn()
+{
+    s_hasCustomSpawn = true;
+    s_customSpawnPos = Vec2::ZERO;  // 不使用自定义位置，使用椅子位置
+    s_spawnFacingRight = true;
+    s_spawnDoJump = false;  // 不跳跃，直接坐下
+    
+    CCLOG("GameScene::createSceneForRespawn - Knight will respawn on chair");
+    
+    return GameScene::create();
+}
+
 bool GameScene::init()
 {
     if (!Scene::init())
@@ -63,6 +75,7 @@ bool GameScene::init()
     float totalMapWidth = 0.0f;
     float maxMapHeight = 0.0f;
 
+    // 先加载地图和交互对象
     for (const auto& chunk : chunks) {
         auto map = TMXTiledMap::create(chunk.file);
         CCASSERT(map != nullptr, ("地图加载失败: " + chunk.file).c_str());
@@ -81,7 +94,7 @@ bool GameScene::init()
         maxMapHeight = std::max(maxMapHeight, mapTop);
 
         createCollisionFromTMX(map, "Collision", scale, mapPos);
-        loadInteractiveObjects(map, scale, mapPos);
+        loadInteractiveObjects(map, scale, mapPos);  // 确保这个在 Knight 创建前调用
         loadForegroundObjects(map, scale, mapPos);
     }
     
@@ -99,29 +112,52 @@ bool GameScene::init()
     _knight = TheKnight::create();
     if (_knight)
     {
-        if (s_hasCustomSpawn)
-        {
-            CCLOG("使用自定义出生点位置: (%.1f, %.1f), 朝向: %s", 
-                  s_customSpawnPos.x, s_customSpawnPos.y, 
-                  s_spawnFacingRight ? "右" : "左");
-            
-            _knight->setPosition(s_customSpawnPos);
-            float scaleValue = s_spawnFacingRight ? 1.0f : -1.0f;
-            _knight->setScaleX(scaleValue);
-            _knight->setScaleY(1.0f);
-        }
-        else
-        {
-            _knight->setPosition(Vec2(startX, startY));
-            _knight->setScale(1.0f);
-        }
+        _knight->setPosition(Vec2(startX, startY));
+        _knight->setScale(1.0f);
         
         _knight->setPlatforms(_platforms);
         this->addChild(_knight, 5, "Player");
         
         CharmManager::getInstance()->syncToKnight(_knight);
         
-        if (s_hasCustomSpawn && s_spawnDoJump)
+        // 【新增】检查是否从 NextScene 死亡返回
+        if (s_hasCustomSpawn && !s_spawnDoJump)
+        {
+            // 从 NextScene 死亡返回，让 Knight 坐在椅子上
+            CCLOG("Knight died in NextScene, respawning on chair in GameScene");
+            
+            // 查找椅子位置
+            Vec2 chairPos = Vec2::ZERO;
+            for (const auto& obj : _interactiveObjects)
+            {
+                if (obj.name == "Chair")
+                {
+                    chairPos = obj.position;
+                    break;
+                }
+            }
+            
+            if (chairPos != Vec2::ZERO)
+            {
+                // 设置 Knight 位置到椅子位置
+                _knight->setPosition(chairPos);
+                _knight->setNearChair(true);
+                
+                // 延迟一帧后让 Knight 坐下
+                this->scheduleOnce([this](float dt) {
+                    if (_knight)
+                    {
+                        _knight->startSitting();
+                        CCLOG("Knight automatically sitting on chair after respawn");
+                    }
+                }, 0.1f, "auto_sit");
+            }
+            
+            // 重置标志
+            s_hasCustomSpawn = false;
+            s_customSpawnPos = Vec2::ZERO;
+        }
+        else if (s_hasCustomSpawn && s_spawnDoJump)
         {
             float horizontalSpeed = s_spawnFacingRight ? 1.0f : -1.0f;
             _knight->triggerJumpFromExternal(horizontalSpeed);
@@ -129,12 +165,12 @@ bool GameScene::init()
             CCLOG("玩家从NextScene返回：位置(%.1f, %.1f)，朝向%s，触发跳跃动作", 
                   s_customSpawnPos.x, s_customSpawnPos.y, 
                   s_spawnFacingRight ? "右" : "左");
+            
+            s_hasCustomSpawn = false;
+            s_customSpawnPos = Vec2::ZERO;
+            s_spawnFacingRight = true;
+            s_spawnDoJump = false;
         }
-        
-        s_hasCustomSpawn = false;
-        s_customSpawnPos = Vec2::ZERO;
-        s_spawnFacingRight = true;
-        s_spawnDoJump = false;
     }
 
     _interactionLabel = Label::createWithSystemFont(u8"休息", "fonts/ZCOOLXiaoWei-Regular.ttf", 24);
@@ -187,6 +223,7 @@ bool GameScene::init()
     }
     
     CCLOG("共创建 %zu 个碰撞平台", _platforms.size());
+    CCLOG("共加载 %zu 个交互对象", _interactiveObjects.size());
 
     return true;
 }
@@ -723,7 +760,7 @@ void GameScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
             fgSprite->setScale(scale);
 
             // 添加到比角色更高的z-order层（角色是5，前景用10）
-            this->addChild(fgSprite, 10);
+//             this->addChild(fgSprite, 10);
 
             CCLOG("加载前景对象: %s at (%.1f, %.1f)", imagePath.c_str(), worldX, worldY);
         }

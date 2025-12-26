@@ -4,6 +4,8 @@
  */
 
 #include "TheKnight.h"
+#include "GameScene.h"  // 添加这一行，包含 GameScene 头文件
+#include "NextScene.h"  // 添加 NextScene 头文件
 
 void TheKnight::startSlash()
 {
@@ -635,7 +637,8 @@ bool TheKnight::getSlashEffectBoundingBox(Rect& outRect) const
 
 void TheKnight::takeDamage(int damage)
 {
-    if (_isInvincible || _state == KnightState::GET_ATTACKED || _state == KnightState::DEAD)
+    // 如果已经死亡或处于无敌状态，不受伤
+    if (_state == KnightState::DEAD || _isInvincible)
     {
         return;
     }
@@ -777,15 +780,71 @@ void TheKnight::onGetAttackedFinished()
 
 void TheKnight::startDeath()
 {
+    CCLOG("TheKnight::startDeath - Knight is dying! Notifying Scene...");
+    
+    // 保存死亡位置用于生成 Shade
+    Vec2 deathPos = this->getPosition();
+    
+    // 通知父场景在死亡位置记录信息
+    if (auto parent = this->getParent())
+    {
+        // 尝试获取 NextScene（动态类型转换）
+        if (auto nextScene = dynamic_cast<NextScene*>(parent))
+        {
+            nextScene->onKnightDeath(deathPos);
+            CCLOG("  -> Notified NextScene of death");
+        }
+        // 如果不是 NextScene，可能是 GameScene 或其他场景
+        else if (auto gameScene = dynamic_cast<GameScene*>(parent))
+        {
+            // GameScene 中死亡不生成 Shade，直接记录日志
+            CCLOG("  -> Knight died in GameScene (no Shade will spawn)");
+        }
+    }
+    
+    // 切换到死亡状态
     changeState(KnightState::DEAD);
 }
 
 void TheKnight::onDeathAnimFinished()
 {
-    // 死亡动画播放完毕，角色消失
-    this->setVisible(false);
-    // 停止更新
-    this->unscheduleUpdate();
+    CCLOG("TheKnight::onDeathAnimFinished - Death animation completed, preparing scene transition");
+    
+    // 检查当前在哪个场景
+    bool isInNextScene = false;
+    if (auto parent = this->getParent())
+    {
+        if (dynamic_cast<NextScene*>(parent))
+        {
+            isInNextScene = true;
+        }
+    }
+    
+    // 死亡动画播放完毕后，淡出并重新加载场景
+    auto fadeOut = cocos2d::FadeOut::create(1.0f);
+    auto reloadScene = cocos2d::CallFunc::create([isInNextScene]() {
+        CCLOG("Reloading scene with respawn flag...");
+        
+        if (isInNextScene)
+        {
+            // 在 NextScene 中死亡，重新加载 NextScene 并生成 Shade
+            auto newScene = NextScene::createSceneWithRespawn();
+            cocos2d::Director::getInstance()->replaceScene(
+                cocos2d::TransitionFade::create(1.0f, newScene, cocos2d::Color3B::BLACK)
+            );
+        }
+        else
+        {
+            // 在 GameScene 中死亡，回到 GameScene 椅子上
+            // （这个逻辑可以根据需要调整）
+            auto newScene = GameScene::createScene();
+            cocos2d::Director::getInstance()->replaceScene(
+                cocos2d::TransitionFade::create(1.0f, newScene, cocos2d::Color3B::BLACK)
+            );
+        }
+    });
+    
+    this->runAction(cocos2d::Sequence::create(fadeOut, reloadScene, nullptr));
 }
 
 void TheKnight::bounceFromDownSlash()
@@ -867,7 +926,7 @@ void TheKnight::onSpikeDeathAnimFinished()
     CCLOG("SpikeDeath animation finished, waiting for respawn");
 }
 
-void TheKnight::startHazardRespawn(const Vec2& respawnPos)
+void TheKnight::startHazardRespawn(const cocos2d::Vec2& respawnPos)
 {
     // 设置重生位置
     _respawnPosition = respawnPos;

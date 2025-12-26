@@ -122,7 +122,9 @@ void ShadowEnemy::update(float dt) {
     Rect knightWorldBox = knightLocalBox; 
 
     // --- 情况 1: Shadow 伤害 TheKnight (TheKnight 受击) ---
-    if (_playerDamageCooldown <= 0) {
+    // 【修改】只有在 IDLE 和 CHASE 状态下才会对 Knight 造成伤害
+    if (_playerDamageCooldown <= 0 && 
+        (_currentState == State::IDLE || _currentState == State::CHASE)) {
         if (worldHitBox.intersectsRect(knightWorldBox)) {
             CCLOG("Shadow hit TheKnight! Simulating damage...");
             _target->takeDamage(1);  // 使用TheKnight的takeDamage方法

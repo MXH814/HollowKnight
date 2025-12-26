@@ -9,8 +9,9 @@ class GameScene : public cocos2d::Scene
 public:
     static cocos2d::Scene* createScene();
     
-    // 带有生成位置和朝向的场景创建方法
+    // 带自定义出生点和朝向的场景创建方法
     static cocos2d::Scene* createSceneWithSpawn(const cocos2d::Vec2& spawnPos, bool facingRight);
+    static Scene* createSceneForRespawn();  // 【新增】从 NextScene 死亡后返回的场景创建方法
     
     virtual bool init() override;
     virtual void update(float dt) override;
@@ -37,8 +38,8 @@ private:
     // HP和Soul UI相关
     void createHPAndSoulUI();
     void updateHPAndSoulUI(float dt);
-    void startHPRecoveryAnimation();  // 开始血量恢复动画
-    void updateHPRecoveryAnimation(float dt);  // 更新血量恢复动画
+    void startHPRecoveryAnimation();
+    void updateHPRecoveryAnimation(float dt);
 
     // 交互对象
     struct InteractiveObject {
@@ -51,13 +52,13 @@ private:
     // 平台列表（碰撞检测）
     std::vector<Platform> _platforms;
     
-    // 玩家
+    // 角色
     TheKnight* _knight = nullptr;
     
     // UI 显示标签
     cocos2d::Label* _interactionLabel = nullptr;
     
-    // 禁止重复切换场景
+    // 防止重复切换场景
     bool _isTransitioning = false;
     
     // 地图信息
@@ -69,29 +70,29 @@ private:
     float _targetCameraOffsetY = 0.0f;
     
     // HP和Soul UI
-    cocos2d::Node* _uiLayer = nullptr;           // UI层（跟随摄像机）
-    cocos2d::Sprite* _hpBg = nullptr;            // 血条背景
-    cocos2d::Sprite* _soulBg = nullptr;          // 灵魂背景
-    std::vector<cocos2d::Sprite*> _hpBars;       // 血量图标
-    cocos2d::Sprite* _hpLose = nullptr;          // 失去血量图标
-    int _lastDisplayedHP = 0;                    // 上次显示的HP
-    int _lastDisplayedSoul = 0;                  // 上次显示的灵魂值
+    cocos2d::Node* _uiLayer = nullptr;
+    cocos2d::Sprite* _hpBg = nullptr;
+    cocos2d::Sprite* _soulBg = nullptr;
+    std::vector<cocos2d::Sprite*> _hpBars;
+    cocos2d::Sprite* _hpLose = nullptr;
+    int _lastDisplayedHP = 0;
+    int _lastDisplayedSoul = 0;
     
     // 血量恢复动画相关
-    bool _isHPRecovering = false;                // 是否正在恢复血量
-    int _hpRecoverTarget = 0;                    // 目标血量
-    int _hpRecoverCurrent = 0;                   // 当前恢复到的血量
-    float _hpRecoverTimer = 0.0f;                // 恢复计时器
-    float _hpRecoverInterval = 0.3f;             // 每个血量恢复间隔
+    bool _isHPRecovering = false;
+    int _hpRecoverTarget = 0;
+    int _hpRecoverCurrent = 0;
+    float _hpRecoverTimer = 0.0f;
+    float _hpRecoverInterval = 0.3f;
     
-    // 坐下状态追踪
-    bool _wasSitting = false;                    // 上一帧是否坐着
+    // 坐姿状态追踪
+    bool _wasSitting = false;
     
-    // 静态变量：从NextScene返回时的生成参数
-    static bool s_hasCustomSpawn;                // 是否有自定义生成位置
-    static cocos2d::Vec2 s_customSpawnPos;       // 自定义生成位置
-    static bool s_spawnFacingRight;              // 生成时的朝向
-    static bool s_spawnDoJump;                   // 是否需要跳跃动作
+    // 静态变量（从NextScene返回时可以传参）
+    static bool s_hasCustomSpawn;
+    static cocos2d::Vec2 s_customSpawnPos;
+    static bool s_spawnFacingRight;
+    static bool s_spawnDoJump;
 };
 
 #endif // __GAME_SCENE_H__

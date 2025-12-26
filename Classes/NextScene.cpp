@@ -10,10 +10,45 @@
 
 USING_NS_CC;
 
+// 静态变量初始化（在文件顶部，USING_NS_CC 之后）
+bool NextScene::s_isRespawning = false;
+Vec2 NextScene::s_shadePosition = Vec2::ZERO;
+
 Scene* NextScene::createScene()
 {
-    auto scene = Scene::create();
+    // 【新增】自动检测是否有保存的 Shade 位置
+    if (s_shadePosition != Vec2::ZERO)
+    {
+        CCLOG("NextScene::createScene - Auto-detecting shade spawn needed");
+        return createSceneWithRespawn();
+    }
     
+    s_isRespawning = false;  // 重置重生标志
+    
+    auto scene = Scene::create();
+    auto layer = NextScene::create();
+    scene->addChild(layer);
+
+    auto knight = layer->getChildByName("Player");
+    if (knight) {
+        Size visibleSize = Director::getInstance()->getVisibleSize();
+        float verticalOffset = visibleSize.height / 6.0f;
+        scene->getDefaultCamera()->setPosition(
+            Vec2(knight->getPositionX(), knight->getPositionY() + verticalOffset)
+        );
+    }
+
+    return scene;
+}
+
+// 新增：带重生标志的场景创建方法
+Scene* NextScene::createSceneWithRespawn()
+{
+    s_isRespawning = true;  // 设置重生标志
+    
+    CCLOG("NextScene::createSceneWithRespawn - Knight will respawn");
+    
+    auto scene = Scene::create();
     auto layer = NextScene::create();
     scene->addChild(layer);
 
@@ -33,6 +68,12 @@ bool NextScene::init()
 {
     if (!Layer::init())
         return false;
+
+    // 【新增】调试日志
+    CCLOG("====== NextScene::init ======");
+    CCLOG("  s_isRespawning: %s", s_isRespawning ? "TRUE" : "FALSE");
+    CCLOG("  s_shadePosition: (%.1f, %.1f)", s_shadePosition.x, s_shadePosition.y);
+    CCLOG("=============================");
 
     Size visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
@@ -60,6 +101,9 @@ bool NextScene::init()
     // 初始化攻击冷却时间
     _knightAttackCooldown = 0.0f;
     _spellAttackCooldown = 0.0f;
+    
+    // 【新增】初始化 _shade 为 nullptr
+    _shade = nullptr;
 
     auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255));
     this->addChild(blackLayer, 10, "LoadingBlack");
@@ -117,15 +161,71 @@ bool NextScene::init()
     auto knight = TheKnight::create();
     if (knight)
     {
-        knight->setPosition(Vec2(startX, startY));
-        knight->setScale(1.0f);
+        // 处理重生逻辑
+        if (s_isRespawning)
+        {
+            CCLOG("==== Processing respawn logic in NextScene ====");
+            
+            // 重生位置使用最后的安全位置，如果没有则使用默认位置
+            Vec2 respawnPos = _lastSafePosition;
+            if (respawnPos == Vec2::ZERO)
+            {
+                // 使用默认起始位置
+                respawnPos = Vec2(startX, startY);
+            }
+            
+            CCLOG("Knight respawning at position: (%.1f, %.1f)", respawnPos.x, respawnPos.y);
+            knight->setPosition(respawnPos);
+            knight->setScale(1.0f);
+            
+            // 重置血量为满血
+            knight->setHP(knight->getMaxHP());
+        }
+        else
+        {
+            knight->setPosition(Vec2(startX, startY));
+            knight->setScale(1.0f);
+        }
+        
         knight->setPlatforms(_platforms);
         this->addChild(knight, 5, "Player");
         
-        // 【新增】保存 Knight 引用到成员变量
+        // 【修改】立即设置 _player 引用
         _player = knight;
         
         CharmManager::getInstance()->syncToKnight(knight);
+        
+        // 【修改】重生逻辑：延迟生成 Shade，确保 _player 已经设置
+        if (s_isRespawning)
+        {
+            CCLOG("Knight added to scene, setting up respawn...");
+            CCLOG("_player pointer: %p", _player);  // 调试日志
+            CCLOG("s_shadePosition: (%.1f, %.1f)", s_shadePosition.x, s_shadePosition.y);  // 【新增】调试日志
+            
+            // 延迟一帧后生成 Shade
+            this->scheduleOnce([this](float dt) {
+                // 如果有 Shade 位置，生成 Shade
+                if (s_shadePosition != Vec2::ZERO)
+                {
+                    CCLOG("Spawning Shade at death position: (%.1f, %.1f)", s_shadePosition.x, s_shadePosition.y);
+                    CCLOG("_player pointer before spawn: %p", _player);  // 调试日志
+                    
+                    this->spawnShade(s_shadePosition);
+                    
+                    // 【修改】只重置重生标志，不重置 Shade 位置
+                    // Shade 位置会在 Shade 被击败时才重置
+                }
+                else
+                {
+                    CCLOG("Warning: s_shadePosition is ZERO, not spawning Shade");
+                }
+                
+                // 重置重生标志
+                s_isRespawning = false;
+                // 【删除】不在这里重置 s_shadePosition
+                // s_shadePosition = Vec2::ZERO;  // ❌ 删除这行
+            }, 0.1f, "respawn_delay");
+        }
     }
 
     // 生成所有怪物和 NPC
@@ -361,6 +461,12 @@ void NextScene::startSpikeDeath(TheKnight* knight)
     _isInSpikeDeath = true;
     _spikeDeathPhase = 1;
     _spikeDeathTimer = 0.0f;
+    
+    // 【新增】保存尖刺死亡位置用于 Shade 生成
+    Vec2 currentPos = knight->getPosition();
+    s_shadePosition = currentPos;
+    CCLOG("=== 尖刺死亡 - 保存 Shade 位置 ===");
+    CCLOG("  死亡位置: (%.1f, %.1f)", s_shadePosition.x, s_shadePosition.y);
     
     // 调用骑士的尖刺死亡函数
     knight->startSpikeDeath();
@@ -1116,6 +1222,24 @@ void NextScene::update(float dt)
     Vec2 knightPos = knight->getPosition();
     Size visibleSize = Director::getInstance()->getVisibleSize();
     
+    // ==================== 【修改】检查 Knight 死亡状态,增加防重复触发机制 ====================
+    static bool hasTriggeredDeath = false;  // 添加静态标志防止重复触发
+    
+    if (knight->isDead() && !_isInSpikeDeath && !hasTriggeredDeath)
+    {
+        CCLOG("Knight died in NextScene, triggering death callback");
+        hasTriggeredDeath = true;  // 设置标志
+        onKnightDeath(knightPos);
+        return;  // Knight 已死亡，不再继续后续逻辑
+    }
+    
+    // 如果 Knight 复活了,重置标志
+    if (!knight->isDead() && hasTriggeredDeath)
+    {
+        hasTriggeredDeath = false;
+    }
+    // ==================== 检查结束 ====================
+    
     // ==================== 【调试】实时输出最近的岩石平台 ====================
     static float debugTimer = 0.0f;
     debugTimer += dt;
@@ -1287,6 +1411,22 @@ void NextScene::update(float dt)
     }
 }
 
+// ShadowEnemy 相关方法
+void NextScene::updateShade(float dt)
+{
+    // Shade 的 update 会在其自身的 scheduleUpdate 中调用
+    // 这里可以添加额外的逻辑，比如检查 Shade 是否被击败等
+    if (_shade && _shade->getParent() == nullptr)
+    {
+        // Shade 已经被移除（可能是被击败了）
+        _shade = nullptr;
+        
+        // 【新增】Shade 被击败后，重置静态位置变量
+        CCLOG("Shade has been defeated/collected, resetting s_shadePosition");
+        s_shadePosition = Vec2::ZERO;
+    }
+}
+
 void NextScene::createCollisionFromTMX(TMXTiledMap* map, const std::string& layerName, float scale, const Vec2& mapOffset)
 {
     auto collisionGroup = map->getObjectGroup(layerName);
@@ -1383,9 +1523,10 @@ void NextScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
             fgSprite->setPosition(Vec2(worldX, worldY));
             fgSprite->setScale(scale);
             
-            this->addChild(fgSprite, 10);
+            // 修复：确保前景对象在 Knight 上面
+            this->addChild(fgSprite, 10);  // 移除注释，z-order = 10
             
-            CCLOG("加载前景对象: %s at (%.1f, %.1f)", imagePath.c_str(), worldX, worldY);
+            CCLOG("加载前景对象: %s at (%.1f, %.1f), z-order=10", imagePath.c_str(), worldX, worldY);
         }
         else
         {
@@ -1393,6 +1534,86 @@ void NextScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
         }
     }
 }
+
+// 新增：Knight 死亡回调
+void NextScene::onKnightDeath(const Vec2& deathPos)
+{
+    CCLOG("NextScene::onKnightDeath - Knight died at position (%.1f, %.1f)", deathPos.x, deathPos.y);
+    
+    // 保存死亡位置用于下次重生时生成 Shade
+    s_shadePosition = deathPos;
+    
+    // 移除现有的 Shade（如果有）
+    removeShade();
+    
+    // 【修改】死亡后切换到 GameScene 并坐在椅子上
+    auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 0));
+    this->addChild(blackLayer, 2000);
+    
+    blackLayer->runAction(Sequence::create(
+        FadeIn::create(1.0f),
+        CallFunc::create([]() {
+            // 使用新的重生方法切换到 GameScene
+            auto gameScene = GameScene::createSceneForRespawn();
+            Director::getInstance()->replaceScene(TransitionFade::create(0.5f, gameScene, Color3B::BLACK));
+        }),
+        nullptr
+    ));
+}
+
+// 修改：生成 Shade - 增加更详细的调试信息
+void NextScene::spawnShade(const Vec2& position)
+{
+    CCLOG("=== NextScene::spawnShade START ===");
+    CCLOG("  Position: (%.1f, %.1f)", position.x, position.y);
+    CCLOG("  _player pointer: %p", _player);
+    
+    // 移除旧的 Shade
+    removeShade();
+    
+    // 创建新的 Shade
+    _shade = ShadowEnemy::create();
+    if (_shade)
+    {
+        CCLOG("  Shade created successfully");
+        _shade->setPosition(position);
+        
+        // 【修改】确保 _player 不为空
+        if (_player)
+        {
+            _shade->setTarget(_player);
+            CCLOG("  Shade target set to _player");
+        }
+        else
+        {
+            CCLOG("  WARNING: _player is nullptr! Cannot set target");
+        }
+        
+        this->addChild(_shade, 4);  // 添加到场景中，层级略低于玩家
+        
+        CCLOG("  Shade added to scene at z-order 4");
+        CCLOG("  Shade position: (%.1f, %.1f)", _shade->getPositionX(), _shade->getPositionY());
+        CCLOG("  Shade parent: %p", _shade->getParent());
+        CCLOG("=== Shade spawned successfully ===");
+    }
+    else
+    {
+        CCLOG("  ERROR: Failed to create Shade!");
+        CCLOG("=== FAILED to spawn Shade ===");
+    }
+}
+
+// 新增：移除 Shade
+void NextScene::removeShade()
+{
+    if (_shade)
+    {
+        _shade->removeFromParent();
+        _shade = nullptr;
+        CCLOG("Shade removed from NextScene");
+    }
+}
+// 在 NextScene.cpp 文件末尾添加以下三个方法实现：
 
 void NextScene::createTrapSprites(TMXTiledMap* map, const std::string& layerName, 
                                    const std::string& trapType, const std::string& spritePath,
@@ -1567,7 +1788,7 @@ void NextScene::updateHPAndSoulUI(float dt)
     {
         for (int i = 0; i < (int)_hpBars.size(); i++)
         {
-            _hpBars[i]->setVisible(i < currentHP);
+            _hpBars.at(i)->setVisible(i < currentHP);
         }
         
         if (_hpLose)
