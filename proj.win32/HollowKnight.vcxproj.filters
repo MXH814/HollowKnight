@@ -167,6 +167,9 @@
     <ClInclude Include="..\Classes\GeoManager.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\Classes\GameCommon.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="game.rc">
@@ -175,5 +178,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp" />
+    <None Include="README.md" />
   </ItemGroup>
 </Project>

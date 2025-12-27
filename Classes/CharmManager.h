@@ -1,30 +1,77 @@
-#pragma once
+/**
+ * @file CharmManager.h
+ * @brief 护符管理器类头文件
+ * @details 实现护符系统的单例管理器，负责护符的装备、卸载和UI显示
+ * 
+ * C++ 特性使用说明：
+ * - 单例模式：使用静态成员实现
+ * - STL 容器：std::vector 存储护符和凹槽
+ * - const 成员函数：所有 getter 方法
+ * - 结构体：CharmInfo 存储护符数据
+ * - 删除的函数：禁止拷贝构造和赋值（C++11）
+ */
+
+#ifndef __CHARM_MANAGER_H__
+#define __CHARM_MANAGER_H__
 
 #include "cocos2d.h"
+#include <vector>
+#include <string>
 
 USING_NS_CC;
 
+// 前向声明
 class TheKnight;
 
-// 护符信息结构
+/**
+ * @struct CharmInfo
+ * @brief 护符信息数据结构
+ */
 struct CharmInfo {
-    std::string imagePath;
-    Vec2 originalPos;
-    Sprite* sprite;
-    Sprite* darkSprite;
-    Sprite* selectFrame;  // 选中框
-    int cost;
-    int equippedSlot;
-    bool isEquipped;
+    std::string imagePath;       ///< 护符图片路径
+    Vec2 originalPos;            ///< 原始位置
+    Sprite* sprite;              ///< 护符精灵
+    Sprite* darkSprite;          ///< 灰色占位精灵
+    Sprite* selectFrame;         ///< 选中框
+    int cost;                    ///< 凹槽消耗
+    int equippedSlot;            ///< 装备槽位
+    bool isEquipped;             ///< 是否已装备
+    
+    CharmInfo() 
+        : sprite(nullptr)
+        , darkSprite(nullptr)
+        , selectFrame(nullptr)
+        , cost(0)
+        , equippedSlot(-1)
+        , isEquipped(false) {}
 };
 
-class CharmManager
-{
+/**
+ * @class CharmManager
+ * @brief 护符管理器（单例模式）
+ * @details 管理所有护符的装备状态和UI显示
+ * 
+ * 设计说明：
+ * - 使用单例模式确保全局唯一实例
+ * - 禁止拷贝和赋值（C++11 delete）
+ * - 所有 getter 使用 const 修饰
+ */
+class CharmManager {
 public:
-    // 单例模式
+    // ========================================================================
+    // 单例接口
+    // ========================================================================
+    
+    /**
+     * @brief 获取单例实例
+     * @return 管理器指针
+     */
     static CharmManager* getInstance();
     
-    // 护符状态获取
+    // ========================================================================
+    // 护符状态接口（const getter）
+    // ========================================================================
+    
     int getCharmWaywardCompass() const { return _charmWaywardCompass; }
     int getCharmShamanStone() const { return _charmShamanStone; }
     int getCharmStalwartShell() const { return _charmStalwartShell; }
@@ -32,7 +79,7 @@ public:
     int getCharmSoulCatcher() const { return _charmSoulCatcher; }
     int getCharmSprintMaster() const { return _charmSprintMaster; }
     
-    // 护符状态设置
+    // Setters
     void setCharmWaywardCompass(int value) { _charmWaywardCompass = value; }
     void setCharmShamanStone(int value) { _charmShamanStone = value; }
     void setCharmStalwartShell(int value) { _charmStalwartShell = value; }
@@ -40,61 +87,90 @@ public:
     void setCharmSoulCatcher(int value) { _charmSoulCatcher = value; }
     void setCharmSprintMaster(int value) { _charmSprintMaster = value; }
     
-    // 凹槽系统
+    // ========================================================================
+    // 凹槽系统接口
+    // ========================================================================
+    
+    /** @brief 获取最大凹槽数 */
     int getMaxNotches() const { return MAX_NOTCHES; }
+    
+    /** @brief 获取已使用凹槽数 */
     int getUsedNotches() const { return _usedNotches; }
     
-    // 重新计算已使用凹槽数
+    /** @brief 重新计算已使用凹槽数 */
     void recalculateUsedNotches();
     
-    // 显示护符面板 (在指定场景上)
+    // ========================================================================
+    // UI 接口
+    // ========================================================================
+    
+    /**
+     * @brief 显示护符面板
+     * @param parentNode 父节点
+     * @param canEquip 是否可以装卸护符
+     */
     void showCharmPanel(Node* parentNode, bool canEquip = false);
     
-    // 关闭护符面板
+    /** @brief 关闭护符面板 */
     void hideCharmPanel();
     
-    // 护符面板是否打开
+    /** @brief 护符面板是否打开 */
     bool isPanelOpen() const { return _isPanelOpen; }
     
-    // 设置是否可以装卸护符
+    /** @brief 设置是否可以装卸护符 */
     void setCanEquip(bool canEquip) { _canEquip = canEquip; }
+    
+    /** @brief 是否可以装卸护符 */
     bool canEquip() const { return _canEquip; }
     
-    // 将护符状态同步到 TheKnight
+    /**
+     * @brief 将护符状态同步到骑士
+     * @param knight 骑士指针
+     */
     void syncToKnight(TheKnight* knight);
-    
+
 private:
+    // ========================================================================
+    // 私有构造（单例模式）
+    // ========================================================================
+    
     CharmManager();
     ~CharmManager();
     
-    // 创建护符UI界面
+    // 禁止拷贝和赋值（C++11）
+    CharmManager(const CharmManager&) = delete;
+    CharmManager& operator=(const CharmManager&) = delete;
+    
+    // ========================================================================
+    // UI 创建与更新
+    // ========================================================================
+    
     void createCharmUI(Node* layer, const Size& visibleSize);
-    
-    // 更新凹槽显示
     void updateNotchDisplay();
-    
-    // 更新装备位置
     void updateEquippedPositions();
-    
-    // 更新信息面板
     void updateInfoPanel(int charmIndex, bool show);
-    
-    // 护符选择处理
     void selectCharm(int charmIndex);
-    
-    // 护符装备/卸载处理
     void toggleEquipCharm();
-    
-    // 更新选中框显示
     void updateSelectFrame();
     
-    // 键盘事件处理
+    // ========================================================================
+    // 输入处理
+    // ========================================================================
+    
     void onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event);
-    
+
 private:
-    static CharmManager* _instance;
+    // ========================================================================
+    // 静态成员
+    // ========================================================================
     
-    // 护符状态 (0 = 未装备, 1 = 已装备)
+    static CharmManager* _instance;
+    static const int MAX_NOTCHES = 6;  ///< 最大凹槽数（编译时常量）
+    
+    // ========================================================================
+    // 护符状态（0 = 未装备，1 = 已装备）
+    // ========================================================================
+    
     int _charmWaywardCompass;
     int _charmShamanStone;
     int _charmStalwartShell;
@@ -102,28 +178,24 @@ private:
     int _charmSoulCatcher;
     int _charmSprintMaster;
     
-    // 凹槽系统
-    static const int MAX_NOTCHES = 6;
-    int _usedNotches;
+    int _usedNotches;  ///< 已使用凹槽数
     
+    // ========================================================================
     // UI 相关
+    // ========================================================================
+    
     bool _isPanelOpen;
     Node* _panelLayer;
     Node* _parentNode;
-    std::vector<Sprite*> _notchSprites;
-    std::vector<CharmInfo> _charms;
+    std::vector<Sprite*> _notchSprites;  ///< STL 容器
+    std::vector<CharmInfo> _charms;      ///< STL 容器
     
     // 选择相关
-    int _selectedCharmIndex;  // 当前选中的护符索引
-    Sprite* _selectFrameSprite;  // 选中框精灵
+    int _selectedCharmIndex;
+    Sprite* _selectFrameSprite;
     
-    // 是否可以装卸护符（只有坐在椅子上才能装卸）
     bool _canEquip;
-    
-    // 提示文字
     Label* _hintLabel;
-    
-    // 键盘监听器
     EventListenerKeyboard* _keyboardListener;
     
     // 信息面板元素
@@ -138,3 +210,5 @@ private:
     float _equippedY;
     float _equippedGap;
 };
+
+#endif // __CHARM_MANAGER_H__

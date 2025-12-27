@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 E:\Hollow Knight\HollowKnight\Classes\AppDelegate.cpp;E:\Hollow Knight\HollowKnight\proj.win32\Debug.win32\AppDelegate.obj
 E:\Hollow Knight\HollowKnight\Classes\AudioSettings.cpp;E:\Hollow Knight\HollowKnight\proj.win32\Debug.win32\AudioSettings.obj
 E:\Hollow Knight\HollowKnight\Classes\BossScene.cpp;E:\Hollow Knight\HollowKnight\proj.win32\Debug.win32\BossScene.obj
@@ -27,33 +26,3 @@ E:\Hollow Knight\HollowKnight\Classes\TheKnightCombat.cpp;E:\Hollow Knight\Hollo
 E:\Hollow Knight\HollowKnight\Classes\TheKnightMovement.cpp;E:\Hollow Knight\HollowKnight\proj.win32\Debug.win32\TheKnightMovement.obj
 E:\Hollow Knight\HollowKnight\Classes\TheKnightSoul.cpp;E:\Hollow Knight\HollowKnight\proj.win32\Debug.win32\TheKnightSoul.obj
 E:\Hollow Knight\HollowKnight\proj.win32\main.cpp;E:\Hollow Knight\HollowKnight\proj.win32\Debug.win32\main.obj
-=======
-D:\Project\HollowKnight\Classes\AppDelegate.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\AppDelegate.obj
-D:\Project\HollowKnight\Classes\AudioSettings.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\AudioSettings.obj
-D:\Project\HollowKnight\Classes\BossScene.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\BossScene.obj
-D:\Project\HollowKnight\Classes\boss\HornetAI.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\HornetAI.obj
-D:\Project\HollowKnight\Classes\boss\HornetBoss.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\HornetBoss.obj
-D:\Project\HollowKnight\Classes\CharmManager.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\CharmManager.obj
-D:\Project\HollowKnight\Classes\CorniferNPC.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\CorniferNPC.obj
-D:\Project\HollowKnight\Classes\Enemy.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\Enemy.obj
-D:\Project\HollowKnight\Classes\GameScene.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\GameScene.obj
-D:\Project\HollowKnight\Classes\GeoManager.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\GeoManager.obj
-D:\Project\HollowKnight\Classes\HelloWorldScene.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\HelloWorldScene.obj
-D:\Project\HollowKnight\Classes\LoadingScene.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\LoadingScene.obj
-D:\Project\HollowKnight\Classes\MainMenuScene.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\MainMenuScene.obj
-D:\Project\HollowKnight\Classes\Monster\CrawlidMonster.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\CrawlidMonster.obj
-D:\Project\HollowKnight\Classes\Monster\GruzzerMonster.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\GruzzerMonster.obj
-D:\Project\HollowKnight\Classes\Monster\MonsterSpawner.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\MonsterSpawner.obj
-D:\Project\HollowKnight\Classes\Monster\TiktikMonster.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\TiktikMonster.obj
-D:\Project\HollowKnight\Classes\Monster\VengeflyMonster.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\VengeflyMonster.obj
-D:\Project\HollowKnight\Classes\NextScene.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\NextScene.obj
-D:\Project\HollowKnight\Classes\PauseMenu.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\PauseMenu.obj
-D:\Project\HollowKnight\Classes\SettingsPanel.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\SettingsPanel.obj
-D:\Project\HollowKnight\Classes\ShadowEnemy.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\ShadowEnemy.obj
-D:\Project\HollowKnight\Classes\TheKnightCoreLogic.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\TheKnightCoreLogic.obj
-D:\Project\HollowKnight\Classes\TheKnightAnimation.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\TheKnightAnimation.obj
-D:\Project\HollowKnight\Classes\TheKnightCombat.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\TheKnightCombat.obj
-D:\Project\HollowKnight\Classes\TheKnightMovement.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\TheKnightMovement.obj
-D:\Project\HollowKnight\Classes\TheKnightSoul.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\TheKnightSoul.obj
-D:\Project\HollowKnight\proj.win32\main.cpp;D:\Project\HollowKnight\proj.win32\Debug.win32\main.obj
->>>>>>> 3f78f9ee690cdff8004a162ff494b9d02e31bd02

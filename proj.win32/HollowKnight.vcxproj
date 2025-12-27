@@ -187,6 +187,7 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
     <ClInclude Include="..\Classes\CharmManager.h" />
     <ClInclude Include="..\Classes\CorniferNPC.h" />
     <ClInclude Include="..\Classes\Enemy.h" />
+    <ClInclude Include="..\Classes\GameCommon.h" />
     <ClInclude Include="..\Classes\GameScene.h" />
     <ClInclude Include="..\Classes\GeoManager.h" />
     <ClInclude Include="..\Classes\HelloWorldScene.h" />
@@ -218,6 +219,7 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp" />
+    <None Include="README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
