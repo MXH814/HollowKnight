@@ -120,7 +120,7 @@ bool GameScene::init()
         
         CharmManager::getInstance()->syncToKnight(_knight);
         
-        // 【新增】检查是否从 NextScene 死亡返回
+        // 【修改】检查是否从 NextScene 死亡返回，需要坐在椅子上
         if (s_hasCustomSpawn && !s_spawnDoJump)
         {
             // 从 NextScene 死亡返回，让 Knight 坐在椅子上
@@ -143,14 +143,26 @@ bool GameScene::init()
                 _knight->setPosition(chairPos);
                 _knight->setNearChair(true);
                 
-                // 延迟一帧后让 Knight 坐下
-                this->scheduleOnce([this](float dt) {
+                // 重置血量为满血
+                _knight->setHP(_knight->getMaxHP());
+                
+                // 【修改】增加延迟时间，确保场景完全初始化后再坐下
+                // 并且先让 Knight 进入 IDLE 状态，再触发坐下
+                this->scheduleOnce([this, chairPos](float dt) {
                     if (_knight)
                     {
+                        // 再次确保位置正确
+                        _knight->setPosition(chairPos);
+                        _knight->setNearChair(true);
                         _knight->startSitting();
-                        CCLOG("Knight automatically sitting on chair after respawn");
+                        CCLOG("Knight automatically sitting on chair after respawn at (%.1f, %.1f)", 
+                              chairPos.x, chairPos.y);
                     }
-                }, 0.1f, "auto_sit");
+                }, 0.3f, "auto_sit");
+            }
+            else
+            {
+                CCLOG("Warning: Chair not found, Knight will spawn at default position");
             }
             
             // 重置标志
@@ -232,17 +244,17 @@ void GameScene::createHPAndSoulUI()
 {
     if (!_knight) return;
     
-    // 创建UI层（固定在屏幕上，不随场景移动）
-//     _uiLayer = Node::create();
-//     if (!_uiLayer) return;
-//     this->addChild(_uiLayer, 1000);  // 最高层级
+    // 【修复】创建UI层（跟随摄像机移动）
+    _uiLayer = Node::create();
+    if (!_uiLayer) return;
+    this->addChild(_uiLayer, 1000);  // 最高层级
     
     // 创建血条背景
     _hpBg = Sprite::create("Hp/hpbg.png");
     if (_hpBg)
     {
         _hpBg->setPosition(Vec2(200, 950));
-        this->addChild(_hpBg, 1001);
+        _uiLayer->addChild(_hpBg);
     }
     
     // 初始化血量和灵魂显示
@@ -261,7 +273,7 @@ void GameScene::createHPAndSoulUI()
     {
         _soulBg->setScale(0.9f);
         _soulBg->setPosition(Vec2(152, 935));
-        this->addChild(_soulBg, 1001);
+        _uiLayer->addChild(_soulBg);
         
         // 如果Soul为0，隐藏灵魂显示
         if (currentSoul <= 0)
@@ -306,7 +318,7 @@ void GameScene::createHPAndSoulUI()
             hpBar->setPosition(Vec2(260 + i * gap, 980));
             hpBar->setScale(0.5f);
             hpBar->setVisible(i < _lastDisplayedHP);  // 只显示当前血量
-            this->addChild(hpBar, 1001);
+            _uiLayer->addChild(hpBar);
             _hpBars.push_back(hpBar);
         }
     }
@@ -318,7 +330,7 @@ void GameScene::createHPAndSoulUI()
         _hpLose->setPosition(Vec2(260 + _lastDisplayedHP * gap, 978));
         _hpLose->setScale(0.5f);
         _hpLose->setVisible(_lastDisplayedHP < maxHp);
-        this->addChild(_hpLose, 1001);
+        _uiLayer->addChild(_hpLose);
     }
 }
 
@@ -326,13 +338,13 @@ void GameScene::updateHPAndSoulUI(float dt)
 {
     if (!_knight || !_uiLayer) return;
     
-    // 更新UI层位置跟随摄像机
+    // 【修复】更新UI层位置跟随摄像机
     auto camera = this->getDefaultCamera();
     if (camera)
     {
         Vec2 camPos = camera->getPosition();
         Size visibleSize = Director::getInstance()->getVisibleSize();
-        // UI层左上角对齐
+        // UI层左下角对齐摄像机视口左下角
         _uiLayer->setPosition(Vec2(camPos.x - visibleSize.width / 2, camPos.y - visibleSize.height / 2));
     }
     
@@ -363,50 +375,71 @@ void GameScene::updateHPAndSoulUI(float dt)
             _hpLose->setVisible(currentHP < maxHp);
         }
         
-        // 更新灵魂显示
-        if (_soulBg && currentSoul != _lastDisplayedSoul)
+        // 【修改】血量变化时，增加血量图标缩放动画
+        if (currentHP > _lastDisplayedHP)
         {
-            _lastDisplayedSoul = currentSoul;
-            
-            // 停止之前的动画
-            _soulBg->stopAllActions();
-            
-            // Soul为0时隐藏，否则显示对应等级的动画
-            if (currentSoul <= 0)
+            for (int i = _lastDisplayedHP; i < currentHP; i++)
             {
-                _soulBg->setVisible(false);
-            }
-            else
-            {
-                _soulBg->setVisible(true);
-                
-                // Soul值1-6对应资源文件soul_1到soul_6
-                int soulLevel = currentSoul;
-                if (soulLevel > 6) soulLevel = 6;
-                
-                // 创建灵魂动画帧
-                Vector<SpriteFrame*> soulFrames;
-                for (int i = 0; i <= 2; i++) {
-                    std::string frameName = "Hp/soul_" + std::to_string(soulLevel) + "_" + std::to_string(i) + ".png";
-                    auto texture = Director::getInstance()->getTextureCache()->addImage(frameName);
-                    if (texture) {
-                        auto frame = SpriteFrame::createWithTexture(texture, Rect(0, 0, texture->getContentSize().width, texture->getContentSize().height));
-                        if (frame) {
-                            soulFrames.pushBack(frame);
-                        }
-                    }
-                }
-                
-                if (!soulFrames.empty())
+                if (i < (int)_hpBars.size())
                 {
-                    auto soulAnimation = Animation::createWithSpriteFrames(soulFrames, 0.25f);
-                    auto soulAnimate = Animate::create(soulAnimation);
-                    _soulBg->runAction(RepeatForever::create(soulAnimate));
+                    auto hpBar = _hpBars[i];
+                    hpBar->setVisible(true);
+                    
+                    // 添加一个小的缩放动画效果
+                    hpBar->setScale(0.0f);
+                    hpBar->runAction(Sequence::create(
+                        ScaleTo::create(0.15f, 0.6f),
+                        ScaleTo::create(0.1f, 0.5f),
+                        nullptr
+                    ));
                 }
             }
         }
         
         _lastDisplayedHP = currentHP;
+    }
+    
+    // 更新灵魂显示
+    if (_soulBg && currentSoul != _lastDisplayedSoul)
+    {
+        _lastDisplayedSoul = currentSoul;
+        
+        // 停止之前的动画
+        _soulBg->stopAllActions();
+        
+        // Soul为0时隐藏，否则显示对应等级的动画
+        if (currentSoul <= 0)
+        {
+            _soulBg->setVisible(false);
+        }
+        else
+        {
+            _soulBg->setVisible(true);
+            
+            // Soul值1-6对应资源文件soul_1到soul_6
+            int soulLevel = currentSoul;
+            if (soulLevel > 6) soulLevel = 6;
+            
+            // 创建灵魂动画帧
+            Vector<SpriteFrame*> soulFrames;
+            for (int i = 0; i <= 2; i++) {
+                std::string frameName = "Hp/soul_" + std::to_string(soulLevel) + "_" + std::to_string(i) + ".png";
+                auto texture = Director::getInstance()->getTextureCache()->addImage(frameName);
+                if (texture) {
+                    auto frame = SpriteFrame::createWithTexture(texture, Rect(0, 0, texture->getContentSize().width, texture->getContentSize().height));
+                    if (frame) {
+                        soulFrames.pushBack(frame);
+                    }
+                }
+            }
+            
+            if (!soulFrames.empty())
+            {
+                auto soulAnimation = Animation::createWithSpriteFrames(soulFrames, 0.25f);
+                auto soulAnimate = Animate::create(soulAnimation);
+                _soulBg->runAction(RepeatForever::create(soulAnimate));
+            }
+        }
     }
 }
 
@@ -603,7 +636,6 @@ void GameScene::updateCamera()
     _cameraOffsetY += (_targetCameraOffsetY - _cameraOffsetY) * offsetLerpFactor;
     
     // 计算摄像机目标位置（骑士在屏幕下1/3处，水平居中）
-//     float verticalOffset = visibleSize.height / 6.0f;
     float cameraX = knightPos.x;
     float cameraY = knightPos.y + visibleSize.height / 3.0f + _cameraOffsetY;
     
@@ -665,8 +697,6 @@ void GameScene::createCollisionFromTMX(TMXTiledMap* map, const std::string& laye
     {
         auto& dict = obj.asValueMap();
 
-        // 检查类型（支持 type 或 class 属性）
-//         std::string type = dict["type"].asString();
         std::string type = "";
         if (dict.find("type") != dict.end()) {
             type = dict["type"].asString();
@@ -736,8 +766,6 @@ void GameScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
         // 获取对象在地图中的原始位置（未缩放）
         float objX = dict["x"].asFloat();
         float objY = dict["y"].asFloat();
-        float objWidth = dict["width"].asFloat();
-        float objHeight = dict["height"].asFloat();
 
         // 使用对象名称 + .png 作为图片路径
         std::string imagePath = "Maps/" + name + ".png";
@@ -747,9 +775,10 @@ void GameScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
             imagePath = name + ".png";
             fgSprite = Sprite::create(imagePath);
         }
-        float spriteHeight = fgSprite->getContentSize().height;
+        
         if (fgSprite)
         {
+            float spriteHeight = fgSprite->getContentSize().height;
             // 计算世界坐标位置
             float worldX = objX * scale + mapOffset.x;
             float worldY = (objY + spriteHeight) * scale + mapOffset.y;
@@ -758,9 +787,6 @@ void GameScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
             fgSprite->setAnchorPoint(Vec2(0, 0));
             fgSprite->setPosition(Vec2(worldX, worldY));
             fgSprite->setScale(scale);
-
-            // 添加到比角色更高的z-order层（角色是5，前景用10）
-//             this->addChild(fgSprite, 10);
 
             CCLOG("加载前景对象: %s at (%.1f, %.1f)", imagePath.c_str(), worldX, worldY);
         }

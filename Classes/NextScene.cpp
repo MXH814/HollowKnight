@@ -467,7 +467,7 @@ void NextScene::startSpikeDeath(TheKnight* knight)
     // 【修改】如果是最后一条生命,触发特殊的尖刺死亡流程
     if (currentHP <= 1)
     {
-        CCLOG("  -> 最后一条生命!触发完整尖刺死亡流程");
+        CCLOG("  -> 最后一条命!触发完整尖刺死亡流程");
         
         // 保存死亡位置
         Vec2 currentPos = knight->getPosition();
@@ -1281,6 +1281,7 @@ void NextScene::update(float dt)
     // ==================== 【修改】检查 Knight 死亡状态,等待死亡动画播放完成 ====================
     static bool isPlayingDeathAnim = false; // 标记是否正在播放死亡动画
     static float deathAnimTimer = 0.0f;     // 死亡动画计时器
+    static Vec2 savedDeathPos = Vec2::ZERO; // 【新增】保存死亡位置
     
     if (knight->isDead() && !_isInSpikeDeath)
     {
@@ -1289,26 +1290,33 @@ void NextScene::update(float dt)
             CCLOG("Knight died in NextScene, starting death animation timer");
             isPlayingDeathAnim = true;
             deathAnimTimer = 0.0f;
+            savedDeathPos = knightPos;  // 【新增】在开始播放死亡动画时保存位置
+            
+            // 【新增】保存 Shade 位置
+            s_shadePosition = knightPos;
+            CCLOG("Saved death position for Shade: (%.1f, %.1f)", s_shadePosition.x, s_shadePosition.y);
         }
         
         deathAnimTimer += dt;
-        if (deathAnimTimer >= 1.12f)
+        // 死亡动画13帧，每帧0.1秒，共1.3秒
+        if (deathAnimTimer >= 1.3f)
         {
             CCLOG("Death animation completed, triggering death callback");
             isPlayingDeathAnim = false;
             deathAnimTimer = 0.0f;
-            onKnightDeath(knightPos);
+            onKnightDeath(savedDeathPos);  // 【修改】使用保存的位置
+            savedDeathPos = Vec2::ZERO;
             return;
         }
         
-        // 【重要】死亡动画播放期间，只更新摄像机和UI，跳过其他游戏逻辑
-        // 但不提前return，让代码继续执行到末尾更新摄像机和UI
+        // 死亡动画播放期间，只更新摄像机和UI，跳过其他游戏逻辑
     }
     else if (!knight->isDead() && isPlayingDeathAnim)
     {
         // Knight 复活了，重置标志
         isPlayingDeathAnim = false;
         deathAnimTimer = 0.0f;
+        savedDeathPos = Vec2::ZERO;
     }
     // ==================== 检查结束 ====================
     
