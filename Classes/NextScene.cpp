@@ -458,20 +458,49 @@ void NextScene::startSpikeDeath(TheKnight* knight)
 {
     if (_isInSpikeDeath) return;
     
+    // 【新增】检查是否是最后一条生命
+    int currentHP = knight->getHP();
+    
+    CCLOG("=== 尖刺碰撞检测 ===");
+    CCLOG("  当前血量: %d", currentHP);
+    
+    // 【修改】如果是最后一条生命,触发特殊的尖刺死亡流程
+    if (currentHP <= 1)
+    {
+        CCLOG("  -> 最后一条生命!触发完整尖刺死亡流程");
+        
+        // 保存死亡位置
+        Vec2 currentPos = knight->getPosition();
+        s_shadePosition = currentPos;
+        CCLOG("  -> 保存 Shade 位置: (%.1f, %.1f)", s_shadePosition.x, s_shadePosition.y);
+        
+        // 【关键修改】进入尖刺死亡流程，但使用特殊的阶段5（最后一条命）
+        _isInSpikeDeath = true;
+        _spikeDeathPhase = 5;  // 新阶段：最后一条命的死亡
+        _spikeDeathTimer = 0.0f;
+        
+        // 调用骑士的尖刺死亡函数（播放动画）
+        knight->startSpikeDeath();
+        
+        CCLOG("  -> 进入阶段5：播放完整SpikeDeath动画后触发真正死亡");
+        return;
+    }
+    
+    // 【保留】原有的尖刺重生逻辑(血量 > 1 时)
     _isInSpikeDeath = true;
     _spikeDeathPhase = 1;
     _spikeDeathTimer = 0.0f;
     
-    // 【新增】保存尖刺死亡位置用于 Shade 生成
+    // 临时保存位置(重生后会清除)
     Vec2 currentPos = knight->getPosition();
     s_shadePosition = currentPos;
-    CCLOG("=== 尖刺死亡 - 保存 Shade 位置 ===");
-    CCLOG("  死亡位置: (%.1f, %.1f)", s_shadePosition.x, s_shadePosition.y);
+    CCLOG("  -> 尖刺重生模式(血量 > 1)");
+    CCLOG("  -> 临时保存位置: (%.1f, %.1f)", s_shadePosition.x, s_shadePosition.y);
     
     // 调用骑士的尖刺死亡函数
     knight->startSpikeDeath();
     
-    CCLOG("尖刺死亡流程开始，阶段1：播放SpikeDeath动画");
+    CCLOG("尖刺死亡流程开始,阶段1:播放SpikeDeath动画");
 }
 
 void NextScene::updateSpikeDeath(float dt, TheKnight* knight)
@@ -597,11 +626,38 @@ void NextScene::updateSpikeDeath(float dt, TheKnight* knight)
             // HazardRespawn动画20帧，每帧0.05秒，共1.0秒
             if (_spikeDeathTimer >= 1.0f || !knight->isHazardRespawnState())
             {
+                // 【新增】重生完成后，清除临时保存的 Shade 位置
+                // 因为这不是真正的死亡，只是原地重生
+                s_shadePosition = Vec2::ZERO;
+                CCLOG("尖刺重生完成，清除临时 Shade 位置");
+                
                 // 重生完成
                 _isInSpikeDeath = false;
                 _spikeDeathPhase = 0;
                 _spikeDeathTimer = 0.0f;
                 CCLOG("尖刺死亡流程完成");
+            }
+            break;
+        }
+        
+        case 5:  // 【修改】阶段5：最后一条命的尖刺死亡 - 等待SpikeDeath动画完成后退出尖刺死亡模式
+        {
+            // 【关键修改】等待SpikeDeath动画播放完成（0.64秒）
+            if (_spikeDeathTimer >= 0.64f)
+            {
+                CCLOG("  -> SpikeDeath动画播放完成");
+                CCLOG("  -> 退出尖刺死亡模式，让普通死亡流程接管");
+                
+                // 【关键】设置HP=0，触发普通死亡流程
+                knight->setHP(0);
+                
+                // 【关键】退出尖刺死亡模式，让update()中的普通死亡检测接管
+                _isInSpikeDeath = false;
+                _spikeDeathPhase = 0;
+                _spikeDeathTimer = 0.0f;
+                
+                // s_shadePosition 已经在 startSpikeDeath 中保存，这里不需要再保存
+                CCLOG("  -> 尖刺死亡模式已退出，普通死亡流程将在下一帧开始");
             }
             break;
         }
@@ -1222,67 +1278,39 @@ void NextScene::update(float dt)
     Vec2 knightPos = knight->getPosition();
     Size visibleSize = Director::getInstance()->getVisibleSize();
     
-    // ==================== 【修改】检查 Knight 死亡状态,增加防重复触发机制 ====================
-    static bool hasTriggeredDeath = false;  // 添加静态标志防止重复触发
+    // ==================== 【修改】检查 Knight 死亡状态,等待死亡动画播放完成 ====================
+    static bool isPlayingDeathAnim = false; // 标记是否正在播放死亡动画
+    static float deathAnimTimer = 0.0f;     // 死亡动画计时器
     
-    if (knight->isDead() && !_isInSpikeDeath && !hasTriggeredDeath)
+    if (knight->isDead() && !_isInSpikeDeath)
     {
-        CCLOG("Knight died in NextScene, triggering death callback");
-        hasTriggeredDeath = true;  // 设置标志
-        onKnightDeath(knightPos);
-        return;  // Knight 已死亡，不再继续后续逻辑
+        if (!isPlayingDeathAnim)
+        {
+            CCLOG("Knight died in NextScene, starting death animation timer");
+            isPlayingDeathAnim = true;
+            deathAnimTimer = 0.0f;
+        }
+        
+        deathAnimTimer += dt;
+        if (deathAnimTimer >= 1.12f)
+        {
+            CCLOG("Death animation completed, triggering death callback");
+            isPlayingDeathAnim = false;
+            deathAnimTimer = 0.0f;
+            onKnightDeath(knightPos);
+            return;
+        }
+        
+        // 【重要】死亡动画播放期间，只更新摄像机和UI，跳过其他游戏逻辑
+        // 但不提前return，让代码继续执行到末尾更新摄像机和UI
     }
-    
-    // 如果 Knight 复活了,重置标志
-    if (!knight->isDead() && hasTriggeredDeath)
+    else if (!knight->isDead() && isPlayingDeathAnim)
     {
-        hasTriggeredDeath = false;
+        // Knight 复活了，重置标志
+        isPlayingDeathAnim = false;
+        deathAnimTimer = 0.0f;
     }
     // ==================== 检查结束 ====================
-    
-    // ==================== 【调试】实时输出最近的岩石平台 ====================
-    static float debugTimer = 0.0f;
-    debugTimer += dt;
-    
-    if (debugTimer >= 1.0f)  // 每秒输出一次
-    {
-        debugTimer = 0.0f;
-        
-        CCLOG(">>> Knight 实时位置: (%.1f, %.1f)", knightPos.x, knightPos.y);
-        
-        // 查找最近的平台
-        float minDistance = 99999.0f;
-        const Platform* nearestPlatform = nullptr;
-        
-        for (const auto& platform : _platforms)
-        {
-            Vec2 platformCenter(
-                platform.rect.origin.x + platform.rect.size.width / 2,
-                platform.rect.origin.y + platform.rect.size.height / 2
-            );
-            
-            float distance = knightPos.distance(platformCenter);
-            
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                nearestPlatform = &platform;
-            }
-        }
-        
-        if (nearestPlatform)
-        {
-            auto& rect = nearestPlatform->rect;
-            Vec2 center(rect.getMidX(), rect.getMidY());
-            
-            CCLOG("    最近岩石 [距离: %.1f]:", minDistance);
-            CCLOG("      左下角: (%.1f, %.1f)", rect.getMinX(), rect.getMinY());
-            CCLOG("      右上角: (%.1f, %.1f)", rect.getMaxX(), rect.getMaxY());
-            CCLOG("      中心: (%.1f, %.1f)", center.x, center.y);
-            CCLOG("      尺寸: %.1f x %.1f", rect.size.width, rect.size.height);
-        }
-    }
-    // ==================== 调试代码结束 ====================
     
     float verticalOffset = visibleSize.height / 6.0f;
     
@@ -1301,76 +1329,90 @@ void NextScene::update(float dt)
         return;
     }
     
-    if (!knight->isDead() && !knight->isSpikeDeathState() && !knight->isHazardRespawnState())
+    // 【新增】只在非死亡动画播放期间执行游戏逻辑
+    if (!isPlayingDeathAnim)
     {
-        for (const auto& platform : _platforms)
+        if (!knight->isDead() && !knight->isSpikeDeathState() && !knight->isHazardRespawnState())
         {
-            float platformTop = platform.rect.getMaxY();
-            if (knightPos.x > platform.rect.getMinX() &&
-                knightPos.x < platform.rect.getMaxX() &&
-                std::abs(knightPos.y - platformTop) < 20.0f)
+            for (const auto& platform : _platforms)
             {
-                _lastSafePosition = knightPos;
-                knight->setLastSafePosition(knightPos);
-                break;
+                float platformTop = platform.rect.getMaxY();
+                if (knightPos.x > platform.rect.getMinX() &&
+                    knightPos.x < platform.rect.getMaxX() &&
+                    std::abs(knightPos.y - platformTop) < 20.0f)
+                {
+                    _lastSafePosition = knightPos;
+                    knight->setLastSafePosition(knightPos);
+                    break;
+                }
             }
         }
-    }
-    
-    // === 使用新的战斗碰撞检测方法(参考BossScene) ===
-    checkCombatCollisions();
-    
-    // 检测尖刺碰撞
-    if (!knight->isDead() && !knight->isSpikeDeathState() && !knight->isHazardRespawnState() && !knight->isInvincible())
-    {
-        for (auto& thornObj : _thornObjects)
-        {
-            Rect thornRect(
-                thornObj.position.x - thornObj.size.width / 2,
-                thornObj.position.y - thornObj.size.height / 2,
-                thornObj.size.width,
-                thornObj.size.height
-            );
-            
-            if (thornRect.containsPoint(knightPos))
-            {
-                CCLOG("玩家碰到尖刺！开始尖刺死亡流程");
-                startSpikeDeath(knight);
-                break;
-            }
-        }
-    }
-
-    static bool wasHardLanding = false;
-    bool isHardLanding = knight->isHardLanding();
-    
-    if (isHardLanding && !wasHardLanding)
-    {
-        shakeScreen(0.6f, 30.0f);
-        CCLOG("玩家重落地，触发屏幕震动");
-    }
-    wasHardLanding = isHardLanding;
-
-    if (_isShaking)
-    {
-        _shakeElapsed += dt;
         
-        if (_shakeElapsed >= _shakeDuration)
+        // === 使用新的战斗碰撞检测方法(参考BossScene) ===
+        checkCombatCollisions();
+        
+        // 检测尖刺碰撞
+        if (!knight->isDead() && !knight->isSpikeDeathState() && !knight->isHazardRespawnState() && !knight->isInvincible())
         {
-            _isShaking = false;
-            _shakeOffset = Vec2::ZERO;
-            CCLOG("屏幕震动结束");
+            for (auto& thornObj : _thornObjects)
+            {
+                Rect thornRect(
+                    thornObj.position.x - thornObj.size.width / 2,
+                    thornObj.position.y - thornObj.size.height / 2,
+                    thornObj.size.width,
+                    thornObj.size.height
+                );
+                
+                if (thornRect.containsPoint(knightPos))
+                {
+                    CCLOG("玩家碰到尖刺！开始尖刺死亡流程");
+                    startSpikeDeath(knight);
+                    break;
+                }
+            }
         }
-        else
+
+        static bool wasHardLanding = false;
+        bool isHardLanding = knight->isHardLanding();
+        
+        if (isHardLanding && !wasHardLanding)
         {
-            float factor = 1.0f - (_shakeElapsed / _shakeDuration);
-            float offsetX = ((rand() % 200) / 100.0f - 1.0f) * _shakeIntensity * factor;
-            float offsetY = ((rand() % 200) / 100.0f - 1.0f) * _shakeIntensity * factor;
+            shakeScreen(0.6f, 30.0f);
+            CCLOG("玩家重落地，触发屏幕震动");
+        }
+        wasHardLanding = isHardLanding;
+
+        if (_isShaking)
+        {
+            _shakeElapsed += dt;
             
-            _shakeOffset = Vec2(offsetX, offsetY);
+            if (_shakeElapsed >= _shakeDuration)
+            {
+                _isShaking = false;
+                _shakeOffset = Vec2::ZERO;
+                CCLOG("屏幕震动结束");
+            }
+            else
+            {
+                float factor = 1.0f - (_shakeElapsed / _shakeDuration);
+                float offsetX = ((rand() % 200) / 100.0f - 1.0f) * _shakeIntensity * factor;
+                float offsetY = ((rand() % 200) / 100.0f - 1.0f) * _shakeIntensity * factor;
+                
+                _shakeOffset = Vec2(offsetX, offsetY);
+            }
+        }
+
+        checkInteractions();
+
+        // 更新 Cornifer 的 Knight 位置信息
+        if (_cornifer && knight)
+        {
+            Vec2 knightWorldPos = knight->getPosition();
+            _cornifer->setPlayerPosition(knightWorldPos);
         }
     }
 
+    // 【关键】摄像机和UI更新始终执行，确保死亡动画期间画面正常
     Vec2 cameraPos = camera->getPosition();
     Vec2 targetPos = Vec2(knightPos.x, knightPos.y + verticalOffset);
     
@@ -1381,34 +1423,6 @@ void NextScene::update(float dt)
     camera->setPosition(newPos);
     
     updateHPAndSoulUI(dt);
-    checkInteractions();
-
-    // 【修改】更新 Cornifer 的 Knight 位置信息 - 使用 knight 变量而不是 _player
-    if (_cornifer && knight)
-    {
-        // 获取 Knight 的世界坐标
-        Vec2 knightWorldPos = knight->getPosition();
-        
-        // 【新增】添加调试日志（每秒输出一次）
-        static float corniferDebugTimer = 0.0f;
-        corniferDebugTimer += dt;
-        
-        if (corniferDebugTimer >= 2.0f)  // 每2秒输出一次
-        {
-            corniferDebugTimer = 0.0f;
-            
-            Vec2 corniferPos = _cornifer->getPosition();
-            float distance = knightWorldPos.distance(corniferPos);
-            
-            CCLOG(">>> Cornifer 交互调试:");
-            CCLOG("    Knight 位置: (%.1f, %.1f)", knightWorldPos.x, knightWorldPos.y);
-            CCLOG("    Cornifer 位置: (%.1f, %.1f)", corniferPos.x, corniferPos.y);
-            CCLOG("    距离: %.1f (检测范围: 300x200 矩形)", distance);
-        }
-        
-        // 传递给 Cornifer（Cornifer 会自动处理检测和动画）
-        _cornifer->setPlayerPosition(knightWorldPos);
-    }
 }
 
 // ShadowEnemy 相关方法
@@ -1613,8 +1627,6 @@ void NextScene::removeShade()
         CCLOG("Shade removed from NextScene");
     }
 }
-// 在 NextScene.cpp 文件末尾添加以下三个方法实现：
-
 void NextScene::createTrapSprites(TMXTiledMap* map, const std::string& layerName, 
                                    const std::string& trapType, const std::string& spritePath,
                                    float scale, const Vec2& mapOffset)
