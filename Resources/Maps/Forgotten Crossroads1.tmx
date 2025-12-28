@@ -155,8 +155,7 @@
   <object id="46" type="trap1" gid="72542" x="562" y="1473" width="461" height="166"/>
   <object id="67" type="crash" x="1060" y="58" width="168" height="24"/>
   <object id="72" type="trap1" gid="72542" x="807" y="1499" width="461" height="166"/>
-  <object id="73" type="trap1" gid="72542" x="1037" y="1429" width="461" height="166"/>
-  <object id="74" type="trap1" gid="72542" x="1043" y="1499" width="461" height="166"/>
+  <object id="73" type="trap1" gid="72542" x="1064" y="1515" width="461" height="166"/>
  </objectgroup>
  <objectgroup id="3" name="Objects">
   <object id="68" type="thorn" x="556" y="1369" width="946" height="132"/>

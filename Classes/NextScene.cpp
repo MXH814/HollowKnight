@@ -146,6 +146,7 @@ bool NextScene::init()
         
         if (chunk.file == "Maps/Forgotten Crossroads4.tmx") {
             loadExitObjects(map, scale, mapPos);
+            loadGeoObjects(map, scale, mapPos);  // 【新增】加载 Geo 对象
         }
     }
 
@@ -459,6 +460,52 @@ void NextScene::loadThornObjects(TMXTiledMap* map, float scale, const Vec2& mapO
               thornObj.position.x, thornObj.position.y, 
               thornObj.size.width, thornObj.size.height);
     }
+}
+
+// 新增：加载 Geo 对象
+void NextScene::loadGeoObjects(TMXTiledMap* map, float scale, const Vec2& mapOffset)
+{
+    auto objectGroup = map->getObjectGroup("Objects");
+    if (!objectGroup) {
+        CCLOG("警告：地图中没有找到 Objects 对象层");
+        return;
+    }
+
+    auto& objects = objectGroup->getObjects();
+    
+    for (auto& obj : objects)
+    {
+        auto& dict = obj.asValueMap();
+        
+        std::string objClass = "";
+        if (dict.find("class") != dict.end()) {
+            objClass = dict["class"].asString();
+        }
+        else if (dict.find("type") != dict.end()) {
+            objClass = dict["type"].asString();
+        }
+        
+        if (objClass != "Geo") {
+            continue;
+        }
+        
+        float x = dict["x"].asFloat() * scale + mapOffset.x;
+        float y = dict["y"].asFloat() * scale + mapOffset.y;
+        float width = dict["width"].asFloat() * scale;
+        float height = dict["height"].asFloat() * scale;
+        
+        GeoObject geoObj;
+        geoObj.position = Vec2(x + width / 2, y + height / 2);
+        geoObj.size = Size(width, height);
+        
+        _geoObjects.push_back(geoObj);
+        
+        CCLOG("加载 Geo 对象: at (%.1f, %.1f), size=(%.1f, %.1f)", 
+              geoObj.position.x, geoObj.position.y, 
+              geoObj.size.width, geoObj.size.height);
+    }
+    
+    CCLOG("共加载 %zu 个 Geo 对象", _geoObjects.size());
 }
 
 void NextScene::checkInteractions()
@@ -1314,6 +1361,38 @@ void NextScene::checkCombatCollisions()
                     
                     knight->setKnockbackDirection(knockbackFromRight);
                     knight->takeDamage(1);
+                }
+            }
+        }
+    }
+
+    if (_knightAttackCooldown <= 0)
+    {
+        Rect slashRect;
+        if (knight->getSlashEffectBoundingBox(slashRect))
+        {
+            for (auto& geoObj : _geoObjects)
+            {
+                Rect geoRect(
+                    geoObj.position.x - geoObj.size.width / 2,
+                    geoObj.position.y - geoObj.size.height / 2,
+                    geoObj.size.width,
+                    geoObj.size.height
+                );
+
+                if (slashRect.intersectsRect(geoRect))
+                {
+                    // 轻微屏幕震动
+                    shakeScreen(0.1f, 5.0f);
+
+                    // 增加 2 Geo
+                    GeoManager::getInstance()->addGeo(2);
+                    CCLOG("攻击 Geo 对象! 获得 2 Geo, 总计: %d", GeoManager::getInstance()->getGeo());
+
+                    // 【关键】设置攻击冷却，防止同一次攻击重复触发
+                    _knightAttackCooldown = 0.3f;
+
+                    break;  // 每次攻击只触发一个 Geo 对象
                 }
             }
         }

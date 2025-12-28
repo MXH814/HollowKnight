@@ -27,6 +27,14 @@ struct ThornObject {
     ThornObject() : sprite(nullptr), position(cocos2d::Vec2::ZERO), size(cocos2d::Size::ZERO), damage(1) {}
 };
 
+// 【新增】Geo 对象结构体
+struct GeoObject {
+    cocos2d::Vec2 position;
+    cocos2d::Size size;
+    
+    GeoObject() : position(cocos2d::Vec2::ZERO), size(cocos2d::Size::ZERO) {}
+};
+
 class NextScene : public cocos2d::Layer
 {
 public:
@@ -69,6 +77,9 @@ private:
     // 加载前景对象(bg类，显示在角色上层)
     void loadForegroundObjects(cocos2d::TMXTiledMap* map, float scale, const cocos2d::Vec2& mapOffset);
     
+    // 【新增】加载 Geo 对象
+    void loadGeoObjects(cocos2d::TMXTiledMap* map, float scale, const cocos2d::Vec2& mapOffset);
+    
     // 检测交互
     void checkInteractions();
     
@@ -92,6 +103,7 @@ private:
     std::vector<Platform> _platforms;         // 碰撞平台列表（使用 TheKnight.h 中的 Platform）
     std::vector<ExitObject> _exitObjects;     // 出口对象列表
     std::vector<ThornObject> _thornObjects;   // 尖刺对象列表
+    std::vector<GeoObject> _geoObjects;     // Geo 对象列表
     
     cocos2d::Label* _exitLabel = nullptr;   // 出口提示标签
     cocos2d::Label* _thornLabel = nullptr;  // 尖刺警告标签
