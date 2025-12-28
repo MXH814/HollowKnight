@@ -162,6 +162,10 @@ public:
     bool isSitting() const;
     void startSitting();  // Called by GameScene when near chair and press W
     
+    // 输入控制禁用（用于NPC对话等）
+    void setInputDisabled(bool disabled) { _inputDisabled = disabled; }
+    bool isInputDisabled() const { return _inputDisabled; }
+    
 private:
     // 创建动画（指定起始帧和结束帧）
     Animation* createAnimation(const std::string& path, const std::string& prefix, int startFrame, int endFrame, float delay);
@@ -395,6 +399,9 @@ private:
     float _sitIdleTimeout;       // 入睡超时时间（8秒）
     bool _isAsleep;              // 是否已经睡着
     EventKeyboard::KeyCode _exitKey;  // 退出时按的键
+    
+    // 输入禁用标志
+    bool _inputDisabled;
     
     // 护符系统
     int _charmStalwartShell;     // 坚硬外壳：受击无敌时长+0.4s

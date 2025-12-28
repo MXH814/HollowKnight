@@ -17,6 +17,9 @@ public:
     
     // 设置 Knight 位置（每帧调用）
     void setPlayerPosition(const cocos2d::Vec2& playerPos);
+    
+    // 获取当前是否处于对话状态（用于禁用Knight输入）
+    bool isDialogueActive() const { return _isDialogueActive; }
 
 private:
     void initAnimations();

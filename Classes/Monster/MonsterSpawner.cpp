@@ -69,11 +69,11 @@ int MonsterSpawner::spawnAllCrawlidsInNextScene(cocos2d::Node* parentNode)
     };
     
     std::vector<TiktikSpawnData> tiktikSpawns = {
-        {Vec2(1876.6f, 1022.6f), 297.5f / 2.0f, 67.9f / 2.0f, "Tiktik_1"},
-        {Vec2(2979.3f, 1510.6f), 430.6f / 2.0f, 67.9f / 2.0f, "Tiktik_2"},
-        {Vec2(2979.3f, 2118.8f), 435.9f / 2.0f, 78.3f / 2.0f, "Tiktik_3"},
-        {Vec2(2439.0f, 2755.6f), 435.9f / 2.0f, 83.5f / 2.0f, "Tiktik_4"},
-        {Vec2(1874.0f, 3618.2f), 292.3f / 2.0f, 75.7f / 2.0f, "Tiktik_5"},
+        {Vec2(1876.6f, 1022.6f), 297.5f / 2.0f, 60.9f / 2.0f, "Tiktik_1"},
+        {Vec2(2979.3f, 1510.6f), 430.6f / 2.0f, 60.9f / 2.0f, "Tiktik_2"},
+        {Vec2(2979.3f, 2118.8f), 435.9f / 2.0f, 70.3f / 2.0f, "Tiktik_3"},
+        {Vec2(2439.0f, 2755.6f), 435.9f / 2.0f, 70.5f / 2.0f, "Tiktik_4"},
+        {Vec2(1874.0f, 3618.2f), 292.3f / 2.0f, 70.7f / 2.0f, "Tiktik_5"},
         {Vec2(2441.7f, 4771.8f), 441.1f / 2.0f, 70.5f / 2.0f, "Tiktik_6"},
         {Vec2(5025.8f, 6087.3f), 230.2f / 2.0f, 154.0f / 2.0f, "Tiktik_7"},
         

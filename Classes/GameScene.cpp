@@ -792,6 +792,9 @@ void GameScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
             fgSprite->setPosition(Vec2(worldX, worldY));
             fgSprite->setScale(scale);
 
+            // 添加到场景，z-order 设为 6，比 TheKnight(5) 更高，显示在前景
+            this->addChild(fgSprite, 6);
+
             CCLOG("加载前景对象: %s at (%.1f, %.1f)", imagePath.c_str(), worldX, worldY);
         }
         else

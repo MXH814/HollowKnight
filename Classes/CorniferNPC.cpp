@@ -384,8 +384,8 @@ void CorniferNPC::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event) {
         if (_dialogueWindow->getNumberOfRunningActions() > 0) return;
         handleDialogueInput(keyCode);
     }
-    else if ((keyCode == EventKeyboard::KeyCode::KEY_E || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_E) && _isPlayerNearby) {
-        CCLOG("[Cornifer] 玩家按下 E 键，打开对话");
+    else if ((keyCode == EventKeyboard::KeyCode::KEY_W || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_W) && _isPlayerNearby) {
+        CCLOG("[Cornifer] 玩家按下 W 键，打开对话");
         showDialogue();
     }
 }
@@ -427,12 +427,12 @@ void CorniferNPC::handleDialogueInput(EventKeyboard::KeyCode keyCode) {
             _choiceSelection = (_choiceSelection == 0) ? 1 : 0;
             updateChoiceUI();
         }
-        else if (keyCode == EventKeyboard::KeyCode::KEY_E || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_E) {
+        else if (keyCode == EventKeyboard::KeyCode::KEY_K || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_K) {
             selectChoice(_choiceSelection);
         }
     }
     else {
-        if (keyCode == EventKeyboard::KeyCode::KEY_E || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_E) {
+        if (keyCode == EventKeyboard::KeyCode::KEY_K || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_K) {
             advanceDialogue();
         }
     }
