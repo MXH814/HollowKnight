@@ -4,6 +4,7 @@
  */
 
 #include "TheKnight.h"
+#include "AudioManager.h"
 
 void TheKnight::startJump()
 {
@@ -14,6 +15,10 @@ void TheKnight::startJump()
     _jumpKeyHoldTime = 0.0f;
     _hasDoubleJumped = false;  // 跳跃时重置二段跳
     _fallStartY = this->getPositionY();  // 记录起跳位置
+    
+    // 播放跳跃音效
+    AudioManager::getInstance()->playJumpSound();
+    
     changeState(KnightState::JUMPING);
 }
 
@@ -277,9 +282,13 @@ void TheKnight::startDoubleJump()
 {
     _hasDoubleJumped = true;
     _velocityY = _doubleJumpForce;
-    _jumpKeyHoldTime = _maxJumpHoldTime;  // 设置为最大值，防止长按增加跳跃力度
-    _isJumpKeyPressed = false;  // 重置跳跃键状态，防止后续误判
-    _fallStartY = this->getPositionY();  // 记录二段跳起始位置
+    _jumpKeyHoldTime = _maxJumpHoldTime;  // 设置为最大值，防止再次增加跳跃力度
+    _isJumpKeyPressed = false;  // 清除跳跃键状态，防止继续增加
+    _fallStartY = this->getPositionY();  // 记录二段跳开始位置
+    
+    // 播放跳跃音效
+    AudioManager::getInstance()->playJumpSound();
+    
     changeState(KnightState::DOUBLE_JUMPING);
 }
 
@@ -704,6 +713,10 @@ void TheKnight::startDash()
     _dashEffectFrame = 0;
     _dashEffectTimer = 0.0f;
     createDashEffect();
+    
+    // 播放冲刺音效
+    AudioManager::getInstance()->playDashSound();
+    
     changeState(KnightState::DASHING);
 }
 

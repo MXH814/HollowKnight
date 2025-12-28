@@ -84,6 +84,9 @@
     <ClCompile Include="..\Classes\Monster\MonsterSpawner.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\Classes\AudioManager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -141,6 +144,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\Classes\Monster\MonsterSpawner.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\AudioManager.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

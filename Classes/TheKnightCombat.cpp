@@ -1,11 +1,12 @@
 /**
  * @file TheKnightCombat.cpp
- * @brief 小骑士（TheKnight）角色类 - 战斗相关实现
+ * @brief 小骑士（TheKnight）角色类 - 战斗部分实现
  */
 
 #include "TheKnight.h"
-#include "GameScene.h"  // 添加这一行，包含 GameScene 头文件
-#include "NextScene.h"  // 添加 NextScene 头文件
+#include "GameScene.h"
+#include "NextScene.h"
+#include "AudioManager.h"
 
 void TheKnight::startSlash()
 {
@@ -15,7 +16,10 @@ void TheKnight::startSlash()
     _slashEffectPhase = 1;
     createSlashEffect(1);
     
-    // 水平攻击后坐力（向身后位移），SteadyBody护符可以消除
+    // 播放攻击音效
+    AudioManager::getInstance()->playSlashSound();
+    
+    // 水平攻击有击退，向相反方向位移（若SteadyBody则不后退）
     if (!_charmSteadyBody)
     {
         float recoilDistance = 30.0f;  // 后坐力距离
@@ -48,6 +52,10 @@ void TheKnight::startUpSlash()
     _slashEffectTimer = 0.0f;
     _slashEffectPhase = 1;
     createSlashEffect(1);
+    
+    // 播放攻击音效
+    AudioManager::getInstance()->playSlashSound();
+    
     changeState(KnightState::UP_SLASHING);
 }
 
@@ -58,6 +66,10 @@ void TheKnight::startDownSlash()
     _slashEffectTimer = 0.0f;
     _slashEffectPhase = 1;
     createSlashEffect(1);
+    
+    // 播放攻击音效
+    AudioManager::getInstance()->playSlashSound();
+    
     changeState(KnightState::DOWN_SLASHING);
 }
 
@@ -646,6 +658,9 @@ void TheKnight::takeDamage(int damage)
     _hp -= damage;
     if (_hp < 0) _hp = 0;
     
+    // 播放受击音效
+    AudioManager::getInstance()->playGetAttackedSound();
+    
     // 如果正在恢复，取消恢复（灵魂已消耗，不回血）
     if (_state == KnightState::RECOVERING)
     {
@@ -781,6 +796,9 @@ void TheKnight::onGetAttackedFinished()
 void TheKnight::startDeath()
 {
     CCLOG("TheKnight::startDeath - Knight is dying!");
+    
+    // 播放死亡音效
+    AudioManager::getInstance()->playDeathSound();
     
     // 【修改】只切换到死亡状态，不调用场景的 onKnightDeath
     // 场景的 update() 会检测到 isDead() 状态，等待死亡动画播放完成后再处理

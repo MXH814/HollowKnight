@@ -1,7 +1,7 @@
 // CrawlidMonster.cpp (增强击退效果)
 
 #include "CrawlidMonster.h"
-#include "SimpleAudioEngine.h"
+#include "AudioManager.h"
 
 USING_NS_CC;
 
@@ -178,7 +178,10 @@ void CrawlidMonster::takeDamage(int damage, float knockbackPower, int knockbackD
     _health -= damage;
     _isStunned = true;
 
-    // 1. 停止巡逻序列
+    // 播放受击音效
+    AudioManager::getInstance()->playEnemyTakeDamageSound();
+
+    // 1. 停止巡逻动作
     this->stopActionByTag((int)CrawlidMonsterActionTag::PATROL_ACTION_TAG);
     _isPatrolling = false;
 
@@ -271,6 +274,9 @@ void CrawlidMonster::die(float knockbackPower, int knockbackDirection)
     this->stopAllActions();
 
     _isStunned = true;
+
+    // 播放死亡音效
+    AudioManager::getInstance()->playEnemyDeathSound();
 
     CCLOG("Crawlid Monster Died! Starting death animation.");
 

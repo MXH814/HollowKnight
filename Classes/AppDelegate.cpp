@@ -1,7 +1,7 @@
 #include "AppDelegate.h"
 #include "LoadingScene.h"
 
-// #define USE_AUDIO_ENGINE 1  //音频引擎，使用时解开
+#define USE_AUDIO_ENGINE 1  //音频引擎，使用时解开
 // #define USE_SIMPLE_AUDIO_ENGINE 1  //简单音频引擎，使用时解开
 
 #if USE_AUDIO_ENGINE && USE_SIMPLE_AUDIO_ENGINE

@@ -4,6 +4,7 @@
 #include <BossScene.h>
 #include "CharmManager.h"
 #include "Monster/CrawlidMonster.h"
+#include "AudioManager.h"
 
 USING_NS_CC;
 
@@ -58,6 +59,9 @@ bool GameScene::init()
 
     auto blackLayer1 = LayerColor::create(Color4B(0, 0, 0, 255));
     this->addChild(blackLayer1, 10, "LoadingBlack");
+
+    // 播放 GameScene 背景音乐
+    AudioManager::getInstance()->playGameSceneBGM();
 
     struct MapChunk {
         std::string file;

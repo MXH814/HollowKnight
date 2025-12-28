@@ -1,9 +1,10 @@
 /**
  * @file TheKnightAnimation.cpp
- * @brief 小骑士（TheKnight）角色类 - 动画相关实现
+ * @brief 小骑士（TheKnight）角色类 - 动画部分实现
  */
 
 #include "TheKnight.h"
+#include "AudioManager.h"
 
 Animation* TheKnight::createAnimation(const std::string& path, const std::string& prefix, int startFrame, int endFrame, float delay)
 {
@@ -579,6 +580,8 @@ void TheKnight::changeState(KnightState newState)
         case KnightState::HARD_LANDING:
         {
             this->stopAllActions();
+            // 播放重落地音效
+            AudioManager::getInstance()->playHardLandSound();
             auto animation = AnimationCache::getInstance()->getAnimation("hardLand");
             if (animation)
             {
@@ -1275,7 +1278,10 @@ void TheKnight::onLandFinished()
     // 落地时重置二段跳
     _hasDoubleJumped = false;
     
-    // 落地动画播放完毕，根据输入状态决定下一个状态
+    // 播放落地音效
+    AudioManager::getInstance()->playLandSound();
+    
+    // 落地动画播放完毕后，根据输入状态决定下一个状态
     if (_isMovingLeft || _isMovingRight)
     {
         if ((_isMovingLeft && _facingRight) || (_isMovingRight && !_facingRight))
@@ -1298,7 +1304,10 @@ void TheKnight::onHardLandFinished()
     // 重落地时重置二段跳
     _hasDoubleJumped = false;
     
-    // 重落地动画播放完毕，根据输入状态决定下一个状态
+    // 播放落地音效
+    AudioManager::getInstance()->playLandSound();
+    
+    // 重落地动画播放完毕后，根据输入状态决定下一个状态
     if (_isMovingLeft || _isMovingRight)
     {
         if ((_isMovingLeft && _facingRight) || (_isMovingRight && !_facingRight))

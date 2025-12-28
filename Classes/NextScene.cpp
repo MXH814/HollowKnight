@@ -5,8 +5,9 @@
 #include "Monster/MonsterSpawner.h"
 #include "Monster/CrawlidMonster.h"
 #include "Monster/TiktikMonster.h"
-#include "Monster/GruzzerMonster.h" // 【新增】添加 GruzzerMonster 头文件
-#include "Monster/VengeflyMonster.h" // 【新增】添加 VengeflyMonster 头文件
+#include "Monster/GruzzerMonster.h"
+#include "Monster/VengeflyMonster.h"
+#include "AudioManager.h"
 
 USING_NS_CC;
 
@@ -107,6 +108,9 @@ bool NextScene::init()
 
     auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255));
     this->addChild(blackLayer, 10, "LoadingBlack");
+
+    // 播放 NextScene 背景音乐
+    AudioManager::getInstance()->playNextSceneBGM();
 
     struct MapChunk {
         std::string file;
@@ -464,7 +468,7 @@ void NextScene::startSpikeDeath(TheKnight* knight)
     CCLOG("=== 尖刺碰撞检测 ===");
     CCLOG("  当前血量: %d", currentHP);
     
-    // 【修改】如果是最后一条生命,触发特殊的尖刺死亡流程
+    // 【修改】如果是最后一条命,触发特殊的尖刺死亡流程
     if (currentHP <= 1)
     {
         CCLOG("  -> 最后一条命!触发完整尖刺死亡流程");

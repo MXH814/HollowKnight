@@ -2,6 +2,7 @@
 
 #include "TiktikMonster.h"
 #include "SimpleAudioEngine.h"
+#include "AudioManager.h"
 
 USING_NS_CC;
 
@@ -301,6 +302,9 @@ void TiktikMonster::takeDamage(int damage, float knockbackPower, int knockbackDi
     if (_isStunned || _health <= 0) return;
 
     _health -= damage;
+
+    // 播放受击音效
+    AudioManager::getInstance()->playEnemyTakeDamageSound();
 
     if (_health <= 0)
     {

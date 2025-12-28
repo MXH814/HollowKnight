@@ -4,6 +4,7 @@
  */
 
 #include "TheKnight.h"
+#include "AudioManager.h"
 
 void TheKnight::addSoul(int amount)
 {
@@ -34,6 +35,9 @@ void TheKnight::startCastSpell()
     _castSpellAnimTimer = 0.0f;
     _spellEffectCreated = false;
     _vengefulSpiritFacingRight = _facingRight;
+    
+    // 播放法术释放音效
+    AudioManager::getInstance()->playVengefulSpiritSound();
     
     // 清理攻击特效
     if (_isAttacking)
@@ -202,6 +206,9 @@ void TheKnight::removeVengefulSpiritEffect()
 {
     if (_vengefulSpiritEffect)
     {
+        // 播放法术消失音效
+        AudioManager::getInstance()->playVengefulSpiritDisappearSound();
+        
         _vengefulSpiritEffect->removeFromParent();
         _vengefulSpiritEffect = nullptr;
     }

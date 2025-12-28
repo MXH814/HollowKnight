@@ -1,5 +1,6 @@
 #include "BossScene.h"
 #include "CharmManager.h"
+#include "AudioManager.h"
 
 USING_NS_CC;
 
@@ -20,6 +21,9 @@ bool BossScene::init()
     // 在加载地图之前添加全黑遮罩层
     auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255));
     this->addChild(blackLayer, 10, "LoadingBlack");
+
+    // 播放 BossScene 背景音乐
+    AudioManager::getInstance()->playBossSceneBGM();
 
     // 加载 TMX 地图
     scale = 1.0f;
@@ -481,6 +485,9 @@ void BossScene::checkCombatCollisions()
             {
                 _hornet->onDamaged();
                 
+                // 播放受击音效
+                AudioManager::getInstance()->playEnemyTakeDamageSound();
+                
                 int soulGain = 1;
                 if (_knight->getCharmSoulCatcher())
                 {
@@ -510,6 +517,10 @@ void BossScene::checkCombatCollisions()
             if (spellRect.intersectsRect(bossHurtRect))
             {
                 _hornet->onDamaged();
+                
+                // 播放受击音效
+                AudioManager::getInstance()->playEnemyTakeDamageSound();
+                
                 if (_knight->getCharmShamanStone())
                 {
                     _hornet->onDamaged();

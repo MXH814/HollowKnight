@@ -1,4 +1,5 @@
 #include "HornetBoss.h"
+#include "AudioManager.h"
 
 USING_NS_CC;
 
@@ -245,11 +246,14 @@ void HornetBoss::playJumpAnimation(cocos2d::Vec2 targetPos) {
     this->runAction(seq);
 }
 void HornetBoss::playAttack1Animation(cocos2d::Vec2 targetPos) {
-    // 1. 停止所有动作并锁定逻辑，防止重叠冲突
+    // 1. 停止所有动作和物理逻辑，防止回调冲突
     this->stopActionByTag(10);
     _isActionLocked = true;
 
-    // 2. 实时寻敌：根据传入的 targetPos 确定方向
+    // 播放攻击1音效
+    AudioManager::getInstance()->playHornetAttack1Sound();
+
+    // 2. 实时寻敌，根据传入的 targetPos 确定方向
     float currentX = this->getPositionX();
     float direction = (targetPos.x > currentX) ? 1.0f : -1.0f; // 1为右，-1为左
 
@@ -332,7 +336,10 @@ void HornetBoss::playAttack2Animation(cocos2d::Vec2 targetPos) {
     this->stopActionByTag(10);
     _isActionLocked = true;
 
-    // 1. 方向判定与镜像 (锁定当前鼠标方向)
+    // 播放攻击2音效
+    AudioManager::getInstance()->playHornetAttack2Sound();
+
+    // 1. 方向判断与镜像 (根据当前鼠标方向)
     float currentX = this->getPositionX();
     bool isTargetOnRight = (targetPos.x > currentX);
     if (isTargetOnRight) {
@@ -414,9 +421,12 @@ void HornetBoss::playAttack2Animation(cocos2d::Vec2 targetPos) {
     this->runAction(sequence);
 }
 void HornetBoss::playAttack3Animation(cocos2d::Vec2 targetPos) {
-    // 1. 准备阶段：停止旧动作并锁定逻辑
+    // 1. 准备阶段：停止旧动作和物理逻辑
     this->stopActionByTag(10);
     _isActionLocked = true;
+
+    // 播放攻击3音效
+    AudioManager::getInstance()->playHornetAttack3Sound();
 
     float currentX = this->getPositionX();
     bool isTargetOnRight = (targetPos.x > currentX);
@@ -496,6 +506,9 @@ void HornetBoss::playAttack3Animation(cocos2d::Vec2 targetPos) {
 void HornetBoss::playAttack4Animation(cocos2d::Vec2 targetPos) {
     this->stopActionByTag(10);
     _isActionLocked = true;
+
+    // 播放攻击4音效
+    AudioManager::getInstance()->playHornetAttack4Sound();
 
     // 1. 转向逻辑
     float currentX = this->getPositionX();
@@ -664,7 +677,7 @@ void HornetBoss::playFallAnimation(cocos2d::Vec2 attackSourcePos) {
     }
 
     // 5. 抛物线位移 (JumpBy)
-    // 根据方向决定位移正负
+    // 根据方向决个位移正负
     float jumpDistance = attackFromRight ? -150.0f : 150.0f;
     // 参数：时长, 位移向量, 跳跃高度, 跳跃次数
     auto jumpAction = JumpBy::create(0.5f, Vec2(jumpDistance, 0), 80.0f, 1);

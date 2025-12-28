@@ -2,10 +2,9 @@
 #include "LoadingScene.h" 
 #include <GameScene.h>
 #include <BossScene.h>
-#include "audio/include/SimpleAudioEngine.h"
+#include "AudioManager.h"
 
 USING_NS_CC;
-using namespace CocosDenshion;
 
 Scene* MainMenuScene::createScene()
 {
@@ -93,7 +92,7 @@ bool MainMenuScene::init()
     this->addChild(menu);
 
     // 播放菜单背景音乐（循环）
-    SimpleAudioEngine::getInstance()->playBackgroundMusic("Music/Title.wav", true);
+    AudioManager::getInstance()->playMainMenuBGM();
 
     return true;
 }
@@ -101,10 +100,10 @@ bool MainMenuScene::init()
 void MainMenuScene::startGame(Ref* sender)
 {
     // 播放点击音效
-    SimpleAudioEngine::getInstance()->playEffect("Music/click.wav");
+    AudioManager::getInstance()->playClickSound();
 
     if (this->getChildByName("SelectLayer") != nullptr) {
-        return; // 如果存在，直接返回，避免重复创建
+        return; // 如果存在，直接返回，避免重复添加
     }
     // 创建一个全屏遮罩层
     auto layer = LayerColor::create(Color4B(0, 0, 0, 255));
@@ -188,16 +187,16 @@ void MainMenuScene::startGame(Ref* sender)
     auto normalLabel = Label::createWithTTF(u8"普通模式", "fonts/ZCOOLXiaoWei-Regular.ttf", 50);
     normalLabel->setColor(Color3B::WHITE);
     auto normalItem = MenuItemLabel::create(normalLabel, [=](Ref*) {
-        SimpleAudioEngine::getInstance()->playEffect("Music/click.wav");
+        AudioManager::getInstance()->playClickSound();
         // 在进入游戏前停止菜单音乐
-        SimpleAudioEngine::getInstance()->stopBackgroundMusic(true);
+        AudioManager::getInstance()->stopBGM();
 
         // 创建全黑过渡场景
         auto blackScene = Scene::create();
         auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255));
         blackScene->addChild(blackLayer);
         
-        // 先切换到黑屏，延迟后再进入游戏场景
+        // 先切换到过渡场景，延迟后再进入游戏场景
         Director::getInstance()->replaceScene(TransitionFade::create(0.5f, blackScene));
         
         // 延迟后创建并进入游戏场景
@@ -222,16 +221,16 @@ void MainMenuScene::startGame(Ref* sender)
     auto hardLabel = Label::createWithTTF(u8"Boss战", "fonts/ZCOOLXiaoWei-Regular.ttf", 50);
     hardLabel->setColor(Color3B::WHITE);
     auto hardItem = MenuItemLabel::create(hardLabel, [=](Ref*) {
-        SimpleAudioEngine::getInstance()->playEffect("Music/click.wav");
+        AudioManager::getInstance()->playClickSound();
         // 在进入 Boss 场景前停止菜单音乐
-        SimpleAudioEngine::getInstance()->stopBackgroundMusic(true);
+        AudioManager::getInstance()->stopBGM();
 
         // 创建全黑过渡场景
         auto blackScene = Scene::create();
         auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255));
         blackScene->addChild(blackLayer);
         
-        // 先切换到黑屏，延迟后再进入Boss场景
+        // 先切换到过渡场景，延迟后再进入Boss场景
         Director::getInstance()->replaceScene(TransitionFade::create(0.5f, blackScene));
         
         // 延迟后创建并进入Boss场景
@@ -260,7 +259,7 @@ void MainMenuScene::showQPanel()
 void MainMenuScene::openSettings(Ref* sender)
 {
     // 播放点击音效
-    SimpleAudioEngine::getInstance()->playEffect("Music/click.wav");
+    AudioManager::getInstance()->playClickSound();
 
     CCLOG("设置界面");
 }
@@ -268,7 +267,7 @@ void MainMenuScene::openSettings(Ref* sender)
 void MainMenuScene::exitGame(Ref* sender)
 {
     // 播放点击音效
-    SimpleAudioEngine::getInstance()->playEffect("Music/click.wav");
+    AudioManager::getInstance()->playClickSound();
 
     Director::getInstance()->end();
 }
@@ -276,7 +275,7 @@ void MainMenuScene::exitGame(Ref* sender)
 void MainMenuScene::extrallabel(cocos2d::Ref* sender)
 {
     // 播放点击音效
-    SimpleAudioEngine::getInstance()->playEffect("Music/click.wav");
+    AudioManager::getInstance()->playClickSound();
 
     CCLOG("额外菜单");
 }

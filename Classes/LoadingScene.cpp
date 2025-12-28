@@ -1,5 +1,6 @@
 #include "LoadingScene.h"
 #include "MainMenuScene.h"
+#include "AudioManager.h"
 
 USING_NS_CC;
 
@@ -26,7 +27,7 @@ bool LoadingScene::init()
     hero->setScale(1.5f);
     this->addChild(hero);
 
-    // 小人动画帧（假设有 8 帧循环）
+    // 小人动画帧（手动添加 8 帧循环）
     auto animation = Animation::create();
     animation->setDelayPerUnit(1.0f / 8.0f);
     animation->addSpriteFrameWithFile("Loading/loading_icon_new0000.png");
@@ -40,6 +41,9 @@ bool LoadingScene::init()
 
     auto animate = RepeatForever::create(Animate::create(animation));
     hero->runAction(animate);
+
+    // 预加载所有音频资源
+    AudioManager::getInstance()->preloadAllAudio();
 
     // 模拟加载 3 秒后进入主菜单
     this->scheduleOnce([this](float) {

@@ -2,6 +2,7 @@
 #include "SimpleAudioEngine.h"
 #include "NextScene.h"  // 用于获取平台数据
 #include "TheKnight.h"  // 获取 Platform 定义
+#include "AudioManager.h"
 
 USING_NS_CC;
 
@@ -351,6 +352,9 @@ void VengeflyMonster::takeDamage(int damage, float knockbackPower, int knockback
     }
 
     _health -= damage;
+
+    // 播放受击音效
+    AudioManager::getInstance()->playEnemyTakeDamageSound();
 
     if (_health <= 0)
     {

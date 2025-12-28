@@ -1,6 +1,7 @@
 ﻿#include "GruzzerMonster.h"
 #include "NextScene.h"
 #include "TheKnight.h"  // 包含 TheKnight.h 以获取 Platform 的完整定义
+#include "AudioManager.h"
 
 USING_NS_CC;
 
@@ -176,6 +177,9 @@ void GruzzerMonster::takeDamage(int damage, float knockbackPower, int knockbackD
     }
 
     _health -= damage;
+
+    // 播放受击音效
+    AudioManager::getInstance()->playEnemyTakeDamageSound();
 
     if (_health <= 0) {
         // 死亡
