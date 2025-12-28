@@ -1,6 +1,7 @@
 ﻿#include "GruzzerMonster.h"
 #include "NextScene.h"
-#include "TheKnight.h"  // 包含 TheKnight.h 以获取 Platform 的完整定义
+#include "TheKnight.h"
+#include "SimpleAudioEngine.h"  // 添加音效头文件
 
 USING_NS_CC;
 
@@ -177,6 +178,9 @@ void GruzzerMonster::takeDamage(int damage, float knockbackPower, int knockbackD
 
     _health -= damage;
 
+    // 播放受击音效
+    CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("Music/enemy_damage.wav");
+
     if (_health <= 0) {
         // 死亡
         _state = State::DEAD;
@@ -225,6 +229,9 @@ void GruzzerMonster::die(float knockbackPower, int knockbackDirection) {
     _isStunned = false;
     this->stopAllActions();
     this->unscheduleUpdate();
+
+    // 播放死亡音效
+    CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("Music/enemy_death.wav");
 
     // 播放死亡动画
     if (_deathAnim) {

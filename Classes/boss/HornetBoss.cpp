@@ -1,4 +1,8 @@
 #include "HornetBoss.h"
+#include "AudioSettings.h"
+#include "SimpleAudioEngine.h"
+
+using namespace CocosDenshion;
 
 USING_NS_CC;
 
@@ -327,6 +331,9 @@ void HornetBoss::playAttack1Animation(cocos2d::Vec2 targetPos) {
 
     sequence->setTag(10);
     this->runAction(sequence);
+
+    // 播放音效
+    SimpleAudioEngine::getInstance()->playEffect("Music/1.wav", false);
 }
 void HornetBoss::playAttack2Animation(cocos2d::Vec2 targetPos) {
     this->stopActionByTag(10);
@@ -412,6 +419,9 @@ void HornetBoss::playAttack2Animation(cocos2d::Vec2 targetPos) {
 
     sequence->setTag(10);
     this->runAction(sequence);
+
+    // 播放音效
+    SimpleAudioEngine::getInstance()->playEffect("Music/2.wav", false);
 }
 void HornetBoss::playAttack3Animation(cocos2d::Vec2 targetPos) {
     // 1. 准备阶段：停止旧动作并锁定逻辑
@@ -492,6 +502,9 @@ void HornetBoss::playAttack3Animation(cocos2d::Vec2 targetPos) {
 
     fullSequence->setTag(10);
     this->runAction(fullSequence);
+
+    // 播放音效
+    SimpleAudioEngine::getInstance()->playEffect("Music/3.wav", false);
 }
 void HornetBoss::playAttack4Animation(cocos2d::Vec2 targetPos) {
     this->stopActionByTag(10);
@@ -562,6 +575,9 @@ void HornetBoss::playAttack4Animation(cocos2d::Vec2 targetPos) {
     auto fullSeq = Sequence::create(jumpToAir, prepAnim, startStorm, nullptr);
     fullSeq->setTag(10);
     this->runAction(fullSeq);
+
+    // 播放音效
+    SimpleAudioEngine::getInstance()->playEffect("Music/4.wav", false);
 }
 // 受击动画 1：硬直 2 秒 (injured_0 - 1)
 void HornetBoss::playInjuredAction1() {

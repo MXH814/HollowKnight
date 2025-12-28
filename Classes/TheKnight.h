@@ -483,6 +483,10 @@ private:
     Animation* _getOffAnim;          // 起身离开动画
     Animation* _sitMapOpenAnim;      // 坐着打开地图动画
     Animation* _sitMapCloseAnim;     // 坐着关闭地图动画
+
+    // 音效相关
+    int _runningSoundId;             // 跑步音效ID
+    int _jumpSoundId;                // 跳跃音效ID
 };
 
 #endif // __THE_KNIGHT_H__

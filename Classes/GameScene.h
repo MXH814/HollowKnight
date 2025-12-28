@@ -3,6 +3,7 @@
 
 #include "cocos2d.h"
 #include "TheKnight.h"
+#include "PauseMenu.h"  // 【新增】
 
 class GameScene : public cocos2d::Scene
 {
@@ -87,6 +88,9 @@ private:
     
     // 坐姿状态追踪
     bool _wasSitting = false;
+    
+    // 【新增】暂停菜单
+    PauseMenu* _pauseMenu = nullptr;
     
     // 静态变量（从NextScene返回时可以传参）
     static bool s_hasCustomSpawn;

@@ -4,6 +4,9 @@
  */
 
 #include "TheKnight.h"
+#include "audio/include/SimpleAudioEngine.h"
+
+using namespace CocosDenshion;
 
 void TheKnight::addSoul(int amount)
 {
@@ -35,7 +38,7 @@ void TheKnight::startCastSpell()
     _spellEffectCreated = false;
     _vengefulSpiritFacingRight = _facingRight;
     
-    // 清理攻击特效
+    // 清除攻击特效
     if (_isAttacking)
     {
         _isAttacking = false;
@@ -180,6 +183,8 @@ void TheKnight::updateVengefulSpiritEffect(float dt)
                 if (effectRect.getMaxX() >= platform.rect.getMinX() &&
                     effectRect.getMinX() < platform.rect.getMinX())
                 {
+                    // 播放法术消失音效
+                    SimpleAudioEngine::getInstance()->playEffect("Music/fireball_disappear.wav", false);
                     removeVengefulSpiritEffect();
                     return;
                 }
@@ -190,6 +195,8 @@ void TheKnight::updateVengefulSpiritEffect(float dt)
                 if (effectRect.getMinX() <= platform.rect.getMaxX() &&
                     effectRect.getMaxX() > platform.rect.getMaxX())
                 {
+                    // 播放法术消失音效
+                    SimpleAudioEngine::getInstance()->playEffect("Music/fireball_disappear.wav", false);
                     removeVengefulSpiritEffect();
                     return;
                 }

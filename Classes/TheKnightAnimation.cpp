@@ -4,6 +4,9 @@
  */
 
 #include "TheKnight.h"
+#include "audio/include/SimpleAudioEngine.h"
+
+using namespace CocosDenshion;
 
 Animation* TheKnight::createAnimation(const std::string& path, const std::string& prefix, int startFrame, int endFrame, float delay)
 {
@@ -455,7 +458,17 @@ void TheKnight::changeState(KnightState newState)
         return;
     }
     
-    // 如果从攻击状态切换出去，清理攻击特效
+    // 如果离开RUNNING状态，停止跑步音效
+    if (_state == KnightState::RUNNING && newState != KnightState::RUNNING)
+    {
+        if (_runningSoundId != -1)
+        {
+            SimpleAudioEngine::getInstance()->stopEffect(_runningSoundId);
+            _runningSoundId = -1;
+        }
+    }
+    
+    // 如果从攻击状态切换出去，清除攻击特效
     if ((_state == KnightState::SLASHING || 
          _state == KnightState::UP_SLASHING || 
          _state == KnightState::DOWN_SLASHING ||
@@ -481,6 +494,10 @@ void TheKnight::changeState(KnightState newState)
         {
             _isRunStartFinished = false;
             this->stopAllActions();
+            
+            // 播放跑步音效（循环播放）
+            _runningSoundId = SimpleAudioEngine::getInstance()->playEffect("Music/hero_running.wav", true);
+            
             auto animation = AnimationCache::getInstance()->getAnimation("runStart");
             if (animation)
             {
@@ -494,7 +511,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::TURNING:
         {
             this->stopAllActions();
@@ -507,7 +524,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::RUN_TO_IDLE:
         {
             this->stopAllActions();
@@ -525,11 +542,14 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::JUMPING:
         {
+            // 播放跳跃音效
+            SimpleAudioEngine::getInstance()->playEffect("Music/hero_jump.wav", false);
+            
             this->stopAllActions();
-            auto animation = AnimationCache::getInstance()->getAnimation("jumpUp");
+            auto animation = AnimationCache::getInstance()->getAnimation("Airborne");
             if (animation)
             {
                 auto animate = Animate::create(animation);
@@ -537,7 +557,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::FALLING:
         {
             this->stopAllActions();
@@ -558,9 +578,12 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::LANDING:
         {
+            // 播放落地音效
+            SimpleAudioEngine::getInstance()->playEffect("Music/hero_land.wav", false);
+            
             this->stopAllActions();
             auto animation = AnimationCache::getInstance()->getAnimation("land");
             if (animation)
@@ -569,15 +592,14 @@ void TheKnight::changeState(KnightState newState)
                 auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onLandFinished, this));
                 this->runAction(Sequence::create(animate, callback, nullptr));
             }
-            else
-            {
-                onLandFinished();
-            }
             break;
         }
-            
+        
         case KnightState::HARD_LANDING:
         {
+            // 播放重落地音效
+            SimpleAudioEngine::getInstance()->playEffect("Music/hero_land.wav", false);
+            
             this->stopAllActions();
             auto animation = AnimationCache::getInstance()->getAnimation("hardLand");
             if (animation)
@@ -586,15 +608,14 @@ void TheKnight::changeState(KnightState newState)
                 auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onHardLandFinished, this));
                 this->runAction(Sequence::create(animate, callback, nullptr));
             }
-            else
-            {
-                onHardLandFinished();
-            }
             break;
         }
-            
+        
         case KnightState::DASHING:
         {
+            // 播放冲刺音效
+            SimpleAudioEngine::getInstance()->playEffect("Music/hero_dash.wav", false);
+            
             this->stopAllActions();
             _dashTimer = 0.0f;
             auto animation = AnimationCache::getInstance()->getAnimation("dash");
@@ -605,7 +626,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::DASH_TO_IDLE:
         {
             this->stopAllActions();
@@ -622,7 +643,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::LOOKING_UP:
         {
             this->stopAllActions();
@@ -635,7 +656,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::LOOK_UP_END:
         {
             this->stopAllActions();
@@ -652,7 +673,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::LOOKING_DOWN:
         {
             this->stopAllActions();
@@ -665,7 +686,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::LOOK_DOWN_END:
         {
             this->stopAllActions();
@@ -682,7 +703,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::WALL_SLIDING:
         {
             this->stopAllActions();
@@ -712,9 +733,12 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::WALL_JUMPING:
         {
+            // 蹬墙跳也播放跳跃音效
+            SimpleAudioEngine::getInstance()->playEffect("Music/hero_jump.wav", false);
+            
             this->stopAllActions();
             auto animation = AnimationCache::getInstance()->getAnimation("wallJump");
             if (animation)
@@ -725,34 +749,28 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::DOUBLE_JUMPING:
         {
+            // 二段跳也播放跳跃音效
+            SimpleAudioEngine::getInstance()->playEffect("Music/hero_jump.wav", false);
+            
             this->stopAllActions();
-            // 播放二段跳动画（8帧），然后播放Airborne7，最后切换到下落
-            auto doubleJumpAnim = AnimationCache::getInstance()->getAnimation("doubleJump");
-            auto peakAnim = AnimationCache::getInstance()->getAnimation("jumpPeak");
-            if (doubleJumpAnim)
+            auto animation = AnimationCache::getInstance()->getAnimation("doubleJump");
+            if (animation)
             {
-                auto animateDoubleJump = Animate::create(doubleJumpAnim);
-                if (peakAnim)
-                {
-                    auto animatePeak = Animate::create(peakAnim);
-                    auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onDoubleJumpAnimFinished, this));
-                    auto sequence = Sequence::create(animateDoubleJump, animatePeak, callback, nullptr);
-                    this->runAction(sequence);
-                }
-                else
-                {
-                    auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onDoubleJumpAnimFinished, this));
-                    this->runAction(Sequence::create(animateDoubleJump, callback, nullptr));
-                }
+                auto animate = Animate::create(animation);
+                auto callback = CallFunc::create(CC_CALLBACK_0(TheKnight::onDoubleJumpAnimFinished, this));
+                this->runAction(Sequence::create(animate, callback, nullptr));
             }
             break;
         }
-            
+        
         case KnightState::SLASHING:
         {
+            // 播放攻击音效
+            SimpleAudioEngine::getInstance()->playEffect("Music/hero_sword.wav", false);
+            
             this->stopAllActions();
             auto animation = AnimationCache::getInstance()->getAnimation("slash");
             if (animation)
@@ -767,9 +785,12 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::UP_SLASHING:
         {
+            // 播放攻击音效
+            SimpleAudioEngine::getInstance()->playEffect("Music/hero_sword.wav", false);
+            
             this->stopAllActions();
             auto animation = AnimationCache::getInstance()->getAnimation("upSlash");
             if (animation)
@@ -784,9 +805,12 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::DOWN_SLASHING:
         {
+            // 播放攻击音效
+            SimpleAudioEngine::getInstance()->playEffect("Music/hero_sword.wav", false);
+            
             this->stopAllActions();
             auto animation = AnimationCache::getInstance()->getAnimation("downSlash");
             if (animation)
@@ -801,9 +825,12 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::GET_ATTACKED:
         {
+            // 播放受击音效
+            SimpleAudioEngine::getInstance()->playEffect("Music/hero_damage.wav", false);
+            
             this->stopAllActions();
             _knockbackTimer = 0.0f;
             // 素材面朝左，需要根据后退方向决定翻转
@@ -822,9 +849,12 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::DEAD:
         {
+            // 播放死亡音效
+            SimpleAudioEngine::getInstance()->playEffect("Music/hero_death.wav", false);
+            
             this->stopAllActions();
             // 禁用键盘输入
             _eventDispatcher->removeEventListenersForTarget(this);
@@ -880,9 +910,12 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::CASTING_SPELL:
         {
+            // 播放法术音效
+            SimpleAudioEngine::getInstance()->playEffect("Music/hero_fireball.wav", false);
+            
             this->stopAllActions();
             auto animation = AnimationCache::getInstance()->getAnimation("vengefulSpirit");
             if (animation)
@@ -965,7 +998,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::MAP_OPENING:
         {
             this->stopAllActions();
@@ -982,7 +1015,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::MAP_IDLE:
         {
             this->stopAllActions();
@@ -994,7 +1027,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::MAP_WALKING:
         {
             this->stopAllActions();
@@ -1006,7 +1039,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::MAP_TURNING:
         {
             this->stopAllActions();
@@ -1023,7 +1056,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::MAP_CLOSING:
         {
             this->stopAllActions();
@@ -1040,7 +1073,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         // Chair sitting states
         case KnightState::SITTING:
         {
@@ -1061,7 +1094,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::SIT_IDLE:
         {
             this->stopAllActions();
@@ -1073,7 +1106,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::SIT_FALL_ASLEEP:
         {
             this->stopAllActions();
@@ -1098,7 +1131,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::SITTING_ASLEEP:
         {
             this->stopAllActions();
@@ -1121,7 +1154,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::WAKE_TO_SIT:
         {
             this->stopAllActions();
@@ -1156,7 +1189,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::GET_OFF:
         {
             this->stopAllActions();
@@ -1181,7 +1214,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::SIT_MAP_OPEN:
         {
             this->stopAllActions();
@@ -1198,7 +1231,7 @@ void TheKnight::changeState(KnightState newState)
             }
             break;
         }
-            
+        
         case KnightState::SIT_MAP_CLOSE:
         {
             this->stopAllActions();

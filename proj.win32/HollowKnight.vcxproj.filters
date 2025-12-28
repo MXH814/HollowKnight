@@ -84,6 +84,15 @@
     <ClCompile Include="..\Classes\Monster\MonsterSpawner.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\Classes\PauseMenu.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\SettingsPanel.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Classes\AudioSettings.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -143,10 +152,22 @@
     <ClInclude Include="..\Classes\Monster\MonsterSpawner.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\Classes\PauseMenu.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\SettingsPanel.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Classes\AudioSettings.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="game.rc">
       <Filter>resource</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp" />
   </ItemGroup>
 </Project>

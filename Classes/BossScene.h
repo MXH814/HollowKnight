@@ -4,6 +4,7 @@
 #include "cocos2d.h"
 #include "TheKnight.h"
 #include "boss/HornetBoss.h"
+#include "PauseMenu.h"  // 【新增】
 
 class BossScene : public cocos2d::Scene
 {
@@ -64,6 +65,9 @@ private:
     // 攻击命中冷却（防止一次攻击多次伤害）
     float _knightAttackCooldown = 0.0f;
     float _spellAttackCooldown = 0.0f;
+    
+    // 【新增】暂停菜单
+    PauseMenu* _pauseMenu = nullptr;
 };
 
 #endif // __BOSS_SCENE_H__

@@ -302,6 +302,9 @@ void TiktikMonster::takeDamage(int damage, float knockbackPower, int knockbackDi
 
     _health -= damage;
 
+    // 播放受击音效
+    CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("Music/enemy_damage.wav");
+
     if (_health <= 0)
     {
         this->die(knockbackPower, knockbackDirection);
@@ -341,6 +344,9 @@ void TiktikMonster::die(float knockbackPower, int knockbackDirection)
     _isStunned = true;
     _isPatrolling = false;
     this->stopAllActions();
+
+    // 播放死亡音效
+    CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("Music/enemy_death.wav");
 
     float flyHeight = 150.0f;
     float jumpDuration = 0.8f;

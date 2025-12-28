@@ -352,6 +352,9 @@ void VengeflyMonster::takeDamage(int damage, float knockbackPower, int knockback
 
     _health -= damage;
 
+    // 播放受击音效
+    CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("Music/enemy_damage.wav");
+
     if (_health <= 0)
     {
         // 死亡
@@ -403,6 +406,10 @@ void VengeflyMonster::takeDamage(int damage, float knockbackPower, int knockback
 void VengeflyMonster::deathSequence(float knockbackPower, int knockbackDirection)
 {
     this->unscheduleUpdate();
+
+    // 播放死亡音效
+    CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("Music/enemy_death.wav");
+
     Size size = this->getContentSize();
 
     auto setFlyFrame = CallFunc::create([this, size]() {

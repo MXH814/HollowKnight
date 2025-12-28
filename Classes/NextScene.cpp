@@ -7,8 +7,10 @@
 #include "Monster/TiktikMonster.h"
 #include "Monster/GruzzerMonster.h" // 【新增】添加 GruzzerMonster 头文件
 #include "Monster/VengeflyMonster.h" // 【新增】添加 VengeflyMonster 头文件
+#include "SimpleAudioEngine.h"
 
 USING_NS_CC;
+using namespace CocosDenshion;
 
 // 静态变量初始化（在文件顶部，USING_NS_CC 之后）
 bool NextScene::s_isRespawning = false;
@@ -77,6 +79,67 @@ bool NextScene::init()
 
     Size visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
+
+    {
+        Size vs = Director::getInstance()->getVisibleSize();
+        Vec2 org = Director::getInstance()->getVisibleOrigin();
+        Vec2 centerLocal = Vec2(vs.width * 0.5f, vs.height * 0.5f);
+
+        // 主标题
+        auto sceneTitle = Label::createWithSystemFont(u8"遗忘十字路", "fonts/NotoSerifCJKsc-Regular.otf", 95);
+        sceneTitle->setTextColor(Color4B::WHITE);
+        sceneTitle->setAnchorPoint(Vec2(0.5f, 0.5f));
+
+        // 两张图片：Maps/toptitle.png 和 Maps/bottomtitle.png
+        Sprite* topImg = Sprite::create("Maps/toptitle.png");
+        Sprite* bottomImg = Sprite::create("Maps/bottomtitle.png");
+
+        // 如果图片未找到，设为 nullptr（安全检查）
+        if (topImg && topImg->getContentSize().width == 0) { topImg = nullptr; }
+        if (bottomImg && bottomImg->getContentSize().width == 0) { bottomImg = nullptr; }
+
+        // 添加到 _uiLayer（若存在），否则添加到场景直接居中
+        Node* parentNode = _uiLayer ? _uiLayer : this;
+        Vec2 parentOffset = Vec2::ZERO;
+        if (!_uiLayer) {
+            parentOffset = org;
+        }
+
+        sceneTitle->setPosition(Vec2(centerLocal.x + parentOffset.x, centerLocal.y + parentOffset.y + 80));
+        parentNode->addChild(sceneTitle, 2000, "SceneTitleLabel");
+
+        if (topImg) {
+            topImg->setAnchorPoint(Vec2(0.5f, 0.5f));
+            topImg->setPosition(Vec2(centerLocal.x - 30, centerLocal.y + parentOffset.y + 270));
+            parentNode->addChild(topImg, 1999, "SceneTopImage");
+        }
+        if (bottomImg) {
+            bottomImg->setAnchorPoint(Vec2(0.5f, 0.5f));
+            bottomImg->setPosition(Vec2(centerLocal.x + 14, centerLocal.y + parentOffset.y - 40));
+            parentNode->addChild(bottomImg, 1999, "SceneBottomImage");
+        }
+
+        // 动作序列：淡入 -> 保持 -> 淡出 -> 移除
+        auto in = FadeTo::create(1.5f, 255);
+        auto hold = DelayTime::create(1.8f);
+        auto out = FadeTo::create(0.4f, 0);
+        auto remove = RemoveSelf::create();
+
+        sceneTitle->setOpacity(0);
+        if (topImg) topImg->setOpacity(0);
+        if (bottomImg) bottomImg->setOpacity(0);
+
+        sceneTitle->runAction(Sequence::create(in, hold, out, remove->clone(), nullptr));
+
+        if (topImg) {
+            auto moveInL = MoveBy::create(0.15f, Vec2(20.0f, 0));
+            topImg->runAction(Sequence::create(Spawn::create(in->clone(), moveInL, nullptr), hold->clone(), out->clone(), remove->clone(), nullptr));
+        }
+        if (bottomImg) {
+            auto moveInR = MoveBy::create(0.15f, Vec2(-20.0f, 0));
+            bottomImg->runAction(Sequence::create(Spawn::create(in->clone(), moveInR, nullptr), hold->clone(), out->clone(), remove->clone(), nullptr));
+        }
+    }
 
     _hasLandedOnce = false;
     _isTransitioning = false;
@@ -246,18 +309,67 @@ bool NextScene::init()
     
     createHPAndSoulUI();
 
-    _exitLabel = Label::createWithSystemFont(u8"按 W 进入", "Arial", 24);
+    // 【新增】创建暂停菜单
+    _pauseMenu = PauseMenu::create();
+    if (_pauseMenu)
+    {
+        _uiLayer->addChild(_pauseMenu, 2000);
+    }
+
+    // 【修改】创建出口提示容器（包含文字和装饰图片）
+    _exitContainer = Node::create();
+    this->addChild(_exitContainer, 100, "ExitContainer");
+    _exitContainer->setVisible(false);
+    
+    _exitLabel = Label::createWithSystemFont(u8"按 W 上升", "fonts/NotoSerifCJKsc-Regular.otf", 36);
     _exitLabel->setTextColor(Color4B::WHITE);
-    _exitLabel->setVisible(false);
-    this->addChild(_exitLabel, 100, "ExitLabel");
+    _exitLabel->setPosition(Vec2::ZERO);
+    _exitContainer->addChild(_exitLabel, 1);
+    
+    // 添加顶部装饰图片
+    _exitTopImg = Sprite::create("Menu/pausemenu_top.png");
+    if (_exitTopImg)
+    {
+        _exitTopImg->setPosition(Vec2(0, 60));
+        _exitTopImg->setScale(0.6f);
+        _exitContainer->addChild(_exitTopImg, 0);
+    }
+    
+    // 添加底部装饰图片
+    _exitBottomImg = Sprite::create("Menu/pausemenu_bottom.png");
+    if (_exitBottomImg)
+    {
+        _exitBottomImg->setPosition(Vec2(0, -50));
+        _exitBottomImg->setScale(0.6f);
+        _exitContainer->addChild(_exitBottomImg, 0);
+    }
 
-    _thornLabel = Label::createWithSystemFont(u8"危险！前方有尖刺", "Arial", 24);
-    _thornLabel->setTextColor(Color4B::RED);
-    _thornLabel->setVisible(false);
-    this->addChild(_thornLabel, 100, "ThornLabel");
-
+    // 修改键盘监听器，添加 ESC 键处理
     auto keyboardListener = EventListenerKeyboard::create();
     keyboardListener->onKeyPressed = [this](EventKeyboard::KeyCode keyCode, Event* event) {
+        // 【新增】ESC 键打开/关闭暂停菜单
+        if (keyCode == EventKeyboard::KeyCode::KEY_ESCAPE)
+        {
+            if (_pauseMenu)
+            {
+                if (_pauseMenu->isVisible())
+                {
+                    _pauseMenu->hide();
+                }
+                else
+                {
+                    _pauseMenu->show();
+                }
+            }
+            return;
+        }
+        
+        // 【新增】暂停时不处理其他按键
+        if (_pauseMenu && _pauseMenu->isVisible())
+        {
+            return;
+        }
+        
         if (keyCode == EventKeyboard::KeyCode::KEY_W || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_W)
         {
             if (_isNearExit && !_isTransitioning)
@@ -315,6 +427,10 @@ bool NextScene::init()
 
     // 启用 update
     this->scheduleUpdate();
+
+    // 播放 Crossroads 背景音乐（循环）
+    CocosDenshion::SimpleAudioEngine::getInstance()->stopBackgroundMusic();
+    CocosDenshion::SimpleAudioEngine::getInstance()->playBackgroundMusic("Music/Crossroads.wav", true);
 
     return true;
 }
@@ -416,7 +532,7 @@ void NextScene::checkInteractions()
     
     // 检测出口
     _isNearExit = false;
-    if (_exitLabel) {
+    if (_exitContainer) {
         for (auto& exitObj : _exitObjects)
         {
             float distance = knightPos.distance(exitObj.position);
@@ -424,14 +540,14 @@ void NextScene::checkInteractions()
             if (distance < exitObj.radius)
             {
                 _isNearExit = true;
-                _exitLabel->setPosition(Vec2(knightPos.x, knightPos.y + 80));
+                _exitContainer->setPosition(Vec2(knightPos.x, knightPos.y + 200));
                 break;
             }
         }
-        _exitLabel->setVisible(_isNearExit);
+        _exitContainer->setVisible(_isNearExit);
     }
 
-    // 检测尖刺（仅用于显示警告标签，实际碰撞检测在update中）`
+    // 检测尖刺（仅用于显示警告标签，实际碰撞检测在update中）
     _isNearThorn = false;
     if (_thornLabel) {
         for (auto& thornObj : _thornObjects)
@@ -464,7 +580,7 @@ void NextScene::startSpikeDeath(TheKnight* knight)
     CCLOG("=== 尖刺碰撞检测 ===");
     CCLOG("  当前血量: %d", currentHP);
     
-    // 【修改】如果是最后一条生命,触发特殊的尖刺死亡流程
+    // 【修改】如果是最后一条命,触发特殊的尖刺死亡流程
     if (currentHP <= 1)
     {
         CCLOG("  -> 最后一条命!触发完整尖刺死亡流程");

@@ -2,6 +2,8 @@
 #define __HORNET_BOSS_H__
 
 #include "cocos2d.h"
+#include "AudioSettings.h"
+#include "SimpleAudioEngine.h"
 
 class HornetBoss : public cocos2d::Sprite {
 public:

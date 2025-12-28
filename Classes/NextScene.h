@@ -4,7 +4,8 @@
 #include "cocos2d.h"
 #include "TheKnight.h"
 #include "CorniferNPC.h"
-#include "ShadowEnemy.h"  // 添加 Shadow 头文件
+#include "ShadowEnemy.h"
+#include "PauseMenu.h"  // 【新增】
 
 // 【修改】ExitObject 结构体 - 根据 NextScene.cpp 的使用方式定义
 struct ExitObject {
@@ -144,6 +145,14 @@ private:
     void spawnShade(const cocos2d::Vec2& position);
     void removeShade();
     void updateShade(float dt);
+    
+    // 【新增】暂停菜单
+    PauseMenu* _pauseMenu = nullptr;
+
+    // 在 private 区域确认有以下成员变量
+    cocos2d::Node* _exitContainer = nullptr;
+    cocos2d::Sprite* _exitTopImg = nullptr;
+    cocos2d::Sprite* _exitBottomImg = nullptr;
 };
 
 #endif // __NEXT_SCENE_H__

@@ -5,6 +5,9 @@
 
 #include "TheKnight.h"
 #include "CharmManager.h"
+#include "audio/include/SimpleAudioEngine.h"
+
+using namespace CocosDenshion;
 
 TheKnight* TheKnight::create()
 {
@@ -178,6 +181,16 @@ bool TheKnight::init()
     
     // 启用update
     this->scheduleUpdate();
+    
+    // 音效初始化
+    _runningSoundId = -1;  // 跑步音效初始化
+    _jumpSoundId = -1;     // 跳跃音效初始化
+    
+    // 预加载音效文件（消除首次播放延迟）
+    SimpleAudioEngine::getInstance()->preloadEffect("Music/hero_running.wav");
+    SimpleAudioEngine::getInstance()->preloadEffect("Music/hero_jump.wav");
+    SimpleAudioEngine::getInstance()->preloadEffect("Music/hero_land.wav");
+    SimpleAudioEngine::getInstance()->preloadEffect("Music/hero_dash.wav");
     
     return true;
 }

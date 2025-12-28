@@ -178,6 +178,9 @@ void CrawlidMonster::takeDamage(int damage, float knockbackPower, int knockbackD
     _health -= damage;
     _isStunned = true;
 
+    // ²¥·ÅÊÜ»÷ÒôÐ§
+    CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("Music/enemy_damage.wav");
+
     // 1. Í£Ö¹Ñ²ÂßÐòÁÐ
     this->stopActionByTag((int)CrawlidMonsterActionTag::PATROL_ACTION_TAG);
     _isPatrolling = false;
@@ -271,6 +274,9 @@ void CrawlidMonster::die(float knockbackPower, int knockbackDirection)
     this->stopAllActions();
 
     _isStunned = true;
+
+    // ²¥·ÅËÀÍöÒôÐ§
+    CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("Music/enemy_death.wav");
 
     CCLOG("Crawlid Monster Died! Starting death animation.");
 

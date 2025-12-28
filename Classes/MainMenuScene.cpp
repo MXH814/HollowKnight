@@ -3,6 +3,7 @@
 #include <GameScene.h>
 #include <BossScene.h>
 #include "audio/include/SimpleAudioEngine.h"
+#include "SettingsPanel.h"
 
 USING_NS_CC;
 using namespace CocosDenshion;
@@ -37,7 +38,7 @@ bool MainMenuScene::init()
     // 菜单四个按钮
     auto startlabel = Label::createWithTTF(
         u8"开始游戏",
-        "fonts/ZCOOLXiaoWei-Regular.ttf",
+        "fonts/NotoSerifCJKsc-Regular.otf",
         48
     );
     startlabel->setColor(Color3B::WHITE);
@@ -49,8 +50,8 @@ bool MainMenuScene::init()
     startItem->setPosition(Vec2(visibleSize.width / 2,visibleSize.height / 2));
 
     auto setlabel = Label::createWithTTF(
-        u8"游戏设置",
-        "fonts/ZCOOLXiaoWei-Regular.ttf",
+        u8"选项",
+        "fonts/NotoSerifCJKsc-Regular.otf",
         48
     );
     setlabel->setColor(Color3B::WHITE);
@@ -63,7 +64,7 @@ bool MainMenuScene::init()
 
     auto extrallabel = Label::createWithTTF(
         u8"额外选项",
-        "fonts/ZCOOLXiaoWei-Regular.ttf",
+        "fonts/NotoSerifCJKsc-Regular.otf",
         48
     );
     extrallabel->setColor(Color3B::WHITE);
@@ -76,7 +77,7 @@ bool MainMenuScene::init()
 
     auto exitlabel = Label::createWithTTF(
         u8"退出游戏",
-        "fonts/ZCOOLXiaoWei-Regular.ttf",
+        "fonts/NotoSerifCJKsc-Regular.otf",
         48
     );
     exitlabel->setColor(Color3B::WHITE);
@@ -94,6 +95,13 @@ bool MainMenuScene::init()
 
     // 播放菜单背景音乐（循环）
     SimpleAudioEngine::getInstance()->playBackgroundMusic("Music/Title.wav", true);
+
+    // 创建设置面板
+    _settingsPanel = SettingsPanel::create();
+    _settingsPanel->setCloseCallback([this]() {
+        // 设置面板关闭后的回调（如有需要）
+    });
+    this->addChild(_settingsPanel, 100);
 
     return true;
 }
@@ -113,7 +121,7 @@ void MainMenuScene::startGame(Ref* sender)
     auto visibleSize = Director::getInstance()->getVisibleSize();
 
     // 显示标题
-    auto label = Label::createWithTTF(u8"选择模式", "fonts/ZCOOLXiaoWei-Regular.ttf", 72);
+    auto label = Label::createWithTTF(u8"选择模式", "fonts/NotoSerifCJKsc-Regular.otf", 72);
     label->setColor(Color3B::WHITE);
     label->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 + 200));
     layer->addChild(label);
@@ -185,7 +193,7 @@ void MainMenuScene::startGame(Ref* sender)
     bg2->setOpacity(225);
     layer->addChild(bg2);
 
-    auto normalLabel = Label::createWithTTF(u8"普通模式", "fonts/ZCOOLXiaoWei-Regular.ttf", 50);
+    auto normalLabel = Label::createWithTTF(u8"普通模式", "fonts/NotoSerifCJKsc-Regular.otf", 50);
     normalLabel->setColor(Color3B::WHITE);
     auto normalItem = MenuItemLabel::create(normalLabel, [=](Ref*) {
         SimpleAudioEngine::getInstance()->playEffect("Music/click.wav");
@@ -219,7 +227,7 @@ void MainMenuScene::startGame(Ref* sender)
     bg4->setOpacity(225);
     layer->addChild(bg4);
 
-    auto hardLabel = Label::createWithTTF(u8"Boss战", "fonts/ZCOOLXiaoWei-Regular.ttf", 50);
+    auto hardLabel = Label::createWithTTF(u8"Boss战", "fonts/NotoSerifCJKsc-Regular.otf", 50);
     hardLabel->setColor(Color3B::WHITE);
     auto hardItem = MenuItemLabel::create(hardLabel, [=](Ref*) {
         SimpleAudioEngine::getInstance()->playEffect("Music/click.wav");
@@ -261,8 +269,11 @@ void MainMenuScene::openSettings(Ref* sender)
 {
     // 播放点击音效
     SimpleAudioEngine::getInstance()->playEffect("Music/click.wav");
-
-    CCLOG("设置界面");
+    
+    if (_settingsPanel)
+    {
+        _settingsPanel->show();
+    }
 }
 
 void MainMenuScene::exitGame(Ref* sender)

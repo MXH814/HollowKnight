@@ -1,7 +1,10 @@
 #include "BossScene.h"
 #include "CharmManager.h"
+#include "SimpleAudioEngine.h"
+#include "SettingsPanel.h"
 
 USING_NS_CC;
+using namespace CocosDenshion;
 
 Scene* BossScene::createScene()
 {
@@ -161,6 +164,9 @@ bool BossScene::init()
 
     // ÆôÓÃupdate
     this->scheduleUpdate();
+
+    SimpleAudioEngine::getInstance()->stopBackgroundMusic();
+    SimpleAudioEngine::getInstance()->playBackgroundMusic("Music/Greenpath.wav", true);
 
     return true;
 }
