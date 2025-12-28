@@ -77,6 +77,9 @@ private:
 
     bool _isDialogueActive;
     bool _isPromptShowing;
+    
+    // 是否已显示过地图获取提示
+    bool _hasShownMapPrompt;
 
     const float DETECT_RANGE = 200.0f;
 };

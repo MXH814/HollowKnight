@@ -21,7 +21,7 @@ Scene* GameScene::createScene()
     s_customSpawnPos = Vec2::ZERO;
     s_spawnFacingRight = true;
     s_spawnDoJump = false;
-    
+
     return GameScene::create();
 }
 
@@ -31,10 +31,10 @@ Scene* GameScene::createSceneWithSpawn(const Vec2& spawnPos, bool facingRight)
     s_customSpawnPos = spawnPos;
     s_spawnFacingRight = facingRight;
     s_spawnDoJump = true;
-    
-    CCLOG("GameScene::createSceneWithSpawn - 设置自定义出生点: pos(%.1f, %.1f), facingRight=%d", 
-          spawnPos.x, spawnPos.y, facingRight);
-    
+
+    CCLOG("GameScene::createSceneWithSpawn - 设置自定义出生点: pos(%.1f, %.1f), facingRight=%d",
+        spawnPos.x, spawnPos.y, facingRight);
+
     return GameScene::create();
 }
 
@@ -44,9 +44,9 @@ Scene* GameScene::createSceneForRespawn()
     s_customSpawnPos = Vec2::ZERO;  // 不使用自定义位置，使用椅子位置
     s_spawnFacingRight = true;
     s_spawnDoJump = false;  // 不跳跃，直接坐下
-    
+
     CCLOG("GameScene::createSceneForRespawn - Knight will respawn on chair");
-    
+
     return GameScene::create();
 }
 
@@ -84,8 +84,8 @@ bool GameScene::init()
 
         map->setScale(scale);
         map->setAnchorPoint(Vec2::ZERO);
-        Vec2 mapPos = Vec2(origin.x + chunk.position.x * scale, 
-                           origin.y + chunk.position.y * scale);
+        Vec2 mapPos = Vec2(origin.x + chunk.position.x * scale,
+            origin.y + chunk.position.y * scale);
         map->setPosition(mapPos);
         this->addChild(map, 0);
 
@@ -99,7 +99,7 @@ bool GameScene::init()
         loadInteractiveObjects(map, scale, mapPos);  // 确保这个在 Knight 创建前调用
         loadForegroundObjects(map, scale, mapPos);
     }
-    
+
     _mapSize = Size(totalMapWidth, maxMapHeight);
 
     auto firstMap = TMXTiledMap::create("Maps/Dirtmouth2.tmx");
@@ -114,20 +114,32 @@ bool GameScene::init()
     _knight = TheKnight::create();
     if (_knight)
     {
-        _knight->setPosition(Vec2(startX, startY));
+        // 【修改】根据不同的场景切换方式设置不同的初始位置
+        if (s_hasCustomSpawn && s_spawnDoJump)
+        {
+            // 从 NextScene 的 Exit 出口返回，使用自定义出生点
+            _knight->setPosition(s_customSpawnPos);
+            CCLOG("Knight spawning from Exit at custom position: (%.1f, %.1f)", 
+                  s_customSpawnPos.x, s_customSpawnPos.y);
+        }
+        else
+        {
+            // 默认起始位置
+            _knight->setPosition(Vec2(startX, startY));
+        }
         _knight->setScale(1.0f);
-        
+
         _knight->setPlatforms(_platforms);
         this->addChild(_knight, 5, "Player");
-        
+
         CharmManager::getInstance()->syncToKnight(_knight);
-        
-        // 【修改】检查是否从 NextScene 死亡返回，需要坐在椅子上
+
+        // 检查是否从 NextScene 死亡返回，需要坐在椅子上
         if (s_hasCustomSpawn && !s_spawnDoJump)
         {
             // 从 NextScene 死亡返回，让 Knight 坐在椅子上
             CCLOG("Knight died in NextScene, respawning on chair in GameScene");
-            
+
             // 查找椅子位置
             Vec2 chairPos = Vec2::ZERO;
             for (const auto& obj : _interactiveObjects)
@@ -138,48 +150,43 @@ bool GameScene::init()
                     break;
                 }
             }
-            
+
             if (chairPos != Vec2::ZERO)
             {
-                // 设置 Knight 位置到椅子位置
                 _knight->setPosition(chairPos);
                 _knight->setNearChair(true);
-                
-                // 重置血量为满血
                 _knight->setHP(_knight->getMaxHP());
-                
-                // 【修改】增加延迟时间，确保场景完全初始化后再坐下
-                // 并且先让 Knight 进入 IDLE 状态，再触发坐下
+
                 this->scheduleOnce([this, chairPos](float dt) {
                     if (_knight)
                     {
-                        // 再次确保位置正确
                         _knight->setPosition(chairPos);
                         _knight->setNearChair(true);
                         _knight->startSitting();
-                        CCLOG("Knight automatically sitting on chair after respawn at (%.1f, %.1f)", 
-                              chairPos.x, chairPos.y);
+                        CCLOG("Knight automatically sitting on chair after respawn at (%.1f, %.1f)",
+                            chairPos.x, chairPos.y);
                     }
-                }, 0.3f, "auto_sit");
+                    }, 0.3f, "auto_sit");
             }
             else
             {
                 CCLOG("Warning: Chair not found, Knight will spawn at default position");
             }
-            
+
             // 重置标志
             s_hasCustomSpawn = false;
             s_customSpawnPos = Vec2::ZERO;
         }
         else if (s_hasCustomSpawn && s_spawnDoJump)
         {
+            // 【已修改】位置已在上面设置，这里只触发跳跃动作
             float horizontalSpeed = s_spawnFacingRight ? 1.0f : -1.0f;
             _knight->triggerJumpFromExternal(horizontalSpeed);
-            
-            CCLOG("玩家从NextScene返回：位置(%.1f, %.1f)，朝向%s，触发跳跃动作", 
-                  s_customSpawnPos.x, s_customSpawnPos.y, 
-                  s_spawnFacingRight ? "右" : "左");
-            
+
+            CCLOG("玩家从NextScene返回：位置(%.1f, %.1f)，朝向%s，触发跳跃动作",
+                s_customSpawnPos.x, s_customSpawnPos.y,
+                s_spawnFacingRight ? "右" : "左");
+
             s_hasCustomSpawn = false;
             s_customSpawnPos = Vec2::ZERO;
             s_spawnFacingRight = true;
@@ -187,7 +194,7 @@ bool GameScene::init()
         }
     }
 
-    _interactionLabel = Label::createWithSystemFont(u8"休息", "fonts/NotoSerifCJKsc-Regular.otf", 24);
+    _interactionLabel = Label::createWithSystemFont(u8"休息", "fonts/ZCOOLXiaoWei-Regular.ttf", 24);
     _interactionLabel->setTextColor(Color4B::WHITE);
     _interactionLabel->setVisible(false);
     this->addChild(_interactionLabel, 100, "InteractionLabel");

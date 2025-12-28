@@ -9,14 +9,14 @@ class GameScene : public cocos2d::Scene
 {
 public:
     static cocos2d::Scene* createScene();
-    
+
     // 带自定义出生点和朝向的场景创建方法
     static cocos2d::Scene* createSceneWithSpawn(const cocos2d::Vec2& spawnPos, bool facingRight);
     static Scene* createSceneForRespawn();  // 【新增】从 NextScene 死亡后返回的场景创建方法
-    
+
     virtual bool init() override;
     virtual void update(float dt) override;
-    
+
     CREATE_FUNC(GameScene);
 
 private:
