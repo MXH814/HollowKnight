@@ -3,6 +3,7 @@
 #include "SimpleAudioEngine.h"
 #include "SettingsPanel.h"
 #include "GeoManager.h"
+#include "MainMenuScene.h"
 
 USING_NS_CC;
 using namespace CocosDenshion;
@@ -124,17 +125,42 @@ bool BossScene::init()
         this->addChild(_bossHPLabel, 100);
     }
 
-    // 初始化摄像机偏移
+    // 初始化摄像头偏移
     _cameraOffsetY = 0.0f;
     _targetCameraOffsetY = 0.0f;
     
     // 初始化攻击冷却
     _knightAttackCooldown = 0.0f;
     _spellAttackCooldown = 0.0f;
+    
+    // 初始化战斗结束状态
+    _isBattleEnded = false;
+    _isKnightDefeated = false;
+    _isBossDefeated = false;
+    _deathAnimTimer = 0.0f;
+    _isPlayingDeathAnim = false;
+    _rewardCollected = false;
+    _isNearReward = false;  // 新增：是否在奖励拾取范围内
 
-    // 添加键盘事件监听 (Q键打开护符面板)
+    // 添加键盘事件监听
     auto keyboardListener = EventListenerKeyboard::create();
     keyboardListener->onKeyPressed = [this](EventKeyboard::KeyCode keyCode, Event* event) {
+        // 如果战斗已结束且显示了结果界面，按任意键返回菜单
+        if (_isBattleEnded && _resultLayer && _resultLayer->isVisible())
+        {
+            returnToMainMenu();
+            return;
+        }
+        
+        // 按S键拾取奖励
+        if (keyCode == EventKeyboard::KeyCode::KEY_S)
+        {
+            if (_isNearReward && !_rewardCollected)
+            {
+                collectReward();
+            }
+        }
+        
         if (keyCode == EventKeyboard::KeyCode::KEY_Q)
         {
             auto charmManager = CharmManager::getInstance();
@@ -557,13 +583,365 @@ void BossScene::checkCombatCollisions()
     }
 }
 
+void BossScene::onKnightDefeated()
+{
+    if (_isBattleEnded) return;
+    
+    _isBattleEnded = true;
+    _isKnightDefeated = true;
+    
+    CCLOG("Knight defeated! Showing defeat screen...");
+    
+    // 停止背景音乐
+    SimpleAudioEngine::getInstance()->stopBackgroundMusic();
+    
+    // 创建结果显示层
+    Size visibleSize = Director::getInstance()->getVisibleSize();
+    auto camera = this->getDefaultCamera();
+    Vec2 camPos = camera->getPosition();
+    
+    _resultLayer = Node::create();
+    _resultLayer->setPosition(camPos);
+    this->addChild(_resultLayer, 2000);
+    
+    // 创建半透明黑色背景
+    auto darkBg = LayerColor::create(Color4B(0, 0, 0, 180), visibleSize.width, visibleSize.height);
+    darkBg->setPosition(Vec2(-visibleSize.width / 2, -visibleSize.height / 2));
+    _resultLayer->addChild(darkBg);
+    
+    // 创建"失败"大字
+    auto defeatLabel = Label::createWithTTF(u8"失败", "fonts/NotoSerifCJKsc-Regular.otf", 120);
+    defeatLabel->setTextColor(Color4B(200, 50, 50, 255));
+    defeatLabel->setPosition(Vec2(0, 50));
+    defeatLabel->setOpacity(0);
+    _resultLayer->addChild(defeatLabel);
+    
+    // 创建"按任意键回到菜单"小字
+    auto hintLabel = Label::createWithTTF(u8"按任意键回到菜单", "fonts/NotoSerifCJKsc-Regular.otf", 36);
+    hintLabel->setTextColor(Color4B::WHITE);
+    hintLabel->setPosition(Vec2(0, -50));
+    hintLabel->setOpacity(0);
+    _resultLayer->addChild(hintLabel);
+    
+    // 淡入动画
+    defeatLabel->runAction(Sequence::create(
+        DelayTime::create(0.3f),
+        FadeIn::create(0.5f),
+        nullptr
+    ));
+    
+    hintLabel->runAction(Sequence::create(
+        DelayTime::create(0.8f),
+        FadeIn::create(0.5f),
+        nullptr
+    ));
+}
+
+void BossScene::onBossDefeated()
+{
+    if (_isBattleEnded) return;
+
+    // 标记 Boss 已被击败，防止重复进入
+    if (_isBossDefeated) return;
+    _isBossDefeated = true;
+
+    CCLOG("Boss defeated! Creating reward pickup...");
+
+    // 立即断开对 Hornet 的悬挂引用，避免 removeFromParent 后悬空指针被再次访问导致崩溃
+    _hornet = nullptr;
+
+    // 隐藏Boss HP标签
+    if (_bossHPLabel)
+    {
+        _bossHPLabel->setVisible(false);
+    }
+
+    // 延迟创建奖励拾取物（等Boss离场动画播放完）
+    this->scheduleOnce([this](float dt) {
+        createRewardPickup();
+    }, 2.0f, "create_reward");
+}
+
+void BossScene::createRewardPickup()
+{
+    if (!_knight) return;
+    
+    // 在场景地面中间创建白色发光圆点
+    Vec2 pickupPos = Vec2(1200.0f, 180.0f);
+    
+    // 创建简单的白色发光圆点
+    auto drawNode = DrawNode::create();
+    drawNode->drawDot(Vec2::ZERO, 30.0f, Color4F::WHITE);
+    drawNode->setPosition(pickupPos);
+    this->addChild(drawNode, 8, "RewardPickup");
+    
+    // 添加发光脉动效果
+    auto glowAction = RepeatForever::create(Sequence::create(
+        ScaleTo::create(0.6f, 1.4f),
+        ScaleTo::create(0.6f, 1.0f),
+        nullptr
+    ));
+    drawNode->runAction(glowAction);
+    
+    CCLOG("Created white glow pickup at scene center: (%.1f, %.1f)", pickupPos.x, pickupPos.y);
+}
+
+void BossScene::checkRewardPickup()
+{
+    if (_rewardCollected || !_knight) return;
+    
+    // 通过名称获取拾取物节点
+    auto rewardNode = this->getChildByName("RewardPickup");
+    if (!rewardNode) return;
+    
+    Vec2 knightPos = _knight->getPosition();
+    Vec2 pickupPos = rewardNode->getPosition();
+    
+    float distance = knightPos.distance(pickupPos);
+    float pickupRadius = 100.0f;
+    
+    bool wasNear = _isNearReward;
+    _isNearReward = (distance < pickupRadius);
+    
+    // 获取或创建提示标签
+    auto hintLabel = dynamic_cast<Label*>(this->getChildByName("PickupHint"));
+    
+    if (_isNearReward)
+    {
+        // 在范围内，显示"按S拾取"提示
+        if (!hintLabel)
+        {
+            hintLabel = Label::createWithTTF(u8"按S拾取", "fonts/NotoSerifCJKsc-Regular.otf", 28);
+            hintLabel->setTextColor(Color4B::WHITE);
+            hintLabel->setName("PickupHint");
+            this->addChild(hintLabel, 100);
+        }
+        // 提示显示在光点上方
+        hintLabel->setPosition(Vec2(pickupPos.x, pickupPos.y + 80));
+        hintLabel->setVisible(true);
+    }
+    else
+    {
+        // 不在范围内，隐藏提示
+        if (hintLabel)
+        {
+            hintLabel->setVisible(false);
+        }
+    }
+}
+
+void BossScene::collectReward()
+{
+    if (_rewardCollected) return;
+    _rewardCollected = true;
+    
+    // 获取光点位置
+    auto rewardNode = this->getChildByName("RewardPickup");
+    if (!rewardNode) return;
+    
+    Vec2 pickupPos = rewardNode->getPosition();
+    
+    // 播放拾取音效
+    SimpleAudioEngine::getInstance()->playEffect("Music/item_pickup.wav");
+    
+    // 隐藏"按S拾取"提示
+    auto hintLabel = this->getChildByName("PickupHint");
+    if (hintLabel)
+    {
+        hintLabel->removeFromParent();
+    }
+    
+    // 停止光点动画并移除
+    rewardNode->stopAllActions();
+    rewardNode->runAction(Sequence::create(
+        FadeOut::create(0.3f),
+        RemoveSelf::create(),
+        nullptr
+    ));
+    
+    // 显示奖励界面
+    showRewardAtPickup(pickupPos);
+}
+
+void BossScene::showRewardAtPickup(const Vec2& pickupPos)
+{
+    _isBattleEnded = true;
+    
+    CCLOG("Showing reward at pickup position: (%.1f, %.1f)", pickupPos.x, pickupPos.y);
+    
+    // 停止背景音乐
+    SimpleAudioEngine::getInstance()->stopBackgroundMusic();
+    
+    Size visibleSize = Director::getInstance()->getVisibleSize();
+    auto camera = this->getDefaultCamera();
+    Vec2 camPos = camera->getPosition();
+    
+    // 创建结果显示层（跟随摄像机位置）
+    _resultLayer = Node::create();
+    _resultLayer->setPosition(camPos);
+    this->addChild(_resultLayer, 2000);
+    
+    // 创建半透明黑色背景
+    auto darkBg = LayerColor::create(Color4B(0, 0, 0, 180), visibleSize.width, visibleSize.height);
+    darkBg->setPosition(Vec2(-visibleSize.width / 2, -visibleSize.height / 2));
+    _resultLayer->addChild(darkBg);
+    
+    // 计算光点相对于摄像机的位置（转换为结果层的本地坐标）
+    Vec2 localPickupPos = pickupPos - camPos;
+    
+    // 在光点正上方显示蛾翼披风图片
+    auto cloakSprite = Sprite::create("Hornet/MothwingCloak.png");
+    if (cloakSprite)
+    {
+        // 位置在光点正上方 200 像素处
+        cloakSprite->setPosition(Vec2(localPickupPos.x, localPickupPos.y + 250));
+        cloakSprite->setScale(0.0f);
+        cloakSprite->setOpacity(0);
+        _resultLayer->addChild(cloakSprite);
+        
+        // 图片出现动画 - 放大到1.5倍
+        cloakSprite->runAction(Sequence::create(
+            DelayTime::create(0.2f),
+            Spawn::create(
+                FadeIn::create(0.4f),
+                ScaleTo::create(0.4f, 1.5f),
+                nullptr
+            ),
+            nullptr
+        ));
+    }
+    
+    // 创建"获得蛾翼披风"文字（在图片下方）
+    auto rewardLabel = Label::createWithTTF(u8"获得了蛾翼披风", "fonts/NotoSerifCJKsc-Regular.otf", 42);
+    rewardLabel->setTextColor(Color4B(255, 215, 0, 255)); // 金色
+    rewardLabel->setPosition(Vec2(localPickupPos.x, localPickupPos.y + 80));
+    rewardLabel->setOpacity(0);
+    _resultLayer->addChild(rewardLabel);
+    
+    // 创建"按任意键回到菜单"文字（在上面文字下方）
+    auto hintLabel = Label::createWithTTF(u8"按任意键回到菜单", "fonts/NotoSerifCJKsc-Regular.otf", 28);
+    hintLabel->setTextColor(Color4B::WHITE);
+    hintLabel->setPosition(Vec2(localPickupPos.x, localPickupPos.y + 30));
+    hintLabel->setOpacity(0);
+    _resultLayer->addChild(hintLabel);
+    
+    // 淡入动画
+    rewardLabel->runAction(Sequence::create(
+        DelayTime::create(0.5f),
+        FadeIn::create(0.4f),
+        nullptr
+    ));
+    
+    hintLabel->runAction(Sequence::create(
+        DelayTime::create(0.8f),
+        FadeIn::create(0.4f),
+        nullptr
+    ));
+    
+    // 移除光点
+    auto rewardNode = this->getChildByName("RewardPickup");
+    if (rewardNode)
+    {
+        rewardNode->runAction(Sequence::create(
+            FadeOut::create(0.3f),
+            RemoveSelf::create(),
+            nullptr
+        ));
+    }
+}
+
+void BossScene::returnToMainMenu()
+{
+    CCLOG("Returning to main menu...");
+
+    // 停止背景音乐（立即）
+    SimpleAudioEngine::getInstance()->stopBackgroundMusic();
+
+    // 在当前场景上创建一个全屏黑色覆盖层（避免立即替换 scene 导致的双重 replace 问题）
+    Size visibleSize = Director::getInstance()->getVisibleSize();
+    auto camera = this->getDefaultCamera();
+    Vec2 camPos = camera ? camera->getPosition() : Vec2(visibleSize.width/2, visibleSize.height/2);
+
+    // 使用足够大的黑色 Layer 并把它放在摄像机位置，确保覆盖可视区
+    auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255), visibleSize.width, visibleSize.height);
+    blackLayer->setIgnoreAnchorPointForPosition(false);
+    blackLayer->setAnchorPoint(Vec2(0.5f, 0.5f));
+    blackLayer->setPosition(camPos);
+    this->addChild(blackLayer, 10000, "ReturnToMenuBlack");
+
+    // 给黑屏一个短暂延迟然后一次性替换到主菜单（使用 TransitionFade）
+    blackLayer->runAction(Sequence::create(
+        DelayTime::create(0.5f),
+        CallFunc::create([]() {
+            auto menuScene = MainMenuScene::createScene();
+            Director::getInstance()->replaceScene(TransitionFade::create(0.5f, menuScene, Color3B::BLACK));
+        }),
+        nullptr
+    ));
+}
+
 void BossScene::update(float dt)
 {
     updateCamera();
     updateHPAndSoulUI(dt);
-    
-    // 碰撞检测
-    checkCombatCollisions();
+
+    // 如果战斗已结束，只更新UI
+    if (_isBattleEnded)
+    {
+        // 如果有奖励拾取物，检测拾取
+        if (_isBossDefeated && !_rewardCollected && _rewardPickup)
+        {
+            checkRewardPickup();
+        }
+        return;
+    }
+
+    // 检测骑士死亡
+    if (_knight && _knight->isDead() && !_isPlayingDeathAnim)
+    {
+        _isPlayingDeathAnim = true;
+        _deathAnimTimer = 0.0f;
+        CCLOG("Knight is dead, starting death animation timer...");
+    }
+
+    if (_isPlayingDeathAnim)
+    {
+        _deathAnimTimer += dt;
+        // 死亡动画约1.3秒（13帧，每帧0.1秒）
+        if (_deathAnimTimer >= 1.5f)
+        {
+            _isPlayingDeathAnim = false;
+            onKnightDefeated();
+            return;
+        }
+    }
+
+    // 检测Boss被击败（离场）
+    // 不再直接解引用 _hornet（可能已被 removeFromParent 导致悬空指针）
+    if (!_isBossDefeated)
+    {
+        // 通过场景查找名为 "HornetBoss" 的子节点，若找不到说明已被移除/离场
+        auto hornetNode = this->getChildByName("HornetBoss");
+        if (!hornetNode)
+        {
+            CCLOG("Hornet node not found in scene -> treating as defeated");
+            // 清理本地引用并进入 Boss 击败流程
+            _hornet = nullptr;
+            onBossDefeated();
+        }
+    }
+
+    // 碰撞检测（只在未播放死亡动画时）
+    if (!_isPlayingDeathAnim)
+    {
+        checkCombatCollisions();
+    }
+
+    // 如果Boss已被击败但奖励未收集，检测拾取
+    if (_isBossDefeated && !_rewardCollected && _rewardPickup)
+    {
+        checkRewardPickup();
+    }
 }
 
 void BossScene::menuCloseCallback(Ref* pSender)

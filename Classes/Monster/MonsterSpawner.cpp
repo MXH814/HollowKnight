@@ -25,7 +25,7 @@ int MonsterSpawner::spawnAllCrawlidsInNextScene(cocos2d::Node* parentNode)
     };
     
     std::vector<CrawlidSpawnData> crawlidSpawns = {
-        {Vec2(5024.3f, 5796.7f), 250.0f, "Crawlid_1"},
+        {Vec2(5024.3f, 5790.7f), 250.0f, "Crawlid_1"},
         {Vec2(2678.0f, 5744.5f), 200.0f, "Crawlid_2"},
         {Vec2(5290.0f, 3074.4f), 220.0f, "Crawlid_3"},
         {Vec2(8086.1f, 3131.9f), 120.0f, "Crawlid_4"},
@@ -75,7 +75,7 @@ int MonsterSpawner::spawnAllCrawlidsInNextScene(cocos2d::Node* parentNode)
         {Vec2(2439.0f, 2755.6f), 435.9f / 2.0f, 83.5f / 2.0f, "Tiktik_4"},
         {Vec2(1874.0f, 3618.2f), 292.3f / 2.0f, 75.7f / 2.0f, "Tiktik_5"},
         {Vec2(2441.7f, 4771.8f), 441.1f / 2.0f, 70.5f / 2.0f, "Tiktik_6"},
-        {Vec2(5025.8f, 6087.3f), 230.2f / 2.0f, 154.0f / 2.0f, "Tiktik_7"},
+        {Vec2(5020.8f, 6085.3f), 245.2f / 2.0f, 132.0f / 2.0f, "Tiktik_7"},
         
         // 【新增】两个新的 Tiktik
         // Tiktik_8: Knight位置(6502.2, 3658.7)附近的岩石
