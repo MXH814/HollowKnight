@@ -78,6 +78,10 @@ private:
     cocos2d::Sprite* _hpLose = nullptr;
     int _lastDisplayedHP = 0;
     int _lastDisplayedSoul = 0;
+
+    cocos2d::LayerColor* _mapOverlay = nullptr;    // °ëÍ¸Ã÷ÕÚÕÖ²ã
+    cocos2d::Sprite* _mapSprite = nullptr;         // µØÍ¼Í¼Æ¬
+    bool _isMapVisible = false;
     
     // ÑªÁ¿»Ö¸´¶¯»­Ïà¹Ø
     bool _isHPRecovering = false;
@@ -102,6 +106,9 @@ private:
     static cocos2d::Vec2 s_customSpawnPos;
     static bool s_spawnFacingRight;
     static bool s_spawnDoJump;
+
+    void showMap();
+    void hideMap();
 };
 
 #endif // __GAME_SCENE_H__
