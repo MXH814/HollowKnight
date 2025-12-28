@@ -40,6 +40,7 @@ bool CorniferNPC::init() {
 
     _isDialogueActive = false;
     _isPromptShowing = false;
+    _hasShownMapPrompt = false;
 
     _writingAnim = nullptr;
     _turnLeftAnim = nullptr;
@@ -68,7 +69,7 @@ bool CorniferNPC::init() {
     _promptNode->setVisible(false);
     this->addChild(_promptNode, 10);
 
-    auto promptLabel = Label::createWithTTF(u8"聆听", "fonts/NotoSerifCJKsc-Regular.otf", 24);
+    auto promptLabel = Label::createWithTTF(u8"聆听", "fonts/NotoSerifCJKsc-Regular.otf", 36);
     if (promptLabel) {
         promptLabel->setPosition(Vec2::ZERO);
         _promptNode->addChild(promptLabel);
@@ -80,14 +81,14 @@ bool CorniferNPC::init() {
         if (pUp) {
             pUp->setScale(0.4f);
             float h = pUp->getContentSize().height * 0.4f;
-            pUp->setPosition(Vec2(0, pHalfH + pPadding + h / 2.0f));
+            pUp->setPosition(Vec2(0, pHalfH + pPadding - 20 + h / 2.0f));
             _promptNode->addChild(pUp);
         }
         auto pLow = Sprite::create("Cornifer/dialogbox_low.png");
         if (pLow) {
             pLow->setScale(0.4f);
             float h = pLow->getContentSize().height * 0.4f;
-            pLow->setPosition(Vec2(0, -pHalfH - pPadding - h / 2.0f));
+            pLow->setPosition(Vec2(0, -pHalfH - pPadding + 20 - h / 2.0f));
             _promptNode->addChild(pLow);
         }
     }
@@ -101,9 +102,9 @@ bool CorniferNPC::init() {
     this->addChild(_dialogueWindow, 10);
 
     // 创建文字标签
-    _dialogueLabel = Label::createWithTTF("", "fonts/NotoSerifCJKsc-Regular.otf", 20);
+    _dialogueLabel = Label::createWithTTF("", "fonts/NotoSerifCJKsc-Regular.otf", 24);
     if (_dialogueLabel) {
-        _dialogueLabel->setDimensions(280, 0);
+        _dialogueLabel->setDimensions(500, 0);
         _dialogueLabel->setAlignment(TextHAlignment::CENTER);
         _dialogueLabel->setPosition(Vec2::ZERO);
         _dialogueLabel->setTextColor(Color4B::WHITE);
@@ -384,8 +385,9 @@ void CorniferNPC::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event) {
         if (_dialogueWindow->getNumberOfRunningActions() > 0) return;
         handleDialogueInput(keyCode);
     }
-    else if ((keyCode == EventKeyboard::KeyCode::KEY_E || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_E) && _isPlayerNearby) {
-        CCLOG("[Cornifer] 玩家按下 E 键，打开对话");
+    
+    else if ((keyCode == EventKeyboard::KeyCode::KEY_W || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_W) && _isPlayerNearby) {
+        CCLOG("[Cornifer] 玩家按下 W 键，打开对话");
         showDialogue();
     }
 }
@@ -410,6 +412,40 @@ void CorniferNPC::showDialogue() {
 void CorniferNPC::closeDialogue() {
     if (!_isDialogueActive) return;
 
+    if (_hasShownMapPrompt) {
+
+        auto layer = LayerColor::create(Color4B(0, 0, 0, 200));
+        this->addChild(layer, 10, "Layer");
+
+        auto visibleSize = Director::getInstance()->getVisibleSize();
+
+        // 地图图片
+        auto mapSprite = Sprite::create("Cornifer/Maps_prompt.png");
+        if (mapSprite) {
+            mapSprite->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
+            layer->addChild(mapSprite);
+        }
+
+        // "地图已获取"文字
+        auto label = Label::createWithTTF(u8"地图已获取", "fonts/NotoSerifCJKsc-Regular.otf", 48);
+        if (label) {
+            label->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 + 200));
+            label->setTextColor(Color4B::WHITE);
+            layer->addChild(label);
+        }
+
+        // 淡入效果
+        layer->setOpacity(0);
+        layer->runAction(Sequence::create(
+            FadeIn::create(0.3f),
+            DelayTime::create(1.5f),
+            FadeOut::create(0.3f),
+            RemoveSelf::create(),
+            nullptr
+        ));
+    }
+
+    _hasPurchasedMap = false;
     _isDialogueActive = false;
     _isChoiceActive = false;
     _showPurchaseSuccess = false;
@@ -422,17 +458,19 @@ void CorniferNPC::closeDialogue() {
 
 void CorniferNPC::handleDialogueInput(EventKeyboard::KeyCode keyCode) {
     if (_isChoiceActive) {
-        if (keyCode == EventKeyboard::KeyCode::KEY_A ||
-            keyCode == EventKeyboard::KeyCode::KEY_D) {
-            _choiceSelection = (_choiceSelection == 0) ? 1 : 0;
-            updateChoiceUI();
+        // 使用 Y 键选择"是"
+        if (keyCode == EventKeyboard::KeyCode::KEY_Y || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_Y) {
+            selectChoice(0);
+            _hasShownMapPrompt = true;
         }
-        else if (keyCode == EventKeyboard::KeyCode::KEY_E || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_E) {
-            selectChoice(_choiceSelection);
+        // 使用 N 键选择"否"
+        else if (keyCode == EventKeyboard::KeyCode::KEY_N || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_N) {
+            selectChoice(1);
         }
     }
     else {
-        if (keyCode == EventKeyboard::KeyCode::KEY_E || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_E) {
+        // 【修改】将 E 键改为 W 键推进对话
+        if (keyCode == EventKeyboard::KeyCode::KEY_W || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_W) {
             advanceDialogue();
         }
     }
@@ -440,7 +478,6 @@ void CorniferNPC::handleDialogueInput(EventKeyboard::KeyCode keyCode) {
 
 void CorniferNPC::selectChoice(int choiceIndex) {
     if (choiceIndex == 0) {
-        _hasPurchasedMap = true;
         _showPurchaseSuccess = true;
         _dialogueIndex = 0;
         _isChoiceActive = false;
@@ -473,7 +510,7 @@ void CorniferNPC::updateDialogueContent() {
     std::vector<std::string> prePurchaseDialogues = {
         u8"嗯？啊，你好。你是来探索这些美丽的遗迹的吗？我是制图师柯尼法。",
         u8"我本性热衷于探索，迷路后再次找到正确的路，这种快乐是无可比拟的；你和我都非常幸运。",
-        u8"我是一位制图师，正在绘制这个区域的地图。你要来一份我努力到现在的工作成果吗？只需要30吉欧。"
+        u8"我是一位制图师，正在绘制这个区域的地图。你要来一份我努力到现在的工作成果吗？"
     };
 
     std::vector<std::string> purchaseSuccessDialogues = {
