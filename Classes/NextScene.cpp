@@ -1954,9 +1954,9 @@ void NextScene::createHPAndSoulUI()
         }
 
         // 动作序列：延迟 -> 淡入 -> 保持 -> 淡出 -> 移除
-        auto delay = DelayTime::create(0.5f);
+        auto delay = DelayTime::create(0.1f);
         auto in = FadeTo::create(1.5f, 255);
-        auto hold = DelayTime::create(1.3f);
+        auto hold = DelayTime::create(1.0f);
         auto out = FadeTo::create(0.4f, 0);
         auto remove = RemoveSelf::create();
 

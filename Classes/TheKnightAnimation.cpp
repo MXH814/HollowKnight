@@ -549,7 +549,7 @@ void TheKnight::changeState(KnightState newState)
             SimpleAudioEngine::getInstance()->playEffect("Music/hero_jump.wav", false);
             
             this->stopAllActions();
-            auto animation = AnimationCache::getInstance()->getAnimation("Airborne");
+            auto animation = AnimationCache::getInstance()->getAnimation("jumpUp");
             if (animation)
             {
                 auto animate = Animate::create(animation);
@@ -581,9 +581,6 @@ void TheKnight::changeState(KnightState newState)
         
         case KnightState::LANDING:
         {
-            // ²¥·ÅÂäµØÒôÐ§
-            SimpleAudioEngine::getInstance()->playEffect("Music/hero_land.wav", false);
-            
             this->stopAllActions();
             auto animation = AnimationCache::getInstance()->getAnimation("land");
             if (animation)
