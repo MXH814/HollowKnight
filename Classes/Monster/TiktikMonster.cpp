@@ -2,6 +2,7 @@
 
 #include "TiktikMonster.h"
 #include "SimpleAudioEngine.h"
+#include "GeoManager.h"
 
 USING_NS_CC;
 
@@ -397,6 +398,8 @@ void TiktikMonster::die(float knockbackPower, int knockbackDirection)
         removeSelf,
         nullptr
     );
+
+    GeoManager::getInstance()->addGeo(2);
 
     this->runAction(deathSequence);
 }

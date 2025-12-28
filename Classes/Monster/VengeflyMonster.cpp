@@ -2,6 +2,7 @@
 #include "SimpleAudioEngine.h"
 #include "NextScene.h"  // 用于获取平台数据
 #include "TheKnight.h"  // 获取 Platform 定义
+#include "GeoManager.h"
 
 USING_NS_CC;
 
@@ -462,6 +463,7 @@ void VengeflyMonster::deathSequence(float knockbackPower, int knockbackDirection
     );
 
     this->runAction(deathSequence);
+    GeoManager::getInstance()->addGeo(3);  // Vengefly 给3个 Geo
 }
 
 // 标准化创建和生成接口

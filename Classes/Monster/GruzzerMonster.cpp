@@ -2,6 +2,7 @@
 #include "NextScene.h"
 #include "TheKnight.h"
 #include "SimpleAudioEngine.h"  // 添加音效头文件
+#include "GeoManager.h"
 
 USING_NS_CC;
 
@@ -259,6 +260,8 @@ void GruzzerMonster::die(float knockbackPower, int knockbackDirection) {
             nullptr
         );
         
+        GeoManager::getInstance()->addGeo(2);
+
         this->runAction(deathSequence);
     } else {
         // 如果没有动画，直接移除

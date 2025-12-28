@@ -2,6 +2,7 @@
 #include "CharmManager.h"
 #include "SimpleAudioEngine.h"
 #include "SettingsPanel.h"
+#include "GeoManager.h"
 
 USING_NS_CC;
 using namespace CocosDenshion;
@@ -261,6 +262,23 @@ void BossScene::createHPAndSoulUI()
         _hpLose->setVisible(_lastDisplayedHP < maxHp);
         _uiLayer->addChild(_hpLose);
     }
+
+    _geoIcon = Sprite::create("Hp/Geo.png");
+    if (_geoIcon)
+    {
+        _geoIcon->setPosition(Vec2(260, 900));
+        _uiLayer->addChild(_geoIcon);
+    }
+
+    _lastDisplayedGeo = GeoManager::getInstance()->getGeo();
+    _geoLabel = Label::createWithTTF(std::to_string(_lastDisplayedGeo), "fonts/NotoSerifCJKsc-Regular.otf", 50);
+    if (_geoLabel)
+    {
+        _geoLabel->setTextColor(Color4B::WHITE);
+        _geoLabel->setAnchorPoint(Vec2(0, 0.5f));
+        _geoLabel->setPosition(Vec2(350, 900));
+        _uiLayer->addChild(_geoLabel);
+    }
 }
 
 void BossScene::updateHPAndSoulUI(float dt)
@@ -343,6 +361,18 @@ void BossScene::updateHPAndSoulUI(float dt)
                 _soulBg->runAction(RepeatForever::create(soulAnimate));
             }
         }
+    }
+
+    int currentGeo = GeoManager::getInstance()->getGeo();
+    if (_geoLabel && currentGeo != _lastDisplayedGeo)
+    {
+        _lastDisplayedGeo = currentGeo;
+        _geoLabel->setString(std::to_string(currentGeo));
+
+        // 添加数字跳动效果
+        _geoLabel->stopAllActions();
+        _geoLabel->setScale(1.3f);
+        _geoLabel->runAction(ScaleTo::create(0.15f, 1.0f));
     }
 }
 

@@ -153,6 +153,10 @@ private:
     cocos2d::Node* _exitContainer = nullptr;
     cocos2d::Sprite* _exitTopImg = nullptr;
     cocos2d::Sprite* _exitBottomImg = nullptr;
+
+    cocos2d::Sprite* _geoIcon = nullptr;
+    cocos2d::Label* _geoLabel = nullptr;
+    int _lastDisplayedGeo = 0;
 };
 
 #endif // __NEXT_SCENE_H__

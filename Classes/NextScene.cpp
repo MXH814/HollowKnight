@@ -8,6 +8,7 @@
 #include "Monster/GruzzerMonster.h" // 【新增】添加 GruzzerMonster 头文件
 #include "Monster/VengeflyMonster.h" // 【新增】添加 VengeflyMonster 头文件
 #include "SimpleAudioEngine.h"
+#include "GeoManager.h"
 
 USING_NS_CC;
 using namespace CocosDenshion;
@@ -79,67 +80,6 @@ bool NextScene::init()
 
     Size visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
-
-    {
-        Size vs = Director::getInstance()->getVisibleSize();
-        Vec2 org = Director::getInstance()->getVisibleOrigin();
-        Vec2 centerLocal = Vec2(vs.width * 0.5f, vs.height * 0.5f);
-
-        // 主标题
-        auto sceneTitle = Label::createWithSystemFont(u8"遗忘十字路", "fonts/NotoSerifCJKsc-Regular.otf", 95);
-        sceneTitle->setTextColor(Color4B::WHITE);
-        sceneTitle->setAnchorPoint(Vec2(0.5f, 0.5f));
-
-        // 两张图片：Maps/toptitle.png 和 Maps/bottomtitle.png
-        Sprite* topImg = Sprite::create("Maps/toptitle.png");
-        Sprite* bottomImg = Sprite::create("Maps/bottomtitle.png");
-
-        // 如果图片未找到，设为 nullptr（安全检查）
-        if (topImg && topImg->getContentSize().width == 0) { topImg = nullptr; }
-        if (bottomImg && bottomImg->getContentSize().width == 0) { bottomImg = nullptr; }
-
-        // 添加到 _uiLayer（若存在），否则添加到场景直接居中
-        Node* parentNode = _uiLayer ? _uiLayer : this;
-        Vec2 parentOffset = Vec2::ZERO;
-        if (!_uiLayer) {
-            parentOffset = org;
-        }
-
-        sceneTitle->setPosition(Vec2(centerLocal.x + parentOffset.x, centerLocal.y + parentOffset.y + 80));
-        parentNode->addChild(sceneTitle, 2000, "SceneTitleLabel");
-
-        if (topImg) {
-            topImg->setAnchorPoint(Vec2(0.5f, 0.5f));
-            topImg->setPosition(Vec2(centerLocal.x - 30, centerLocal.y + parentOffset.y + 270));
-            parentNode->addChild(topImg, 1999, "SceneTopImage");
-        }
-        if (bottomImg) {
-            bottomImg->setAnchorPoint(Vec2(0.5f, 0.5f));
-            bottomImg->setPosition(Vec2(centerLocal.x + 14, centerLocal.y + parentOffset.y - 40));
-            parentNode->addChild(bottomImg, 1999, "SceneBottomImage");
-        }
-
-        // 动作序列：淡入 -> 保持 -> 淡出 -> 移除
-        auto in = FadeTo::create(1.5f, 255);
-        auto hold = DelayTime::create(1.8f);
-        auto out = FadeTo::create(0.4f, 0);
-        auto remove = RemoveSelf::create();
-
-        sceneTitle->setOpacity(0);
-        if (topImg) topImg->setOpacity(0);
-        if (bottomImg) bottomImg->setOpacity(0);
-
-        sceneTitle->runAction(Sequence::create(in, hold, out, remove->clone(), nullptr));
-
-        if (topImg) {
-            auto moveInL = MoveBy::create(0.15f, Vec2(20.0f, 0));
-            topImg->runAction(Sequence::create(Spawn::create(in->clone(), moveInL, nullptr), hold->clone(), out->clone(), remove->clone(), nullptr));
-        }
-        if (bottomImg) {
-            auto moveInR = MoveBy::create(0.15f, Vec2(-20.0f, 0));
-            bottomImg->runAction(Sequence::create(Spawn::create(in->clone(), moveInR, nullptr), hold->clone(), out->clone(), remove->clone(), nullptr));
-        }
-    }
 
     _hasLandedOnce = false;
     _isTransitioning = false;
@@ -1894,6 +1834,86 @@ void NextScene::createHPAndSoulUI()
         _hpLose->setVisible(_lastDisplayedHP < maxHp);
         _uiLayer->addChild(_hpLose);
     }
+
+    {
+        Size vs = Director::getInstance()->getVisibleSize();
+        Vec2 org = Director::getInstance()->getVisibleOrigin();
+        Vec2 centerLocal = Vec2(vs.width * 0.5f, vs.height * 0.5f);
+
+        // 主标题
+        auto sceneTitle = Label::createWithSystemFont(u8"遗忘十字路", "fonts/NotoSerifCJKsc-Regular.otf", 100);
+        sceneTitle->setTextColor(Color4B::WHITE);
+        sceneTitle->setAnchorPoint(Vec2(0.5f, 0.5f));
+
+        // 两张图片：Maps/toptitle.png 和 Maps/bottomtitle.png
+        Sprite* topImg = Sprite::create("Maps/toptitle.png");
+        Sprite* bottomImg = Sprite::create("Maps/bottomtitle.png");
+
+        // 如果图片未找到，设为 nullptr（安全检查）
+        if (topImg && topImg->getContentSize().width == 0) { topImg = nullptr; }
+        if (bottomImg && bottomImg->getContentSize().width == 0) { bottomImg = nullptr; }
+
+        // 添加到 _uiLayer（若存在），否则添加到场景直接居中
+        Node* parentNode = _uiLayer ? _uiLayer : this;
+        Vec2 parentOffset = Vec2::ZERO;
+        if (!_uiLayer) {
+            parentOffset = org;
+        }
+
+        sceneTitle->setPosition(Vec2(centerLocal.x + parentOffset.x, centerLocal.y + parentOffset.y + 80));
+        parentNode->addChild(sceneTitle, 2000, "SceneTitleLabel");
+
+        if (topImg) {
+            topImg->setAnchorPoint(Vec2(0.5f, 0.5f));
+            topImg->setPosition(Vec2(centerLocal.x - 30, centerLocal.y + parentOffset.y + 270));
+            parentNode->addChild(topImg, 1999, "SceneTopImage");
+        }
+        if (bottomImg) {
+            bottomImg->setAnchorPoint(Vec2(0.5f, 0.5f));
+            bottomImg->setPosition(Vec2(centerLocal.x + 14, centerLocal.y + parentOffset.y - 40));
+            parentNode->addChild(bottomImg, 1999, "SceneBottomImage");
+        }
+
+        // 动作序列：延迟 -> 淡入 -> 保持 -> 淡出 -> 移除
+        auto delay = DelayTime::create(0.5f);
+        auto in = FadeTo::create(1.5f, 255);
+        auto hold = DelayTime::create(1.3f);
+        auto out = FadeTo::create(0.4f, 0);
+        auto remove = RemoveSelf::create();
+
+        sceneTitle->setOpacity(0);
+        if (topImg) topImg->setOpacity(0);
+        if (bottomImg) bottomImg->setOpacity(0);
+
+        // 【修改】所有动画前添加延迟
+        sceneTitle->runAction(Sequence::create(delay, in, hold, out, remove->clone(), nullptr));
+
+        if (topImg) {
+            auto moveInL = MoveBy::create(0.15f, Vec2(20.0f, 0));
+            topImg->runAction(Sequence::create(delay->clone(), Spawn::create(in->clone(), moveInL, nullptr), hold->clone(), out->clone(), remove->clone(), nullptr));
+        }
+        if (bottomImg) {
+            auto moveInR = MoveBy::create(0.15f, Vec2(-20.0f, 0));
+            bottomImg->runAction(Sequence::create(delay->clone(), Spawn::create(in->clone(), moveInR, nullptr), hold->clone(), out->clone(), remove->clone(), nullptr));
+        }
+    }
+
+    _geoIcon = Sprite::create("Hp/Geo.png");
+    if (_geoIcon)
+    {
+        _geoIcon->setPosition(Vec2(260, 900));
+        _uiLayer->addChild(_geoIcon);
+    }
+
+    _lastDisplayedGeo = GeoManager::getInstance()->getGeo();
+    _geoLabel = Label::createWithTTF(std::to_string(_lastDisplayedGeo), "fonts/NotoSerifCJKsc-Regular.otf", 50);
+    if (_geoLabel)
+    {
+        _geoLabel->setTextColor(Color4B::WHITE);
+        _geoLabel->setAnchorPoint(Vec2(0, 0.5f));
+        _geoLabel->setPosition(Vec2(350, 900));
+        _uiLayer->addChild(_geoLabel);
+    }
 }
 
 void NextScene::updateHPAndSoulUI(float dt)
@@ -1975,5 +1995,17 @@ void NextScene::updateHPAndSoulUI(float dt)
                 _soulBg->runAction(RepeatForever::create(soulAnimate));
             }
         }
+    }
+
+    int currentGeo = GeoManager::getInstance()->getGeo();
+    if (_geoLabel && currentGeo != _lastDisplayedGeo)
+    {
+        _lastDisplayedGeo = currentGeo;
+        _geoLabel->setString(std::to_string(currentGeo));
+
+        // 添加数字跳动效果
+        _geoLabel->stopAllActions();
+        _geoLabel->setScale(1.3f);
+        _geoLabel->runAction(ScaleTo::create(0.15f, 1.0f));
     }
 }

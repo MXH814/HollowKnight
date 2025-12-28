@@ -92,6 +92,11 @@ private:
     // 【新增】暂停菜单
     PauseMenu* _pauseMenu = nullptr;
     
+    // 【新增】Geo UI
+    cocos2d::Sprite* _geoIcon = nullptr;
+    cocos2d::Label* _geoLabel = nullptr;
+    int _lastDisplayedGeo = 0;
+
     // 静态变量（从NextScene返回时可以传参）
     static bool s_hasCustomSpawn;
     static cocos2d::Vec2 s_customSpawnPos;

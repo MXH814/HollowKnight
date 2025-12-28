@@ -2,6 +2,7 @@
 
 #include "CrawlidMonster.h"
 #include "SimpleAudioEngine.h"
+#include "GeoManager.h" // 添加包含
 
 USING_NS_CC;
 
@@ -274,6 +275,9 @@ void CrawlidMonster::die(float knockbackPower, int knockbackDirection)
     this->stopAllActions();
 
     _isStunned = true;
+
+    // 【新增】死亡时增加 Geo
+    GeoManager::getInstance()->addGeo(2);
 
     // 播放死亡音效
     CocosDenshion::SimpleAudioEngine::getInstance()->playEffect("Music/enemy_death.wav");

@@ -68,6 +68,10 @@ private:
     
     // ¡¾ÐÂÔö¡¿ÔÝÍ£²Ëµ¥
     PauseMenu* _pauseMenu = nullptr;
+
+    cocos2d::Sprite* _geoIcon = nullptr;
+    cocos2d::Label* _geoLabel = nullptr;
+    int _lastDisplayedGeo = 0;
 };
 
 #endif // __BOSS_SCENE_H__

@@ -6,6 +6,7 @@
 #include "Monster/CrawlidMonster.h"
 #include "SimpleAudioEngine.h"
 #include "PauseMenu.h"
+#include "GeoManager.h"
 
 USING_NS_CC;
 
@@ -448,6 +449,24 @@ void GameScene::createHPAndSoulUI()
         _hpLose->setVisible(_lastDisplayedHP < maxHp);
         _uiLayer->addChild(_hpLose);
     }
+    
+    // 【新增】创建 Geo UI（在血条下方）
+    _geoIcon = Sprite::create("Hp/Geo.png");
+    if (_geoIcon)
+    {
+        _geoIcon->setPosition(Vec2(260, 900));
+        _uiLayer->addChild(_geoIcon);
+    }
+    
+    _lastDisplayedGeo = GeoManager::getInstance()->getGeo();
+    _geoLabel = Label::createWithTTF(std::to_string(_lastDisplayedGeo), "fonts/NotoSerifCJKsc-Regular.otf", 50);
+    if (_geoLabel)
+    {
+        _geoLabel->setTextColor(Color4B::WHITE);
+        _geoLabel->setAnchorPoint(Vec2(0, 0.5f));
+        _geoLabel->setPosition(Vec2(350, 900));
+        _uiLayer->addChild(_geoLabel);
+    }
 }
 
 void GameScene::updateHPAndSoulUI(float dt)
@@ -556,6 +575,19 @@ void GameScene::updateHPAndSoulUI(float dt)
                 _soulBg->runAction(RepeatForever::create(soulAnimate));
             }
         }
+    }
+    
+    // 【新增】更新 Geo 显示
+    int currentGeo = GeoManager::getInstance()->getGeo();
+    if (_geoLabel && currentGeo != _lastDisplayedGeo)
+    {
+        _lastDisplayedGeo = currentGeo;
+        _geoLabel->setString(std::to_string(currentGeo));
+        
+        // 添加数字跳动效果
+        _geoLabel->stopAllActions();
+        _geoLabel->setScale(1.3f);
+        _geoLabel->runAction(ScaleTo::create(0.15f, 1.0f));
     }
 }
 
