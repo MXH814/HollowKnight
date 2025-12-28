@@ -12,6 +12,9 @@ public:
 
 private:
     void onLoadingFinished();
+    
+    // 预加载所有游戏音效
+    void preloadAllAudio();
 };
 
 #endif // __LOADING_SCENE_H__

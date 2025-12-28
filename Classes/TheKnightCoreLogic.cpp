@@ -186,11 +186,7 @@ bool TheKnight::init()
     _runningSoundId = -1;  // 跑步音效初始化
     _jumpSoundId = -1;     // 跳跃音效初始化
     
-    // 预加载音效文件（消除首次播放延迟）
-    SimpleAudioEngine::getInstance()->preloadEffect("Music/hero_running.wav");
-    SimpleAudioEngine::getInstance()->preloadEffect("Music/hero_jump.wav");
-    SimpleAudioEngine::getInstance()->preloadEffect("Music/hero_land.wav");
-    SimpleAudioEngine::getInstance()->preloadEffect("Music/hero_dash.wav");
+    // 注意：音效已在 LoadingScene 中统一预加载，这里无需再次预加载
     
     return true;
 }
