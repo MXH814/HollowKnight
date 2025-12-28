@@ -143,6 +143,6 @@
  <objectgroup id="4" name="Objects">
   <object id="21" name="Exit" x="60" y="1849" width="200.33" height="93"/>
   <object id="41" name="well" type="bg" gid="52172" x="92.33" y="1816" width="125" height="141"/>
-  <object id="45" name="Start" x="240.5" y="1676.5" width="45.5" height="26.5"/>
+  <object id="45" name="Start" x="251.5" y="1676.5" width="45.5" height="26.5"/>
  </objectgroup>
 </map>

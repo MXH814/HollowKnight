@@ -146,6 +146,7 @@ bool NextScene::init()
         
         if (chunk.file == "Maps/Forgotten Crossroads4.tmx") {
             loadExitObjects(map, scale, mapPos);
+            loadGeoObjects(map, scale, mapPos);  // 【新增】加载 Geo 对象
         }
     }
 
@@ -310,6 +311,13 @@ bool NextScene::init()
             return;
         }
         
+        // 【新增】TAB 键显示地图
+        if (keyCode == EventKeyboard::KeyCode::KEY_TAB)
+        {
+            showMap();
+            return;
+        }
+        
         if (keyCode == EventKeyboard::KeyCode::KEY_W || keyCode == EventKeyboard::KeyCode::KEY_CAPITAL_W)
         {
             if (_isNearExit && !_isTransitioning)
@@ -363,6 +371,16 @@ bool NextScene::init()
             charmManager->showCharmPanel(scene);
         }
     };
+    
+    // 【新增】按键释放事件
+    keyboardListener->onKeyReleased = [this](EventKeyboard::KeyCode keyCode, Event* event) {
+        // TAB 键释放时隐藏地图
+        if (keyCode == EventKeyboard::KeyCode::KEY_TAB)
+        {
+            hideMap();
+        }
+    };
+    
     _eventDispatcher->addEventListenerWithSceneGraphPriority(keyboardListener, this);
 
     // 启用 update
@@ -459,6 +477,52 @@ void NextScene::loadThornObjects(TMXTiledMap* map, float scale, const Vec2& mapO
               thornObj.position.x, thornObj.position.y, 
               thornObj.size.width, thornObj.size.height);
     }
+}
+
+// 新增：加载 Geo 对象
+void NextScene::loadGeoObjects(TMXTiledMap* map, float scale, const Vec2& mapOffset)
+{
+    auto objectGroup = map->getObjectGroup("Objects");
+    if (!objectGroup) {
+        CCLOG("警告：地图中没有找到 Objects 对象层");
+        return;
+    }
+
+    auto& objects = objectGroup->getObjects();
+    
+    for (auto& obj : objects)
+    {
+        auto& dict = obj.asValueMap();
+        
+        std::string objClass = "";
+        if (dict.find("class") != dict.end()) {
+            objClass = dict["class"].asString();
+        }
+        else if (dict.find("type") != dict.end()) {
+            objClass = dict["type"].asString();
+        }
+        
+        if (objClass != "Geo") {
+            continue;
+        }
+        
+        float x = dict["x"].asFloat() * scale + mapOffset.x;
+        float y = dict["y"].asFloat() * scale + mapOffset.y;
+        float width = dict["width"].asFloat() * scale;
+        float height = dict["height"].asFloat() * scale;
+        
+        GeoObject geoObj;
+        geoObj.position = Vec2(x + width / 2, y + height / 2);
+        geoObj.size = Size(width, height);
+        
+        _geoObjects.push_back(geoObj);
+        
+        CCLOG("加载 Geo 对象: at (%.1f, %.1f), size=(%.1f, %.1f)", 
+              geoObj.position.x, geoObj.position.y, 
+              geoObj.size.width, geoObj.size.height);
+    }
+    
+    CCLOG("共加载 %zu 个 Geo 对象", _geoObjects.size());
 }
 
 void NextScene::checkInteractions()
@@ -1318,6 +1382,38 @@ void NextScene::checkCombatCollisions()
             }
         }
     }
+
+    if (_knightAttackCooldown <= 0)
+    {
+        Rect slashRect;
+        if (knight->getSlashEffectBoundingBox(slashRect))
+        {
+            for (auto& geoObj : _geoObjects)
+            {
+                Rect geoRect(
+                    geoObj.position.x - geoObj.size.width / 2,
+                    geoObj.position.y - geoObj.size.height / 2,
+                    geoObj.size.width,
+                    geoObj.size.height
+                );
+
+                if (slashRect.intersectsRect(geoRect))
+                {
+                    // 轻微屏幕震动
+                    shakeScreen(0.1f, 5.0f);
+
+                    // 增加 2 Geo
+                    GeoManager::getInstance()->addGeo(2);
+                    CCLOG("攻击 Geo 对象! 获得 2 Geo, 总计: %d", GeoManager::getInstance()->getGeo());
+
+                    // 【关键】设置攻击冷却，防止同一次攻击重复触发
+                    _knightAttackCooldown = 0.3f;
+
+                    break;  // 每次攻击只触发一个 Geo 对象
+                }
+            }
+        }
+    }
 }
 
 void NextScene::update(float dt)
@@ -1875,9 +1971,9 @@ void NextScene::createHPAndSoulUI()
         }
 
         // 动作序列：延迟 -> 淡入 -> 保持 -> 淡出 -> 移除
-        auto delay = DelayTime::create(0.5f);
+        auto delay = DelayTime::create(0.1f);
         auto in = FadeTo::create(1.5f, 255);
-        auto hold = DelayTime::create(1.3f);
+        auto hold = DelayTime::create(1.0f);
         auto out = FadeTo::create(0.4f, 0);
         auto remove = RemoveSelf::create();
 
@@ -2008,4 +2104,60 @@ void NextScene::updateHPAndSoulUI(float dt)
         _geoLabel->setScale(1.3f);
         _geoLabel->runAction(ScaleTo::create(0.15f, 1.0f));
     }
+}
+
+void NextScene::showMap()
+{
+    if (_isMapVisible) return;
+    _isMapVisible = true;
+    
+    Size visibleSize = Director::getInstance()->getVisibleSize();
+    
+    // 创建半透明黑色遮罩层
+    _mapOverlay = LayerColor::create(Color4B(0, 0, 0, 180));
+    if (_mapOverlay)
+    {
+        _uiLayer->addChild(_mapOverlay, 3000);
+    }
+    
+    // 创建地图图片
+    _mapSprite = Sprite::create("Maps/Forgotten_Crossroads_Map_Clean.png");
+    if (_mapSprite)
+    {
+        _mapSprite->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
+        
+        // 根据需要调整地图大小，使其适应屏幕
+        float mapWidth = _mapSprite->getContentSize().width;
+        float mapHeight = _mapSprite->getContentSize().height;
+        float scaleX = (visibleSize.width * 0.75f) / mapWidth;
+        float scaleY = (visibleSize.height * 0.75f) / mapHeight;
+        float mapScale = std::min(scaleX, scaleY);
+        _mapSprite->setScale(mapScale);
+        
+        _uiLayer->addChild(_mapSprite, 3001);
+    }
+    
+    CCLOG("显示地图: Forgotten_Crossroads_Map_Clean.png");
+}
+
+void NextScene::hideMap()
+{
+    if (!_isMapVisible) return;
+    _isMapVisible = false;
+    
+    // 移除地图图片
+    if (_mapSprite)
+    {
+        _mapSprite->removeFromParent();
+        _mapSprite = nullptr;
+    }
+    
+    // 移除遮罩层
+    if (_mapOverlay)
+    {
+        _mapOverlay->removeFromParent();
+        _mapOverlay = nullptr;
+    }
+    
+    CCLOG("隐藏地图");
 }
