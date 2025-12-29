@@ -252,6 +252,12 @@ bool GameScene::init()
             return;
         }
 
+        if (keyCode == EventKeyboard::KeyCode::KEY_TAB)
+        {
+            showMap();
+            return;
+        }
+
         if (_knight && _knight->isNearChair() && !_knight->isSitting())
         {
             if (keyCode == EventKeyboard::KeyCode::KEY_W || 
@@ -261,6 +267,15 @@ bool GameScene::init()
             }
         }
     };
+
+    keyboardListener->onKeyReleased = [this](EventKeyboard::KeyCode keyCode, Event* event) {
+        // TAB 键释放时隐藏地图
+        if (keyCode == EventKeyboard::KeyCode::KEY_TAB)
+        {
+            hideMap();
+        }
+    };
+
     _eventDispatcher->addEventListenerWithSceneGraphPriority(keyboardListener, this);
 
     this->scheduleUpdate();
@@ -862,4 +877,60 @@ void GameScene::loadForegroundObjects(TMXTiledMap* map, float scale, const Vec2&
             CCLOG("警告：无法加载前景图片: %s", imagePath.c_str());
         }
     }
+}
+
+void GameScene::showMap()
+{
+    if (_isMapVisible) return;
+    _isMapVisible = true;
+
+    Size visibleSize = Director::getInstance()->getVisibleSize();
+
+    // 创建半透明黑色遮罩层
+    _mapOverlay = LayerColor::create(Color4B(0, 0, 0, 180));
+    if (_mapOverlay)
+    {
+        _uiLayer->addChild(_mapOverlay, 3000);
+    }
+
+    // 创建地图图片
+    _mapSprite = Sprite::create("Maps/Dirtmouth_Map_Clean.png");
+    if (_mapSprite)
+    {
+        _mapSprite->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
+
+        // 根据需要调整地图大小，使其适应屏幕
+        float mapWidth = _mapSprite->getContentSize().width;
+        float mapHeight = _mapSprite->getContentSize().height;
+        float scaleX = (visibleSize.width * 0.75f) / mapWidth;
+        float scaleY = (visibleSize.height * 0.75f) / mapHeight;
+        float mapScale = std::min(scaleX, scaleY);
+        _mapSprite->setScale(mapScale);
+
+        _uiLayer->addChild(_mapSprite, 3001);
+    }
+
+    CCLOG("显示地图");
+}
+
+void GameScene::hideMap()
+{
+    if (!_isMapVisible) return;
+    _isMapVisible = false;
+
+    // 移除地图图片
+    if (_mapSprite)
+    {
+        _mapSprite->removeFromParent();
+        _mapSprite = nullptr;
+    }
+
+    // 移除遮罩层
+    if (_mapOverlay)
+    {
+        _mapOverlay->removeFromParent();
+        _mapOverlay = nullptr;
+    }
+
+    CCLOG("隐藏地图");
 }

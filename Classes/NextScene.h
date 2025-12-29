@@ -151,6 +151,14 @@ private:
     cocos2d::Sprite* _geoIcon = nullptr;
     cocos2d::Label* _geoLabel = nullptr;
     int _lastDisplayedGeo = 0;
+
+    // 【新增】地图显示相关
+    cocos2d::LayerColor* _mapOverlay = nullptr;    // 半透明遮罩层
+    cocos2d::Sprite* _mapSprite = nullptr;         // 地图图片
+    bool _isMapVisible = false;                     // 地图是否显示中
+
+    void showMap();
+    void hideMap();
 };
 
 #endif // __NEXT_SCENE_H__

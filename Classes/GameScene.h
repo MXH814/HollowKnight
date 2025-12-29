@@ -101,6 +101,12 @@ private:
     cocos2d::Sprite* _geoIcon = nullptr;
     cocos2d::Label* _geoLabel = nullptr;
     int _lastDisplayedGeo = 0;
+
+    void showMap();
+    void hideMap();
+    cocos2d::LayerColor* _mapOverlay = nullptr;    // °ëÍ¸Ã÷ÕÚÕÖ²ã
+    cocos2d::Sprite* _mapSprite = nullptr;         // µØÍ¼Í¼Æ¬
+    bool _isMapVisible = false;
 };
 
 #endif // __GAME_SCENE_H__
