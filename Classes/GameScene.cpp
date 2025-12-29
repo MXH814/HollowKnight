@@ -119,7 +119,19 @@ bool GameScene::init()
     _knight = TheKnight::create();
     if (_knight)
     {
-        _knight->setPosition(Vec2(startX, startY));
+        // 【修改】根据是否有自定义出生点来设置位置
+        if (s_hasCustomSpawn && s_customSpawnPos != Vec2::ZERO)
+        {
+            // 使用自定义出生点位置
+            _knight->setPosition(s_customSpawnPos);
+            CCLOG("Knight spawned at custom position: (%.1f, %.1f)", s_customSpawnPos.x, s_customSpawnPos.y);
+        }
+        else
+        {
+            // 使用地图默认起始位置
+            _knight->setPosition(Vec2(startX, startY));
+            CCLOG("Knight spawned at default position: (%.1f, %.1f)", startX, startY);
+        }
         _knight->setScale(1.0f);
         
         _knight->setPlatforms(_platforms);
@@ -135,10 +147,23 @@ bool GameScene::init()
                 _knight->setHP(stateManager->getHP());
                 CCLOG("从 NextScene 返回，恢复状态: HP=%d", stateManager->getHP());
             }
+            
+            // 【新增】触发跳跃动作
+            float horizontalSpeed = s_spawnFacingRight ? 1.0f : -1.0f;
+            _knight->triggerJumpFromExternal(horizontalSpeed);
+            
+            CCLOG("玩家从NextScene返回：位置(%.1f, %.1f)，朝向%s，触发跳跃动作", 
+                  s_customSpawnPos.x, s_customSpawnPos.y, 
+                  s_spawnFacingRight ? "右" : "左");
+            
+            // 重置标志
+            s_hasCustomSpawn = false;
+            s_customSpawnPos = Vec2::ZERO;
+            s_spawnFacingRight = true;
+            s_spawnDoJump = false;
         }
-        
         // 【修改】检查是否从 NextScene 死亡返回，需要坐在椅子上
-        if (s_hasCustomSpawn && !s_spawnDoJump)
+        else if (s_hasCustomSpawn && !s_spawnDoJump)
         {
             // 从 NextScene 死亡返回，让 Knight 坐在椅子上
             CCLOG("Knight died in NextScene, respawning on chair in GameScene");
@@ -185,20 +210,6 @@ bool GameScene::init()
             // 重置标志
             s_hasCustomSpawn = false;
             s_customSpawnPos = Vec2::ZERO;
-        }
-        else if (s_hasCustomSpawn && s_spawnDoJump)
-        {
-            float horizontalSpeed = s_spawnFacingRight ? 1.0f : -1.0f;
-            _knight->triggerJumpFromExternal(horizontalSpeed);
-            
-            CCLOG("玩家从NextScene返回：位置(%.1f, %.1f)，朝向%s，触发跳跃动作", 
-                  s_customSpawnPos.x, s_customSpawnPos.y, 
-                  s_spawnFacingRight ? "右" : "左");
-            
-            s_hasCustomSpawn = false;
-            s_customSpawnPos = Vec2::ZERO;
-            s_spawnFacingRight = true;
-            s_spawnDoJump = false;
         }
     }
 
