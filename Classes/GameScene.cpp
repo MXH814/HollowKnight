@@ -7,6 +7,7 @@
 #include "SimpleAudioEngine.h"
 #include "PauseMenu.h"
 #include "GeoManager.h"
+#include "KnightStateManager.h"
 
 USING_NS_CC;
 
@@ -134,6 +135,20 @@ bool GameScene::init()
         this->addChild(_knight, 5, "Player");
 
         CharmManager::getInstance()->syncToKnight(_knight);
+
+        // 【新增】从 NextScene 返回时恢复保存的状态
+        if (s_hasCustomSpawn && s_spawnDoJump)
+        {
+            // 从 NextScene 正常返回（非死亡），恢复保存的状态
+            auto stateManager = KnightStateManager::getInstance();
+            if (stateManager->hasState())
+            {
+                _knight->setHP(stateManager->getHP());
+                _knight->setSoul(stateManager->getSoul());
+                CCLOG("从 NextScene 返回，恢复状态: HP=%d, Soul=%d", 
+                      stateManager->getHP(), stateManager->getSoul());
+            }
+        }
 
         // 检查是否从 NextScene 死亡返回，需要坐在椅子上
         if (s_hasCustomSpawn && !s_spawnDoJump)
@@ -751,6 +766,9 @@ void GameScene::checkInteractions()
             {
                 // 进入出口，切换到 NextScene
                 _isTransitioning = true;
+
+                // 【新增】保存骑士状态
+                KnightStateManager::getInstance()->saveState(_knight->getHP(), _knight->getSoul());
 
                 auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 0));
                 this->addChild(blackLayer, 1000);

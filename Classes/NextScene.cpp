@@ -9,6 +9,7 @@
 #include "Monster/VengeflyMonster.h" // 【新增】添加 VengeflyMonster 头文件
 #include "SimpleAudioEngine.h"
 #include "GeoManager.h"
+#include "KnightStateManager.h"
 
 USING_NS_CC;
 using namespace CocosDenshion;
@@ -199,6 +200,19 @@ bool NextScene::init()
         
         CharmManager::getInstance()->syncToKnight(knight);
         
+        // 【新增】恢复保存的骑士状态（非重生情况）
+        if (!s_isRespawning)
+        {
+            auto stateManager = KnightStateManager::getInstance();
+            if (stateManager->hasState())
+            {
+                knight->setHP(stateManager->getHP());
+                knight->setSoul(stateManager->getSoul());
+                CCLOG("进入 NextScene，恢复状态: HP=%d, Soul=%d", 
+                      stateManager->getHP(), stateManager->getSoul());
+            }
+        }
+        
         // 【修改】重生逻辑：延迟生成 Shade，确保 _player 已经设置
         if (s_isRespawning)
         {
@@ -329,6 +343,9 @@ bool NextScene::init()
                 if (knight)
                 {
                     facingRight = knight->getScaleX() > 0;
+                    
+                    // 【新增】保存骑士状态
+                    KnightStateManager::getInstance()->saveState(knight->getHP(), knight->getSoul());
                 }
                 
                 Vec2 spawnPos(12479.7f, 435.0f);
@@ -1720,7 +1737,10 @@ void NextScene::onKnightDeath(const Vec2& deathPos)
     // 移除现有的 Shade（如果有）
     removeShade();
     
-    // 【修改】死亡后切换到 GameScene 并坐在椅子上
+    // 【新增】清除保存的状态，死亡后会满血复活
+    KnightStateManager::getInstance()->clearState();
+    
+    // 死亡后切换到 GameScene 并坐在椅子上
     auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 0));
     this->addChild(blackLayer, 2000);
     
