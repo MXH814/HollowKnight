@@ -2,6 +2,7 @@
 #include "NextScene.h"
 #include "TheKnight.h"  // 包含 TheKnight.h 以获取 Platform 的完整定义
 #include "AudioManager.h"
+#include "GeoManager.h"
 
 USING_NS_CC;
 
@@ -229,6 +230,9 @@ void GruzzerMonster::die(float knockbackPower, int knockbackDirection) {
     _isStunned = false;
     this->stopAllActions();
     this->unscheduleUpdate();
+
+    GeoManager::getInstance()->addGeo(2);
+    CCLOG("Gruzzer died! +2 Geo");
 
     // 播放死亡动画
     if (_deathAnim) {

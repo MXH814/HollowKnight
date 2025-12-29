@@ -5,6 +5,7 @@
 #include "TheKnight.h"
 #include "CorniferNPC.h"
 #include "ShadowEnemy.h"  // 添加 Shadow 头文件
+#include "PauseMenu.h"
 
 // 【修改】ExitObject 结构体 - 根据 NextScene.cpp 的使用方式定义
 struct ExitObject {
@@ -144,6 +145,12 @@ private:
     void spawnShade(const cocos2d::Vec2& position);
     void removeShade();
     void updateShade(float dt);
+
+    PauseMenu* _pauseMenu = nullptr;
+
+    cocos2d::Sprite* _geoIcon = nullptr;
+    cocos2d::Label* _geoLabel = nullptr;
+    int _lastDisplayedGeo = 0;
 };
 
 #endif // __NEXT_SCENE_H__

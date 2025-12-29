@@ -152,6 +152,7 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
   <ItemGroup>
     <ClCompile Include="..\Classes\AppDelegate.cpp" />
     <ClCompile Include="..\Classes\AudioManager.cpp" />
+    <ClCompile Include="..\Classes\AudioSettings.cpp" />
     <ClCompile Include="..\Classes\BossScene.cpp" />
     <ClCompile Include="..\Classes\boss\HornetAI.cpp" />
     <ClCompile Include="..\Classes\boss\HornetBoss.cpp" />
@@ -159,6 +160,7 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
     <ClCompile Include="..\Classes\CorniferNPC.cpp" />
     <ClCompile Include="..\Classes\Enemy.cpp" />
     <ClCompile Include="..\Classes\GameScene.cpp" />
+    <ClCompile Include="..\Classes\GeoManager.cpp" />
     <ClCompile Include="..\Classes\HelloWorldScene.cpp" />
     <ClCompile Include="..\Classes\LoadingScene.cpp" />
     <ClCompile Include="..\Classes\MainMenuScene.cpp" />
@@ -168,6 +170,8 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
     <ClCompile Include="..\Classes\Monster\TiktikMonster.cpp" />
     <ClCompile Include="..\Classes\Monster\VengeflyMonster.cpp" />
     <ClCompile Include="..\Classes\NextScene.cpp" />
+    <ClCompile Include="..\Classes\PauseMenu.cpp" />
+    <ClCompile Include="..\Classes\SettingsPanel.cpp" />
     <ClCompile Include="..\Classes\ShadowEnemy.cpp" />
     <ClCompile Include="..\Classes\TheKnightCoreLogic.cpp" />
     <ClCompile Include="..\Classes\TheKnightAnimation.cpp" />
@@ -179,12 +183,14 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
   <ItemGroup>
     <ClInclude Include="..\Classes\AppDelegate.h" />
     <ClInclude Include="..\Classes\AudioManager.h" />
+    <ClInclude Include="..\Classes\AudioSettings.h" />
     <ClInclude Include="..\Classes\BossScene.h" />
     <ClInclude Include="..\Classes\boss\HornetBoss.h" />
     <ClInclude Include="..\Classes\CharmManager.h" />
     <ClInclude Include="..\Classes\CorniferNPC.h" />
     <ClInclude Include="..\Classes\Enemy.h" />
     <ClInclude Include="..\Classes\GameScene.h" />
+    <ClInclude Include="..\Classes\GeoManager.h" />
     <ClInclude Include="..\Classes\HelloWorldScene.h" />
     <ClInclude Include="..\Classes\LoadingScene.h" />
     <ClInclude Include="..\Classes\MainMenuScene.h" />
@@ -194,6 +200,8 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
     <ClInclude Include="..\Classes\Monster\TiktikMonster.h" />
     <ClInclude Include="..\Classes\Monster\VengeflyMonster.h" />
     <ClInclude Include="..\Classes\NextScene.h" />
+    <ClInclude Include="..\Classes\PauseMenu.h" />
+    <ClInclude Include="..\Classes\SettingsPanel.h" />
     <ClInclude Include="..\Classes\ShadowEnemy.h" />
     <ClInclude Include="..\Classes\TheKnight.h" />
     <ClInclude Include="main.h" />

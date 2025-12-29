@@ -5,6 +5,7 @@
 #include "TheKnight.h"
 #include "boss/HornetBoss.h"
 #include "AudioManager.h"
+#include "PauseMenu.h" 
 
 class BossScene : public cocos2d::Scene
 {
@@ -88,6 +89,7 @@ private:
     
     // Ω·π˚œ‘ æ≤„
     cocos2d::Node* _resultLayer = nullptr;
+    PauseMenu* _pauseMenu = nullptr;
 };
 
 #endif // __BOSS_SCENE_H__

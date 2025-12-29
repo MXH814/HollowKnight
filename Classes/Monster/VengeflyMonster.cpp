@@ -3,6 +3,7 @@
 #include "NextScene.h"  // 用于获取平台数据
 #include "TheKnight.h"  // 获取 Platform 定义
 #include "AudioManager.h"
+#include "GeoManager.h" 
 
 USING_NS_CC;
 
@@ -408,6 +409,9 @@ void VengeflyMonster::deathSequence(float knockbackPower, int knockbackDirection
 {
     this->unscheduleUpdate();
     Size size = this->getContentSize();
+
+    GeoManager::getInstance()->addGeo(3);
+    CCLOG("Vengefly died! +3 Geo");
 
     auto setFlyFrame = CallFunc::create([this, size]() {
         auto frame = createFrame(VENGEFLY_FALLING_FRAME, size);

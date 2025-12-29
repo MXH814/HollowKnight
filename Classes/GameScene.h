@@ -3,6 +3,7 @@
 
 #include "cocos2d.h"
 #include "TheKnight.h"
+#include "PauseMenu.h" 
 
 class GameScene : public cocos2d::Scene
 {
@@ -93,6 +94,13 @@ private:
     static cocos2d::Vec2 s_customSpawnPos;
     static bool s_spawnFacingRight;
     static bool s_spawnDoJump;
+
+    PauseMenu* _pauseMenu = nullptr;
+
+    // Geo UI
+    cocos2d::Sprite* _geoIcon = nullptr;
+    cocos2d::Label* _geoLabel = nullptr;
+    int _lastDisplayedGeo = 0;
 };
 
 #endif // __GAME_SCENE_H__

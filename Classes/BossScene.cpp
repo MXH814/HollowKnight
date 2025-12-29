@@ -3,6 +3,7 @@
 #include "MainMenuScene.h"
 #include "SimpleAudioEngine.h"
 #include "AudioManager.h"
+#include "PauseMenu.h" 
 
 using namespace CocosDenshion;
 
@@ -118,6 +119,12 @@ bool BossScene::init()
     // 创建HP和Soul UI
     createHPAndSoulUI();
 
+    _pauseMenu = PauseMenu::create();
+    if (_pauseMenu)
+    {
+        _uiLayer->addChild(_pauseMenu, 2000);
+    }
+
     // 创建Boss HP显示标签
     _bossHPLabel = Label::createWithTTF("HORNET", "fonts/Marker Felt.ttf", 28);
     if (_bossHPLabel)
@@ -139,6 +146,29 @@ bool BossScene::init()
     // 添加键盘事件监听
     auto keyboardListener = EventListenerKeyboard::create();
     keyboardListener->onKeyPressed = [this](EventKeyboard::KeyCode keyCode, Event* event) {
+        // 【新增】ESC 键打开/关闭暂停菜单
+        if (keyCode == EventKeyboard::KeyCode::KEY_ESCAPE)
+        {
+            if (_pauseMenu)
+            {
+                if (_pauseMenu->isVisible())
+                {
+                    _pauseMenu->hide();
+                }
+                else
+                {
+                    _pauseMenu->show();
+                }
+            }
+            return;
+        }
+
+        // 【新增】暂停时不处理其他按键
+        if (_pauseMenu && _pauseMenu->isVisible())
+        {
+            return;
+        }
+        
         // 战斗结束后按任意键返回菜单
         if (_isBattleEnded)
         {

@@ -5,6 +5,8 @@
 #include "CharmManager.h"
 #include "Monster/CrawlidMonster.h"
 #include "AudioManager.h"
+#include "PauseMenu.h"
+#include "GeoManager.h"
 
 USING_NS_CC;
 
@@ -196,6 +198,12 @@ bool GameScene::init()
 
     createHPAndSoulUI();
 
+    _pauseMenu = PauseMenu::create();
+    if (_pauseMenu)
+    {
+        _uiLayer->addChild(_pauseMenu, 2000);
+    }
+
     _cameraOffsetY = 0.0f;
     _targetCameraOffsetY = 0.0f;
     _wasSitting = false;
@@ -221,6 +229,29 @@ bool GameScene::init()
             return;
         }
         
+        // 【新增】ESC 键打开/关闭暂停菜单
+        if (keyCode == EventKeyboard::KeyCode::KEY_ESCAPE)
+        {
+            if (_pauseMenu)
+            {
+                if (_pauseMenu->isVisible())
+                {
+                    _pauseMenu->hide();
+                }
+                else
+                {
+                    _pauseMenu->show();
+                }
+            }
+            return;
+        }
+
+        // 【新增】暂停时不处理其他按键
+        if (_pauseMenu && _pauseMenu->isVisible())
+        {
+            return;
+        }
+
         if (_knight && _knight->isNearChair() && !_knight->isSitting())
         {
             if (keyCode == EventKeyboard::KeyCode::KEY_W || 
@@ -308,6 +339,23 @@ void GameScene::createHPAndSoulUI()
         }
         
         _lastDisplayedSoul = currentSoul;
+
+        _geoIcon = Sprite::create("Hp/Geo.png");
+        if (_geoIcon)
+        {
+            _geoIcon->setPosition(Vec2(260, 900));
+            _uiLayer->addChild(_geoIcon);
+        }
+
+        _lastDisplayedGeo = GeoManager::getInstance()->getGeo();
+        _geoLabel = Label::createWithTTF(std::to_string(_lastDisplayedGeo), "fonts/NotoSerifCJKsc-Regular.otf", 50);
+        if (_geoLabel)
+        {
+            _geoLabel->setTextColor(Color4B::WHITE);
+            _geoLabel->setAnchorPoint(Vec2(0, 0.5f));
+            _geoLabel->setPosition(Vec2(350, 900));
+            _uiLayer->addChild(_geoLabel);
+        }
     }
     
     int maxHp = _knight->getMaxHP();
@@ -444,6 +492,18 @@ void GameScene::updateHPAndSoulUI(float dt)
                 _soulBg->runAction(RepeatForever::create(soulAnimate));
             }
         }
+    }
+
+    int currentGeo = GeoManager::getInstance()->getGeo();
+    if (_geoLabel && currentGeo != _lastDisplayedGeo)
+    {
+        _lastDisplayedGeo = currentGeo;
+        _geoLabel->setString(std::to_string(currentGeo));
+
+        // 添加数字跳动效果
+        _geoLabel->stopAllActions();
+        _geoLabel->setScale(1.3f);
+        _geoLabel->runAction(ScaleTo::create(0.15f, 1.0f));
     }
 }
 

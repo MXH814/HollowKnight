@@ -8,6 +8,8 @@
 #include "Monster/GruzzerMonster.h"
 #include "Monster/VengeflyMonster.h"
 #include "AudioManager.h"
+#include "PauseMenu.h"
+#include "GeoManager.h"
 
 USING_NS_CC;
 
@@ -250,6 +252,13 @@ bool NextScene::init()
     
     createHPAndSoulUI();
 
+    // 【新增】创建暂停菜单
+    _pauseMenu = PauseMenu::create();
+    if (_pauseMenu)
+    {
+        _uiLayer->addChild(_pauseMenu, 2000);
+    }
+
     _exitLabel = Label::createWithSystemFont(u8"按 W 进入", "Arial", 24);
     _exitLabel->setTextColor(Color4B::WHITE);
     _exitLabel->setVisible(false);
@@ -293,6 +302,28 @@ bool NextScene::init()
                 ));
                 return;
             }
+        }
+
+        if (keyCode == EventKeyboard::KeyCode::KEY_ESCAPE)
+        {
+            if (_pauseMenu)
+            {
+                if (_pauseMenu->isVisible())
+                {
+                    _pauseMenu->hide();
+                }
+                else
+                {
+                    _pauseMenu->show();
+                }
+            }
+            return;
+        }
+
+        // 【新增】暂停时不处理其他按键
+        if (_pauseMenu && _pauseMenu->isVisible())
+        {
+            return;
         }
         
         if (keyCode == EventKeyboard::KeyCode::KEY_Q)
@@ -1797,6 +1828,23 @@ void NextScene::createHPAndSoulUI()
         _hpLose->setVisible(_lastDisplayedHP < maxHp);
         _uiLayer->addChild(_hpLose);
     }
+
+    _geoIcon = Sprite::create("Hp/Geo.png");
+    if (_geoIcon)
+    {
+        _geoIcon->setPosition(Vec2(260, 900));
+        _uiLayer->addChild(_geoIcon);
+    }
+
+    _lastDisplayedGeo = GeoManager::getInstance()->getGeo();
+    _geoLabel = Label::createWithTTF(std::to_string(_lastDisplayedGeo), "fonts/NotoSerifCJKsc-Regular.otf", 50);
+    if (_geoLabel)
+    {
+        _geoLabel->setTextColor(Color4B::WHITE);
+        _geoLabel->setAnchorPoint(Vec2(0, 0.5f));
+        _geoLabel->setPosition(Vec2(350, 900));
+        _uiLayer->addChild(_geoLabel);
+    }
 }
 
 void NextScene::updateHPAndSoulUI(float dt)
@@ -1878,5 +1926,17 @@ void NextScene::updateHPAndSoulUI(float dt)
                 _soulBg->runAction(RepeatForever::create(soulAnimate));
             }
         }
+    }
+
+    int currentGeo = GeoManager::getInstance()->getGeo();
+    if (_geoLabel && currentGeo != _lastDisplayedGeo)
+    {
+        _lastDisplayedGeo = currentGeo;
+        _geoLabel->setString(std::to_string(currentGeo));
+
+        // 添加数字跳动效果
+        _geoLabel->stopAllActions();
+        _geoLabel->setScale(1.3f);
+        _geoLabel->runAction(ScaleTo::create(0.15f, 1.0f));
     }
 }
