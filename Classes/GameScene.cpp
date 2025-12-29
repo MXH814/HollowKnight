@@ -198,6 +198,79 @@ bool GameScene::init()
 
     createHPAndSoulUI();
 
+    {
+        Size vs = Director::getInstance()->getVisibleSize();
+        Vec2 org = Director::getInstance()->getVisibleOrigin();
+        Vec2 centerLocal = Vec2(vs.width * 0.5f, vs.height * 0.5f);
+
+        // 主标题
+        auto sceneTitle = Label::createWithSystemFont(u8"德特茅斯", "fonts/NotoSerifCJKsc-Regular.otf", 95);
+        sceneTitle->setTextColor(Color4B::WHITE);
+        sceneTitle->setAnchorPoint(Vec2(0.5f, 0.5f));
+
+        // 副标题（小字）
+        auto sceneSubtitle = Label::createWithSystemFont(u8"衰败的小镇", "fonts/NotoSerifCJKsc-Regular.otf", 45);
+        sceneSubtitle->setTextColor(Color4B::WHITE);
+        sceneSubtitle->setAnchorPoint(Vec2(0.5f, 0.5f));
+
+        // 两张图片：Maps/toptitle.png 和 Maps/bottomtitle.png
+        Sprite* topImg = Sprite::create("Maps/toptitle.png");
+        Sprite* bottomImg = Sprite::create("Maps/bottomtitle.png");
+
+        // 如果图片未找到，设为 nullptr（安全检查）
+        if (topImg && topImg->getContentSize().width == 0) { topImg = nullptr; }
+        if (bottomImg && bottomImg->getContentSize().width == 0) { bottomImg = nullptr; }
+
+        // 添加到 _uiLayer（若存在），否则添加到场景直接居中
+        Node* parentNode = _uiLayer ? _uiLayer : this;
+        Vec2 parentOffset = Vec2::ZERO;
+        if (!_uiLayer) {
+            parentOffset = org;
+        }
+
+        // 主标题位置（相对于 UI 层的视口坐标）
+        sceneTitle->setPosition(Vec2(centerLocal.x + parentOffset.x, centerLocal.y + parentOffset.y + 80));
+        parentNode->addChild(sceneTitle, 2000, "SceneTitleLabel");
+
+        // 副标题靠主标题下方一点
+        sceneSubtitle->setPosition(Vec2(centerLocal.x + parentOffset.x, centerLocal.y + parentOffset.y + 160));
+        parentNode->addChild(sceneSubtitle, 2000, "SceneSubtitleLabel");
+
+        if (topImg) {
+            topImg->setAnchorPoint(Vec2(0.5f, 0.5f));
+            topImg->setPosition(Vec2(centerLocal.x - 30, centerLocal.y + parentOffset.y + 270));
+            parentNode->addChild(topImg, 1999, "SceneTopImage");
+        }
+        if (bottomImg) {
+            bottomImg->setAnchorPoint(Vec2(0.5f, 0.5f));
+            bottomImg->setPosition(Vec2(centerLocal.x + 14, centerLocal.y + parentOffset.y - 40));
+            parentNode->addChild(bottomImg, 1999, "SceneBottomImage");
+        }
+
+        // 动作序列：淡入 -> 保持 -> 淡出 -> 移除
+        auto in = FadeTo::create(0.15f, 255);
+        auto hold = DelayTime::create(1.8f);
+        auto out = FadeTo::create(0.4f, 0);
+        auto remove = RemoveSelf::create();
+
+        sceneTitle->setOpacity(0);
+        sceneSubtitle->setOpacity(0);
+        if (topImg) topImg->setOpacity(0);
+        if (bottomImg) bottomImg->setOpacity(0);
+
+        sceneTitle->runAction(Sequence::create(in, hold, out, remove->clone(), nullptr));
+        sceneSubtitle->runAction(Sequence::create(DelayTime::create(0.05f), in->clone(), hold->clone(), out->clone(), remove->clone(), nullptr));
+
+        if (topImg) {
+            auto moveInL = MoveBy::create(0.15f, Vec2(20.0f, 0));
+            topImg->runAction(Sequence::create(Spawn::create(in->clone(), moveInL, nullptr), hold->clone(), out->clone(), remove->clone(), nullptr));
+        }
+        if (bottomImg) {
+            auto moveInR = MoveBy::create(0.15f, Vec2(-20.0f, 0));
+            bottomImg->runAction(Sequence::create(Spawn::create(in->clone(), moveInR, nullptr), hold->clone(), out->clone(), remove->clone(), nullptr));
+        }
+    }
+
     _pauseMenu = PauseMenu::create();
     if (_pauseMenu)
     {

@@ -133,10 +133,6 @@
   <object id="14" name="box11" type="crash" x="942" y="1672.67" width="168" height="47.6667"/>
   <object id="15" name="wall2" type="crash" x="2000" y="762" width="460" height="1226"/>
   <object id="16" name="solid6" type="crash" x="-11.33" y="1705" width="114.333" height="218.333"/>
-  <object id="24" name="box1" type="crash" x="82.1818" y="1692.55" width="21.0909" height="36.9091"/>
-  <object id="25" name="box5" type="crash" x="89.3636" y="1683.82" width="14" height="12.1818"/>
-  <object id="26" name="box4" type="crash" x="86.0909" y="1685.27" width="14.7273" height="15.8182"/>
-  <object id="27" name="box2" type="crash" x="83" y="1688.73" width="15.7273" height="15.9091"/>
   <object id="29" name="box6" type="crash" x="173.364" y="1682.55" width="28.3636" height="29.2727"/>
   <object id="30" name="box7" type="crash" x="186" y="1684" width="18.5455" height="29.9091"/>
   <object id="31" name="box8" type="crash" x="188.909" y="1685.82" width="18.4545" height="26"/>
