@@ -155,6 +155,6 @@
   <object id="1" name="PlayerStart" type="Start" x="961.67" y="327" width="52.67" height="70.67"/>
   <object id="56" type="Exit" x="951.333" y="943.333" width="79.3333" height="60"/>
   <object id="57" type="Exit" x="934.667" y="304" width="109.333" height="78"/>
-  <object id="58" type="Geo" x="837.667" y="1174" width="45.3333" height="36.6667"/>
+  <object id="58" type="Geo" x="829.667" y="1163" width="53.3333" height="47.6667"/>
  </objectgroup>
 </map>
