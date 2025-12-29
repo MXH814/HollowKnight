@@ -150,7 +150,7 @@ void CharmManager::showCharmPanel(Node* parentNode, bool canEquip)
 void CharmManager::createCharmUI(Node* layer, const Size& visibleSize)
 {
     // 显示 Charm 标题和边框
-    auto label = Label::createWithTTF(u8"护符", "fonts/ZCOOLXiaoWei-Regular.ttf", 48);
+    auto label = Label::createWithTTF(u8"护符", "fonts/NotoSerifCJKsc-Regular.otf", 48);
     label->setColor(Color3B::WHITE);
     label->setPosition(Vec2(visibleSize.width / 2, visibleSize.height - 40));
     layer->addChild(label);
@@ -162,17 +162,17 @@ void CharmManager::createCharmUI(Node* layer, const Size& visibleSize)
     } else {
         hintText = u8"AD选择 Q关闭 (坐下后可装卸)";
     }
-    _hintLabel = Label::createWithTTF(hintText, "fonts/ZCOOLXiaoWei-Regular.ttf", 32);
+    _hintLabel = Label::createWithTTF(hintText, "fonts/NotoSerifCJKsc-Regular.otf", 32);
     _hintLabel->setColor(Color3B::WHITE);
     _hintLabel->setPosition(Vec2(visibleSize.width - 300, 180));
     layer->addChild(_hintLabel);
     
-    auto aocao = Label::createWithTTF(u8"凹槽", "fonts/ZCOOLXiaoWei-Regular.ttf", 28);
+    auto aocao = Label::createWithTTF(u8"凹槽", "fonts/NotoSerifCJKsc-Regular.otf", 28);
     aocao->setColor(Color3B::WHITE);
     aocao->setPosition(Vec2(365, visibleSize.height / 2 + 60));
     layer->addChild(aocao);
     
-    auto zhuangbei = Label::createWithTTF(u8"已装备", "fonts/ZCOOLXiaoWei-Regular.ttf", 44);
+    auto zhuangbei = Label::createWithTTF(u8"已装备", "fonts/NotoSerifCJKsc-Regular.otf", 44);
     zhuangbei->setColor(Color3B::WHITE);
     zhuangbei->setPosition(Vec2(400, visibleSize.height / 2 + 220));
     layer->addChild(zhuangbei);
@@ -340,14 +340,14 @@ void CharmManager::createCharmUI(Node* layer, const Size& visibleSize)
     layer->addChild(_infoCharmIcon);
     
     // Charm 名称
-    _infoCharmName = Label::createWithTTF(u8"", "fonts/ZCOOLXiaoWei-Regular.ttf", 48);
+    _infoCharmName = Label::createWithTTF(u8"", "fonts/NotoSerifCJKsc-Regular.otf", 48);
     _infoCharmName->setColor(Color3B::WHITE);
     _infoCharmName->setPosition(Vec2(infoPanelX, infoPanelY + 150));
     _infoCharmName->setName("InfoCharmName");
     layer->addChild(_infoCharmName);
     
     // Charm 描述
-    _infoCharmDesc = Label::createWithTTF(u8"", "fonts/ZCOOLXiaoWei-Regular.ttf", 32);
+    _infoCharmDesc = Label::createWithTTF(u8"", "fonts/NotoSerifCJKsc-Regular.otf", 32);
     _infoCharmDesc->setColor(Color3B::WHITE);
     _infoCharmDesc->setPosition(Vec2(infoPanelX, infoPanelY - 150));
     _infoCharmDesc->setMaxLineWidth(400);
@@ -360,7 +360,7 @@ void CharmManager::createCharmUI(Node* layer, const Size& visibleSize)
     _costContainer->setName("InfoCharmCostContainer");
     layer->addChild(_costContainer);
     
-    _infoCharmCost = Label::createWithTTF(u8"", "fonts/ZCOOLXiaoWei-Regular.ttf", 32);
+    _infoCharmCost = Label::createWithTTF(u8"", "fonts/NotoSerifCJKsc-Regular.otf", 32);
     _infoCharmCost->setColor(Color3B::WHITE);
     _infoCharmCost->setPosition(Vec2(infoPanelX - 50, infoPanelY + 100));
     _infoCharmCost->setName("InfoCharmCost");

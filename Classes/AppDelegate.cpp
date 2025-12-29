@@ -31,7 +31,9 @@ AppDelegate::AppDelegate()
 AppDelegate::~AppDelegate()   //析构函数，应用程序结束时销毁操作
 {
 #if USE_AUDIO_ENGINE
-    AudioEngine::end();
+    AudioEngine::stopAll();    // 先停止所有正在播放的音频
+    AudioEngine::uncacheAll(); // 清除所有缓存的音频数据
+    AudioEngine::end();        // 最后释放音频引擎资源
 #elif USE_SIMPLE_AUDIO_ENGINE
     SimpleAudioEngine::end();
 #endif

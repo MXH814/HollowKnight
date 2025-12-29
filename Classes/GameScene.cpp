@@ -202,7 +202,7 @@ bool GameScene::init()
         }
     }
 
-    _interactionLabel = Label::createWithSystemFont(u8"休息", "fonts/ZCOOLXiaoWei-Regular.ttf", 24);
+    _interactionLabel = Label::createWithSystemFont(u8"休息", "fonts/NotoSerifCJKsc-Regular.otf", 24);
     _interactionLabel->setTextColor(Color4B::WHITE);
     _interactionLabel->setVisible(false);
     this->addChild(_interactionLabel, 100, "InteractionLabel");

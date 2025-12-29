@@ -1,30 +1,30 @@
-E:\HollowKnight\HollowKnight\Classes\AppDelegate.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\AppDelegate.obj
-E:\HollowKnight\HollowKnight\Classes\AudioManager.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\AudioManager.obj
-E:\HollowKnight\HollowKnight\Classes\AudioSettings.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\AudioSettings.obj
-E:\HollowKnight\HollowKnight\Classes\BossScene.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\BossScene.obj
-E:\HollowKnight\HollowKnight\Classes\boss\HornetAI.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\HornetAI.obj
-E:\HollowKnight\HollowKnight\Classes\boss\HornetBoss.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\HornetBoss.obj
-E:\HollowKnight\HollowKnight\Classes\CharmManager.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\CharmManager.obj
-E:\HollowKnight\HollowKnight\Classes\CorniferNPC.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\CorniferNPC.obj
-E:\HollowKnight\HollowKnight\Classes\Enemy.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\Enemy.obj
-E:\HollowKnight\HollowKnight\Classes\GameScene.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\GameScene.obj
-E:\HollowKnight\HollowKnight\Classes\GeoManager.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\GeoManager.obj
-E:\HollowKnight\HollowKnight\Classes\HelloWorldScene.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\HelloWorldScene.obj
-E:\HollowKnight\HollowKnight\Classes\KnightStateManager.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\KnightStateManager.obj
-E:\HollowKnight\HollowKnight\Classes\LoadingScene.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\LoadingScene.obj
-E:\HollowKnight\HollowKnight\Classes\MainMenuScene.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\MainMenuScene.obj
-E:\HollowKnight\HollowKnight\Classes\Monster\CrawlidMonster.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\CrawlidMonster.obj
-E:\HollowKnight\HollowKnight\Classes\Monster\GruzzerMonster.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\GruzzerMonster.obj
-E:\HollowKnight\HollowKnight\Classes\Monster\MonsterSpawner.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\MonsterSpawner.obj
-E:\HollowKnight\HollowKnight\Classes\Monster\TiktikMonster.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\TiktikMonster.obj
-E:\HollowKnight\HollowKnight\Classes\Monster\VengeflyMonster.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\VengeflyMonster.obj
-E:\HollowKnight\HollowKnight\Classes\NextScene.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\NextScene.obj
-E:\HollowKnight\HollowKnight\Classes\PauseMenu.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\PauseMenu.obj
-E:\HollowKnight\HollowKnight\Classes\SettingsPanel.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\SettingsPanel.obj
-E:\HollowKnight\HollowKnight\Classes\ShadowEnemy.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\ShadowEnemy.obj
-E:\HollowKnight\HollowKnight\Classes\TheKnightCoreLogic.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\TheKnightCoreLogic.obj
-E:\HollowKnight\HollowKnight\Classes\TheKnightAnimation.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\TheKnightAnimation.obj
-E:\HollowKnight\HollowKnight\Classes\TheKnightCombat.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\TheKnightCombat.obj
-E:\HollowKnight\HollowKnight\Classes\TheKnightMovement.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\TheKnightMovement.obj
-E:\HollowKnight\HollowKnight\Classes\TheKnightSoul.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\TheKnightSoul.obj
-E:\HollowKnight\HollowKnight\proj.win32\main.cpp;E:\HollowKnight\HollowKnight\proj.win32\Debug.win32\main.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\AppDelegate.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\AppDelegate.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\AudioManager.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\AudioManager.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\AudioSettings.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\AudioSettings.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\BossScene.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\BossScene.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\boss\HornetAI.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\HornetAI.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\boss\HornetBoss.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\HornetBoss.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\CharmManager.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\CharmManager.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\CorniferNPC.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\CorniferNPC.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\Enemy.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\Enemy.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\GameScene.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\GameScene.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\GeoManager.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\GeoManager.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\HelloWorldScene.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\HelloWorldScene.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\KnightStateManager.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\KnightStateManager.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\LoadingScene.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\LoadingScene.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\MainMenuScene.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\MainMenuScene.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\Monster\CrawlidMonster.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\CrawlidMonster.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\Monster\GruzzerMonster.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\GruzzerMonster.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\Monster\MonsterSpawner.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\MonsterSpawner.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\Monster\TiktikMonster.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\TiktikMonster.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\Monster\VengeflyMonster.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\VengeflyMonster.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\NextScene.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\NextScene.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\PauseMenu.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\PauseMenu.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\SettingsPanel.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\SettingsPanel.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\ShadowEnemy.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\ShadowEnemy.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\TheKnightCoreLogic.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\TheKnightCoreLogic.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\TheKnightAnimation.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\TheKnightAnimation.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\TheKnightCombat.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\TheKnightCombat.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\TheKnightMovement.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\TheKnightMovement.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\Classes\TheKnightSoul.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\TheKnightSoul.obj
+E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\main.cpp;E:\Hollow Knight\HollowKnight-hzy1\HollowKnight\proj.win32\Debug.win32\main.obj

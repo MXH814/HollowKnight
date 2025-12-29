@@ -126,7 +126,7 @@ bool BossScene::init()
     }
 
     // 创建Boss HP显示标签
-    _bossHPLabel = Label::createWithTTF("HORNET", "fonts/Marker Felt.ttf", 28);
+    _bossHPLabel = Label::createWithTTF("HORNET", "fonts/NotoSerifCJKsc-Regular.otf", 28);
     if (_bossHPLabel)
     {
         _bossHPLabel->setAnchorPoint(Vec2(0.5f, 0));
