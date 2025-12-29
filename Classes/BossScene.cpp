@@ -1,6 +1,10 @@
 #include "BossScene.h"
 #include "CharmManager.h"
+#include "MainMenuScene.h"
+#include "SimpleAudioEngine.h"
 #include "AudioManager.h"
+
+using namespace CocosDenshion;
 
 USING_NS_CC;
 
@@ -34,7 +38,7 @@ bool BossScene::init()
     _map->setPosition(origin);
     _map->setScale(scale);
     this->addChild(_map, 0);
-    
+
     // 保存地图尺寸
     auto mapContentSize = _map->getContentSize();
     _mapSize = Size(mapContentSize.width * scale, mapContentSize.height * scale);
@@ -57,14 +61,14 @@ bool BossScene::init()
         _knight->setPosition(Vec2(startX, startY));
         _knight->setScale(1.0f);
         _knight->setPlatforms(_platforms);
-        
+
         // 进入Boss场景时重置：HP满，Soul为0
         _knight->setHP(_knight->getMaxHP());
         _knight->setSoul(0);
-        
+
         // 同步护符状态到玩家
         CharmManager::getInstance()->syncToKnight(_knight);
-        
+
         this->addChild(_knight, 10, "PlayerInstance");
     }
 
@@ -75,11 +79,11 @@ bool BossScene::init()
         float groundY = 180.0f;
         float minX = 500.0f;
         float maxX = 1900.0f;
-        
+
         _hornet->setBoundaries(groundY, minX, maxX);
         _hornet->setName("HornetBoss");
         this->addChild(_hornet, 9);
-        
+
         if (_knight)
         {
             _hornet->startAI(_knight);
@@ -88,7 +92,7 @@ bool BossScene::init()
         {
             _hornet->playEntryAnimation(600, 800);
         }
-        
+
         CCLOG("Boss边界设置: 地面Y=%.1f, 最小X=%.1f, 最大X=%.1f", groundY, minX, maxX);
     }
 
@@ -113,7 +117,7 @@ bool BossScene::init()
 
     // 创建HP和Soul UI
     createHPAndSoulUI();
-    
+
     // 创建Boss HP显示标签
     _bossHPLabel = Label::createWithTTF("HORNET", "fonts/Marker Felt.ttf", 28);
     if (_bossHPLabel)
@@ -127,21 +131,35 @@ bool BossScene::init()
     // 初始化摄像机偏移
     _cameraOffsetY = 0.0f;
     _targetCameraOffsetY = 0.0f;
-    
+
     // 初始化攻击冷却
     _knightAttackCooldown = 0.0f;
     _spellAttackCooldown = 0.0f;
 
-    // 添加键盘事件监听 (Q键打开护符面板)
+    // 添加键盘事件监听
     auto keyboardListener = EventListenerKeyboard::create();
     keyboardListener->onKeyPressed = [this](EventKeyboard::KeyCode keyCode, Event* event) {
+        // 战斗结束后按任意键返回菜单
+        if (_isBattleEnded)
+        {
+            returnToMainMenu();
+            return;
+        }
+
+        // S键拾取奖励
+        if (keyCode == EventKeyboard::KeyCode::KEY_S && _isNearReward && !_rewardCollected)
+        {
+            collectReward();
+            return;
+        }
+
+        // Q键打开护符面板
         if (keyCode == EventKeyboard::KeyCode::KEY_Q)
         {
             auto charmManager = CharmManager::getInstance();
             if (charmManager->isPanelOpen())
             {
                 charmManager->hideCharmPanel();
-                // 关闭面板后同步护符状态到玩家
                 if (_knight)
                 {
                     charmManager->syncToKnight(_knight);
@@ -152,14 +170,14 @@ bool BossScene::init()
                 charmManager->showCharmPanel(this);
             }
         }
-    };
+        };
     _eventDispatcher->addEventListenerWithSceneGraphPriority(keyboardListener, this);
 
     // 直接移除黑层
     if (blackLayer && blackLayer->getParent()) {
         blackLayer->removeFromParent();
     }
-    
+
     CCLOG("Map Size: %f x %f", _mapSize.width, _mapSize.height);
     CCLOG("Screen Size: %f x %f", visibleSize.width, visibleSize.height);
 
@@ -172,12 +190,12 @@ bool BossScene::init()
 void BossScene::createHPAndSoulUI()
 {
     if (!_knight) return;
-    
+
     // 创建UI层
     _uiLayer = Node::create();
     if (!_uiLayer) return;
     this->addChild(_uiLayer, 1000);
-    
+
     // 血条背景
     _hpBg = Sprite::create("Hp/hpbg.png");
     if (_hpBg)
@@ -185,21 +203,21 @@ void BossScene::createHPAndSoulUI()
         _hpBg->setPosition(Vec2(200, 950));
         _uiLayer->addChild(_hpBg);
     }
-    
+
     // 初始化血量显示
     _lastDisplayedHP = _knight->getHP();
     _lastDisplayedSoul = -1;  // 初始化为-1，确保第一次更新时会触发
-    
+
     // 灵魂背景 - Boss场景初始Soul为0，使用soul_1作为默认图像但隐藏
     int currentSoul = _knight->getSoul();
-    
+
     _soulBg = Sprite::create("Hp/soul_1_0.png");  // 使用soul_1作为默认
     if (_soulBg)
     {
         _soulBg->setScale(0.9f);
         _soulBg->setPosition(Vec2(152, 935));
         _uiLayer->addChild(_soulBg);
-        
+
         // Soul为0时隐藏
         if (currentSoul <= 0)
         {
@@ -209,7 +227,7 @@ void BossScene::createHPAndSoulUI()
         {
             int soulLevel = currentSoul;
             if (soulLevel > 6) soulLevel = 6;
-            
+
             Vector<SpriteFrame*> soulFrames;
             for (int i = 0; i <= 2; i++) {
                 std::string frameName = "Hp/soul_" + std::to_string(soulLevel) + "_" + std::to_string(i) + ".png";
@@ -221,7 +239,7 @@ void BossScene::createHPAndSoulUI()
                     }
                 }
             }
-            
+
             if (!soulFrames.empty())
             {
                 auto soulAnimation = Animation::createWithSpriteFrames(soulFrames, 0.25f);
@@ -229,13 +247,13 @@ void BossScene::createHPAndSoulUI()
                 _soulBg->runAction(RepeatForever::create(soulAnimate));
             }
         }
-        
+
         _lastDisplayedSoul = currentSoul;
     }
-    
+
     int maxHp = _knight->getMaxHP();
     float gap = 50;
-    
+
     // 创建血量图标
     for (int i = 0; i < maxHp; i++)
     {
@@ -249,7 +267,7 @@ void BossScene::createHPAndSoulUI()
             _hpBars.push_back(hpBar);
         }
     }
-    
+
     // 失去血量图标
     _hpLose = Sprite::create("Hp/hp8.png");
     if (_hpLose)
@@ -264,7 +282,7 @@ void BossScene::createHPAndSoulUI()
 void BossScene::updateHPAndSoulUI(float dt)
 {
     if (!_knight || !_uiLayer) return;
-    
+
     // 更新UI层位置跟随摄像机
     auto camera = this->getDefaultCamera();
     if (camera)
@@ -272,19 +290,19 @@ void BossScene::updateHPAndSoulUI(float dt)
         Vec2 camPos = camera->getPosition();
         Size visibleSize = Director::getInstance()->getVisibleSize();
         _uiLayer->setPosition(Vec2(camPos.x - visibleSize.width / 2, camPos.y - visibleSize.height / 2));
-        
+
         // 更新Boss HP标签位置
         if (_bossHPLabel)
         {
             _bossHPLabel->setPosition(Vec2(camPos.x, camPos.y - visibleSize.height / 2 + 50));
         }
     }
-    
+
     int currentHP = _knight->getHP();
     int currentSoul = _knight->getSoul();
     int maxHp = _knight->getMaxHP();
     float gap = 50;
-    
+
     // 更新血量显示
     if (currentHP != _lastDisplayedHP)
     {
@@ -292,23 +310,23 @@ void BossScene::updateHPAndSoulUI(float dt)
         {
             _hpBars[i]->setVisible(i < currentHP);
         }
-        
+
         if (_hpLose)
         {
             _hpLose->setPosition(Vec2(260 + currentHP * gap, 978));
             _hpLose->setVisible(currentHP < maxHp);
         }
-        
+
         _lastDisplayedHP = currentHP;
     }
-    
+
     // 更新灵魂显示
     if (_soulBg && currentSoul != _lastDisplayedSoul)
     {
         _lastDisplayedSoul = currentSoul;
-        
+
         _soulBg->stopAllActions();
-        
+
         // Soul为0时隐藏，否则显示对应等级的动画
         if (currentSoul <= 0)
         {
@@ -317,11 +335,11 @@ void BossScene::updateHPAndSoulUI(float dt)
         else
         {
             _soulBg->setVisible(true);
-            
+
             // Soul值1-6对应资源文件soul_1到soul_6
             int soulLevel = currentSoul;
             if (soulLevel > 6) soulLevel = 6;
-            
+
             Vector<SpriteFrame*> soulFrames;
             for (int i = 0; i <= 2; i++) {
                 std::string frameName = "Hp/soul_" + std::to_string(soulLevel) + "_" + std::to_string(i) + ".png";
@@ -333,7 +351,7 @@ void BossScene::updateHPAndSoulUI(float dt)
                     }
                 }
             }
-            
+
             if (!soulFrames.empty())
             {
                 auto soulAnimation = Animation::createWithSpriteFrames(soulFrames, 0.25f);
@@ -352,38 +370,38 @@ void BossScene::parseCollisionLayer()
         CCLOG("警告：地图缺少 Collision 对象层");
         return;
     }
-    
+
     auto& objects = collisionGroup->getObjects();
-    
+
     for (auto& obj : objects)
     {
         ValueMap& dict = obj.asValueMap();
-        
+
         float x = dict["x"].asFloat() * scale;
         float y = dict["y"].asFloat() * scale;
         float width = dict["width"].asFloat() * scale;
         float height = dict["height"].asFloat() * scale;
-        
+
         Platform platform;
         platform.rect = Rect(x, y, width, height);
         platform.node = nullptr;
         _platforms.push_back(platform);
-        
+
         std::string name = dict["name"].asString();
-        CCLOG("创建碰撞平台: %s - x:%.1f y:%.1f w:%.1f h:%.1f", 
-              name.c_str(), x, y, width, height);
+        CCLOG("创建碰撞平台: %s - x:%.1f y:%.1f w:%.1f h:%.1f",
+            name.c_str(), x, y, width, height);
     }
-    
+
     CCLOG("创建了 %zu 个碰撞平台", _platforms.size());
 }
 
 void BossScene::updateCamera()
 {
     if (!_knight) return;
-    
+
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 knightPos = _knight->getPosition();
-    
+
     float lookOffset = 150.0f;
     if (_knight->isLookingUp())
     {
@@ -397,26 +415,26 @@ void BossScene::updateCamera()
     {
         _targetCameraOffsetY = 0.0f;
     }
-    
+
     float offsetLerpFactor = 0.05f;
     _cameraOffsetY += (_targetCameraOffsetY - _cameraOffsetY) * offsetLerpFactor;
-    
+
     float cameraX = knightPos.x;
     float cameraY = knightPos.y + _cameraOffsetY;
-    
+
     cameraX = std::max(cameraX, visibleSize.width / 2);
     cameraX = std::min(cameraX, _mapSize.width - visibleSize.width / 2);
-    
+
     cameraY = std::max(cameraY, visibleSize.height / 2);
     cameraY = std::min(cameraY, _mapSize.height - visibleSize.height / 2);
-    
+
     auto camera = this->getDefaultCamera();
     Vec2 currentCamPos = camera->getPosition();
     float lerpFactor = 0.1f;
-    
+
     float newX = currentCamPos.x + (cameraX - currentCamPos.x) * lerpFactor;
     float newY = currentCamPos.y + (cameraY - currentCamPos.y) * lerpFactor;
-    
+
     camera->setPosition(Vec2(newX, newY));
 }
 
@@ -424,19 +442,19 @@ void BossScene::checkCombatCollisions()
 {
     if (!_knight || !_hornet) return;
     if (_knight->isDead()) return;
-    
+
     // ========== 1. 检测Hornet对TheKnight的伤害 ==========
     if (!_knight->isInvincible() && !_knight->isStunned())
     {
         Rect knightRect = _knight->getBoundingBox();
         bool knightHit = false;
-        
+
         Rect bossRect = _hornet->getBossHitRect();
         if (knightRect.intersectsRect(bossRect))
         {
             knightHit = true;
         }
-        
+
         if (!knightHit)
         {
             Rect weaponRect = _hornet->getWeaponRect();
@@ -445,7 +463,7 @@ void BossScene::checkCombatCollisions()
                 knightHit = true;
             }
         }
-        
+
         if (!knightHit)
         {
             Rect attack4Rect = _hornet->getAttack4Rect();
@@ -454,7 +472,7 @@ void BossScene::checkCombatCollisions()
                 knightHit = true;
             }
         }
-        
+
         if (knightHit)
         {
             bool fromRight = (_hornet->getPositionX() > _knight->getPositionX());
@@ -462,10 +480,10 @@ void BossScene::checkCombatCollisions()
             _knight->takeDamage(1);
         }
     }
-    
+
     // ========== 2. 检测TheKnight对Hornet的伤害 ==========
     Rect bossHurtRect = _hornet->getBossHitRect();
-    
+
     float dt = Director::getInstance()->getDeltaTime();
     if (_knightAttackCooldown > 0)
     {
@@ -475,7 +493,7 @@ void BossScene::checkCombatCollisions()
     {
         _spellAttackCooldown -= dt;
     }
-    
+
     if (_knightAttackCooldown <= 0)
     {
         Rect slashRect;
@@ -484,24 +502,24 @@ void BossScene::checkCombatCollisions()
             if (slashRect.intersectsRect(bossHurtRect))
             {
                 _hornet->onDamaged();
-                
+
                 // 播放受击音效
                 AudioManager::getInstance()->playEnemyTakeDamageSound();
-                
+
                 int soulGain = 1;
                 if (_knight->getCharmSoulCatcher())
                 {
                     soulGain += 1;
                 }
                 _knight->addSoul(soulGain);
-                
+
                 _knight->bounceFromDownSlash();
-                
+
                 _knightAttackCooldown = 0.3f;
             }
         }
     }
-    
+
     if (_spellAttackCooldown <= 0)
     {
         Sprite* spellEffect = _knight->getVengefulSpiritEffect();
@@ -510,35 +528,389 @@ void BossScene::checkCombatCollisions()
             auto effectSize = spellEffect->getContentSize();
             auto effectPos = spellEffect->getPosition();
             Rect spellRect(effectPos.x - effectSize.width / 2,
-                           effectPos.y - effectSize.height / 2,
-                           effectSize.width,
-                           effectSize.height);
-            
+                effectPos.y - effectSize.height / 2,
+                effectSize.width,
+                effectSize.height);
+
             if (spellRect.intersectsRect(bossHurtRect))
             {
                 _hornet->onDamaged();
-                
+
                 // 播放受击音效
                 AudioManager::getInstance()->playEnemyTakeDamageSound();
-                
+
                 if (_knight->getCharmShamanStone())
                 {
                     _hornet->onDamaged();
                 }
-                
+
                 _spellAttackCooldown = 0.2f;
             }
         }
     }
 }
 
+void BossScene::onKnightDefeated()
+{
+    if (_isBattleEnded) return;
+
+    _isBattleEnded = true;
+    _isKnightDefeated = true;
+
+    CCLOG("Knight defeated! Showing defeat screen...");
+
+    // 停止背景音乐
+    AudioManager::getInstance()->stopBGM();
+
+    // 创建结果显示层
+    Size visibleSize = Director::getInstance()->getVisibleSize();
+    auto camera = this->getDefaultCamera();
+    Vec2 camPos = camera->getPosition();
+
+    _resultLayer = Node::create();
+    _resultLayer->setPosition(camPos);
+    this->addChild(_resultLayer, 2000);
+
+    // 创建半透明黑色背景
+    auto darkBg = LayerColor::create(Color4B(0, 0, 0, 180), visibleSize.width, visibleSize.height);
+    darkBg->setPosition(Vec2(-visibleSize.width / 2, -visibleSize.height / 2));
+    _resultLayer->addChild(darkBg);
+
+    // 创建"失败"大字
+    auto defeatLabel = Label::createWithTTF(u8"失败", "fonts/NotoSerifCJKsc-Regular.otf", 120);
+    defeatLabel->setTextColor(Color4B(200, 50, 50, 255));
+    defeatLabel->setPosition(Vec2(0, 50));
+    defeatLabel->setOpacity(0);
+    _resultLayer->addChild(defeatLabel);
+
+    // 创建"按任意键回到菜单"小字
+    auto hintLabel = Label::createWithTTF(u8"按任意键回到菜单", "fonts/NotoSerifCJKsc-Regular.otf", 36);
+    hintLabel->setTextColor(Color4B::WHITE);
+    hintLabel->setPosition(Vec2(0, -50));
+    hintLabel->setOpacity(0);
+    _resultLayer->addChild(hintLabel);
+
+    // 淡入动画
+    defeatLabel->runAction(Sequence::create(
+        DelayTime::create(0.3f),
+        FadeIn::create(0.5f),
+        nullptr
+    ));
+
+    hintLabel->runAction(Sequence::create(
+        DelayTime::create(0.8f),
+        FadeIn::create(0.5f),
+        nullptr
+    ));
+}
+
+void BossScene::onBossDefeated()
+{
+    if (_isBattleEnded) return;
+
+    // 标记 Boss 已被击败，防止重复进入
+    if (_isBossDefeated) return;
+    _isBossDefeated = true;
+
+    CCLOG("Boss defeated! Creating reward pickup...");
+
+    // 立即断开对 Hornet 的悬挂引用
+    _hornet = nullptr;
+
+    // 隐藏Boss HP标签
+    if (_bossHPLabel)
+    {
+        _bossHPLabel->setVisible(false);
+    }
+
+    // 延迟创建奖励拾取物
+    this->scheduleOnce([this](float dt) {
+        createRewardPickup();
+        }, 2.0f, "create_reward");
+}
+
+void BossScene::createRewardPickup()
+{
+    if (!_knight) return;
+
+    // 在场景地面中间创建白色发光圆点
+    Vec2 pickupPos = Vec2(1200.0f, 180.0f);
+
+    // 创建简单的白色发光圆点
+    auto drawNode = DrawNode::create();
+    drawNode->drawDot(Vec2::ZERO, 30.0f, Color4F::WHITE);
+    drawNode->setPosition(pickupPos);
+    drawNode->setCascadeOpacityEnabled(true);
+    this->addChild(drawNode, 8, "RewardPickup");
+
+    // 添加发光脉动效果
+    auto glowAction = RepeatForever::create(Sequence::create(
+        ScaleTo::create(0.6f, 1.4f),
+        ScaleTo::create(0.6f, 1.0f),
+        nullptr
+    ));
+    drawNode->runAction(glowAction);
+
+    CCLOG("Created white glow pickup at scene center: (%.1f, %.1f)", pickupPos.x, pickupPos.y);
+}
+
+void BossScene::checkRewardPickup()
+{
+    if (_rewardCollected || !_knight) return;
+
+    // 通过名称获取拾取物节点
+    auto rewardNode = this->getChildByName("RewardPickup");
+    if (!rewardNode) return;
+
+    Vec2 knightPos = _knight->getPosition();
+    Vec2 pickupPos = rewardNode->getPosition();
+
+    float distance = knightPos.distance(pickupPos);
+    float pickupRadius = 100.0f;
+
+    _isNearReward = (distance < pickupRadius);
+
+    // 获取或创建提示标签
+    auto hintLabel = dynamic_cast<Label*>(this->getChildByName("PickupHint"));
+
+    if (_isNearReward)
+    {
+        // 在范围内，显示"按S拾取"提示
+        if (!hintLabel)
+        {
+            hintLabel = Label::createWithTTF(u8"按S拾取", "fonts/NotoSerifCJKsc-Regular.otf", 28);
+            hintLabel->setTextColor(Color4B::WHITE);
+            hintLabel->setName("PickupHint");
+            this->addChild(hintLabel, 100);
+        }
+        // 显示提示在光点上方
+        hintLabel->setPosition(Vec2(pickupPos.x, pickupPos.y + 80));
+        hintLabel->setVisible(true);
+    }
+    else
+    {
+        // 不在范围内，隐藏提示
+        if (hintLabel)
+        {
+            hintLabel->setVisible(false);
+        }
+    }
+}
+
+void BossScene::collectReward()
+{
+    if (_rewardCollected) return;
+    _rewardCollected = true;
+
+    CCLOG("Collecting reward...");
+
+    // 获取光点位置
+    auto rewardNode = this->getChildByName("RewardPickup");
+    if (!rewardNode)
+    {
+        CCLOG("RewardPickup node not found!");
+        // 即使找不到节点也显示奖励UI
+        showRewardAtPickup(Vec2(1200.0f, 180.0f));
+        return;
+    }
+
+    Vec2 pickupPos = rewardNode->getPosition();
+
+    // 移除"按S拾取"提示
+    auto hintLabel = this->getChildByName("PickupHint");
+    if (hintLabel)
+    {
+        hintLabel->removeFromParent();
+    }
+
+    // 保存位置用于回调
+    Vec2 savedPos = pickupPos;
+
+    // 停止光点动画并直接移除（DrawNode不支持FadeOut）
+    rewardNode->stopAllActions();
+    rewardNode->removeFromParent();
+
+    // 直接显示奖励UI
+    showRewardAtPickup(savedPos);
+}
+
+void BossScene::showRewardAtPickup(const Vec2& pickupPos)
+{
+    // 防止重复调用
+    if (_isBattleEnded) return;
+    _isBattleEnded = true;
+
+    CCLOG("Showing reward at pickup position: (%.1f, %.1f)", pickupPos.x, pickupPos.y);
+
+    // 停止背景音乐
+    AudioManager::getInstance()->stopBGM();
+
+    Size visibleSize = Director::getInstance()->getVisibleSize();
+    auto camera = this->getDefaultCamera();
+    Vec2 camPos = camera ? camera->getPosition() : Vec2(visibleSize.width / 2, visibleSize.height / 2);
+
+    // 创建结果显示层（跟随相机位置）
+    _resultLayer = Node::create();
+    if (!_resultLayer)
+    {
+        CCLOG("Failed to create result layer!");
+        return;
+    }
+    _resultLayer->setPosition(camPos);
+    this->addChild(_resultLayer, 2000);
+
+    // 创建半透明黑色背景
+    auto darkBg = LayerColor::create(Color4B(0, 0, 0, 180), visibleSize.width, visibleSize.height);
+    if (darkBg)
+    {
+        darkBg->setPosition(Vec2(-visibleSize.width / 2, -visibleSize.height / 2));
+        _resultLayer->addChild(darkBg);
+    }
+
+    // 将光点世界坐标转换为结果层的本地坐标
+    Vec2 localPickupPos = pickupPos - camPos;
+
+    // 在光点正上方显示 MothwingCloak 图片
+    auto cloakSprite = Sprite::create("Hornet/MothwingCloak.png");
+    if (cloakSprite)
+    {
+        cloakSprite->setPosition(Vec2(localPickupPos.x - 10, localPickupPos.y + 550));
+        cloakSprite->setScale(0.0f);
+        cloakSprite->setOpacity(0);
+        _resultLayer->addChild(cloakSprite);
+
+        // 图片出现动画 - 放大并淡入
+        cloakSprite->runAction(Sequence::create(
+            DelayTime::create(0.2f),
+            Spawn::create(
+                FadeIn::create(0.4f),
+                ScaleTo::create(0.4f, 1.5f),
+                nullptr
+            ),
+            nullptr
+        ));
+    }
+
+    // 创建"获得蛾翼披风"提示 - 修复字体路径
+    auto hintLabel = Label::createWithTTF(u8"获得“蛾翼披风”", "fonts/NotoSerifCJKsc-Regular.otf", 72);
+    if (hintLabel)
+    {
+        hintLabel->setTextColor(Color4B::WHITE);
+        hintLabel->setPosition(Vec2(localPickupPos.x, localPickupPos.y+200));
+        hintLabel->setOpacity(0);
+        _resultLayer->addChild(hintLabel);
+
+        // 提示文字淡入动画
+        hintLabel->runAction(Sequence::create(
+            DelayTime::create(0.8f),
+            FadeIn::create(0.4f),
+            nullptr
+        ));
+    }
+
+    // 创建"按任意键退出"提示
+    auto hintLabel2 = Label::createWithTTF(u8"按任意键退出", "fonts/NotoSerifCJKsc-Regular.otf", 32);
+    if (hintLabel2)
+    {
+        hintLabel2->setTextColor(Color4B::WHITE);
+        hintLabel2->setPosition(Vec2(localPickupPos.x, localPickupPos.y - 50));
+        hintLabel2->setOpacity(0);
+        _resultLayer->addChild(hintLabel2);
+
+        // 提示文字淡入动画
+        hintLabel2->runAction(Sequence::create(
+            DelayTime::create(1.2f),
+            FadeIn::create(0.4f),
+            nullptr
+        ));
+    }
+
+    CCLOG("Reward UI displayed successfully");
+}
+
+void BossScene::returnToMainMenu()
+{
+    CCLOG("Returning to main menu...");
+
+    // 停止背景音乐
+    AudioManager::getInstance()->stopBGM();
+
+    Size visibleSize = Director::getInstance()->getVisibleSize();
+    auto camera = this->getDefaultCamera();
+    Vec2 camPos = camera ? camera->getPosition() : Vec2(visibleSize.width / 2, visibleSize.height / 2);
+
+    // 创建全屏黑色覆盖层
+    auto blackLayer = LayerColor::create(Color4B(0, 0, 0, 255), visibleSize.width, visibleSize.height);
+    blackLayer->setIgnoreAnchorPointForPosition(false);
+    blackLayer->setAnchorPoint(Vec2(0.5f, 0.5f));
+    blackLayer->setPosition(camPos);
+    this->addChild(blackLayer, 10000, "ReturnToMenuBlack");
+
+    // 延迟后切换到主菜单
+    blackLayer->runAction(Sequence::create(
+        DelayTime::create(0.5f),
+        CallFunc::create([]() {
+            auto menuScene = MainMenuScene::createScene();
+            Director::getInstance()->replaceScene(TransitionFade::create(0.5f, menuScene, Color3B::BLACK));
+            }),
+        nullptr
+    ));
+}
+
 void BossScene::update(float dt)
 {
     updateCamera();
     updateHPAndSoulUI(dt);
-    
-    // 碰撞检测
-    checkCombatCollisions();
+
+    // 如果Boss已被击败但奖励未收集，检测拾取
+    if (_isBossDefeated && !_rewardCollected)
+    {
+        checkRewardPickup();
+    }
+
+    // 如果战斗已结束，只更新UI
+    if (_isBattleEnded)
+    {
+        return;
+    }
+
+    // 检测骑士死亡
+    if (_knight && _knight->isDead() && !_isPlayingDeathAnim)
+    {
+        _isPlayingDeathAnim = true;
+        _deathAnimTimer = 0.0f;
+        CCLOG("Knight is dead, starting death animation timer...");
+    }
+
+    if (_isPlayingDeathAnim)
+    {
+        _deathAnimTimer += dt;
+        // 死亡动画约1.5秒
+        if (_deathAnimTimer >= 1.5f)
+        {
+            _isPlayingDeathAnim = false;
+            onKnightDefeated();
+            return;
+        }
+    }
+
+    // 检测Boss被击败（离场）
+    if (!_isBossDefeated)
+    {
+        auto hornetNode = this->getChildByName("HornetBoss");
+        if (!hornetNode)
+        {
+            CCLOG("Hornet node not found in scene -> treating as defeated");
+            _hornet = nullptr;
+            onBossDefeated();
+        }
+    }
+
+    // 碰撞检测（只在未播放死亡动画时）
+    if (!_isPlayingDeathAnim)
+    {
+        checkCombatCollisions();
+    }
 }
 
 void BossScene::menuCloseCallback(Ref* pSender)
