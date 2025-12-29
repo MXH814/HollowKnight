@@ -97,6 +97,9 @@ bool TheKnight::init()
     _isAsleep = false;
     _exitKey = EventKeyboard::KeyCode::KEY_NONE;
 
+    // 输入禁用初始化
+    _inputDisabled = false;
+
     // 护符系统初始化（0=未装备，1=已装备）
     _charmStalwartShell = 0;     // 坚硬外壳：受击无敌时长+0.4s
     _charmSoulCatcher = 0;       // 灵魂捕手：攻击获得Soul+1
@@ -402,6 +405,11 @@ bool TheKnight::checkWallSlideCollision(bool checkRight)
 
 void TheKnight::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
 {
+    // 如果输入被禁用（如NPC对话中），忽略所有输入
+    if (_inputDisabled) {
+        return;
+    }
+    
     // 如果护符面板打开，禁用角色控制
     if (CharmManager::getInstance()->isPanelOpen()) {
         return;
@@ -644,6 +652,11 @@ void TheKnight::onKeyPressed(EventKeyboard::KeyCode keyCode, Event* event)
 
 void TheKnight::onKeyReleased(EventKeyboard::KeyCode keyCode, Event* event)
 {
+    // 如果输入被禁用（如NPC对话中），忽略所有输入
+    if (_inputDisabled) {
+        return;
+    }
+    
     // 如果护符面板打开，禁用角色控制
     if (CharmManager::getInstance()->isPanelOpen()) {
         return;

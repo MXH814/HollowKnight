@@ -320,6 +320,18 @@ bool NextScene::init()
     // 启用 update
     this->scheduleUpdate();
 
+    // 【修复】场景加载完成后，淡出并移除加载黑屏
+    auto loadingBlack = this->getChildByName("LoadingBlack");
+    if (loadingBlack)
+    {
+        loadingBlack->runAction(Sequence::create(
+            DelayTime::create(0.1f),  // 短暂延迟确保场景完全加载
+            FadeOut::create(0.5f),    // 淡出效果
+            RemoveSelf::create(),     // 移除自身
+            nullptr
+        ));
+    }
+
     return true;
 }
 
@@ -1421,6 +1433,9 @@ void NextScene::update(float dt)
         {
             Vec2 knightWorldPos = knight->getPosition();
             _cornifer->setPlayerPosition(knightWorldPos);
+            
+            // 同步 Knight 输入禁用状态：当 Cornifer 对话激活时禁用 Knight 输入
+            knight->setInputDisabled(_cornifer->isDialogueActive());
         }
     }
 
