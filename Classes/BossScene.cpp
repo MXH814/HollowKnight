@@ -741,9 +741,6 @@ void BossScene::collectReward()
     
     Vec2 pickupPos = rewardNode->getPosition();
     
-    // 播放拾取音效
-    SimpleAudioEngine::getInstance()->playEffect("Music/item_pickup.wav");
-    
     // 隐藏"按S拾取"提示
     auto hintLabel = this->getChildByName("PickupHint");
     if (hintLabel)

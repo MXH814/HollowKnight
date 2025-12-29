@@ -80,7 +80,7 @@ void LoadingScene::PreloadAllAudio() {
     "Music/Title.wav",
     "Music/Dirtmouth.wav",
     "Music/Crossroads.wav",
-    "Music/Hornet.wav"
+    "Music/Greenpath.wav"
   };
   
   const std::vector<std::string> kEffectList = {
@@ -98,6 +98,9 @@ void LoadingScene::PreloadAllAudio() {
     // 法术音效
     "Music/hero_fireball.wav",
     "Music/fireball_disappear.wav",
+    // 怪物音效
+    "Music/enemy_damage.wav",
+    "Music/enemy_death.wav",
     // Boss 音效
     "Music/1.wav",
     "Music/2.wav",

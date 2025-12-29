@@ -71,8 +71,6 @@ void PauseMenu::show()
     
     // ÔÝÍ£ÓÎÏ·
     Director::getInstance()->pause();
-    
-    SimpleAudioEngine::getInstance()->playEffect("Music/pause.wav");
 }
 
 void PauseMenu::hide()
