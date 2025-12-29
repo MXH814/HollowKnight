@@ -1859,7 +1859,41 @@ void NextScene::createHPAndSoulUI()
     
     // 初始化血量和灵魂显示
     _lastDisplayedHP = knight->getHP();
-    _lastDisplayedSoul = -1;  // 初始化为-1，确保第一次更新时会触发
+    _lastDisplayedSoul = -1;
+    
+    int maxHp = knight->getMaxHP();
+    float gap = 50;
+    
+    // 【修改】先创建所有空血槽图标（底层）
+    for (int i = 0; i < maxHp; i++)
+    {
+        auto hpEmpty = Sprite::create("Hp/hp8.png");
+        if (hpEmpty)
+        {
+            hpEmpty->setPosition(Vec2(260 + i * gap, 978));
+            hpEmpty->setScale(0.5f);
+            hpEmpty->setVisible(i >= _lastDisplayedHP);  // 失去的血量位置显示
+            _uiLayer->addChild(hpEmpty);
+            _hpEmptyBars.push_back(hpEmpty);  // 需要在头文件中添加此成员变量
+        }
+    }
+    
+    // 创建满血图标（上层，会覆盖空血槽）
+    for (int i = 0; i < maxHp; i++)
+    {
+        auto hpBar = Sprite::create("Hp/hp1.png");
+        if (hpBar)
+        {
+            hpBar->setPosition(Vec2(260 + i * gap, 980));
+            hpBar->setScale(0.5f);
+            hpBar->setVisible(i < _lastDisplayedHP);
+            _uiLayer->addChild(hpBar);
+            _hpBars.push_back(hpBar);
+        }
+    }
+    
+    // 【删除】不再需要单独的 _hpLose
+    // _hpLose = Sprite::create("Hp/hp8.png");
     
     // 灵魂背景 - 使用soul_1作为默认图像
     int currentSoul = knight->getSoul();
@@ -1902,33 +1936,6 @@ void NextScene::createHPAndSoulUI()
         }
         
         _lastDisplayedSoul = currentSoul;
-    }
-    
-    int maxHp = knight->getMaxHP();
-    float gap = 50;
-    
-    // 创建血量图标
-    for (int i = 0; i < maxHp; i++)
-    {
-        auto hpBar = Sprite::create("Hp/hp1.png");
-        if (hpBar)
-        {
-            hpBar->setPosition(Vec2(260 + i * gap, 980));
-            hpBar->setScale(0.5f);
-            hpBar->setVisible(i < _lastDisplayedHP);
-            _uiLayer->addChild(hpBar);
-            _hpBars.push_back(hpBar);
-        }
-    }
-    
-    // 失去血量图标
-    _hpLose = Sprite::create("Hp/hp8.png");
-    if (_hpLose)
-    {
-        _hpLose->setPosition(Vec2(260 + _lastDisplayedHP * gap, 978));
-        _hpLose->setScale(0.5f);
-        _hpLose->setVisible(_lastDisplayedHP < maxHp);
-        _uiLayer->addChild(_hpLose);
     }
 
     {
@@ -2043,10 +2050,10 @@ void NextScene::updateHPAndSoulUI(float dt)
             _hpBars.at(i)->setVisible(i < currentHP);
         }
         
-        if (_hpLose)
+        // 【修改】更新所有空血槽的显示
+        for (int i = 0; i < (int)_hpEmptyBars.size(); i++)
         {
-            _hpLose->setPosition(Vec2(260 + currentHP * gap, 978));
-            _hpLose->setVisible(currentHP < maxHp);
+            _hpEmptyBars.at(i)->setVisible(i >= currentHP);
         }
         
         _lastDisplayedHP = currentHP;

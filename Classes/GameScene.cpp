@@ -443,7 +443,21 @@ void GameScene::createHPAndSoulUI()
     int maxHp = _knight->getMaxHP();
     float gap = 50;
     
-    // 创建血量图标
+    // 【修改】先创建所有空血槽图标（底层）
+    for (int i = 0; i < maxHp; i++)
+    {
+        auto hpEmpty = Sprite::create("Hp/hp8.png");
+        if (hpEmpty)
+        {
+            hpEmpty->setPosition(Vec2(260 + i * gap, 978));
+            hpEmpty->setScale(0.5f);
+            hpEmpty->setVisible(i >= _lastDisplayedHP);  // 失去的血量位置显示
+            _uiLayer->addChild(hpEmpty);
+            _hpEmptyBars.push_back(hpEmpty);
+        }
+    }
+    
+    // 创建满血图标（上层，会覆盖空血槽）
     for (int i = 0; i < maxHp; i++)
     {
         auto hpBar = Sprite::create("Hp/hp1.png");
@@ -457,15 +471,9 @@ void GameScene::createHPAndSoulUI()
         }
     }
     
-    // 失去血量图标
-    _hpLose = Sprite::create("Hp/hp8.png");
-    if (_hpLose)
-    {
-        _hpLose->setPosition(Vec2(260 + _lastDisplayedHP * gap, 978));
-        _hpLose->setScale(0.5f);
-        _hpLose->setVisible(_lastDisplayedHP < maxHp);
-        _uiLayer->addChild(_hpLose);
-    }
+    // 【删除】不再需要单独的 _hpLose
+    // _hpLose = Sprite::create("Hp/hp8.png");
+    // ...
     
     // 【新增】创建 Geo UI（在血条下方）
     _geoIcon = Sprite::create("Hp/Geo.png");
@@ -518,13 +526,6 @@ void GameScene::updateHPAndSoulUI(float dt)
         for (int i = 0; i < (int)_hpBars.size(); i++)
         {
             _hpBars[i]->setVisible(i < currentHP);
-        }
-        
-        // 更新失去血量图标位置
-        if (_hpLose)
-        {
-            _hpLose->setPosition(Vec2(260 + currentHP * gap, 978));
-            _hpLose->setVisible(currentHP < maxHp);
         }
         
         // 【修改】血量变化时，增加血量图标缩放动画
@@ -657,12 +658,10 @@ void GameScene::updateHPRecoveryAnimation(float dt)
             ));
         }
         
-        // 更新失去血量图标位置
-        float gap = 50;
-        if (_hpLose)
+        // 【修改】隐藏对应的空血槽
+        if (_hpRecoverCurrent - 1 < (int)_hpEmptyBars.size())
         {
-            _hpLose->setPosition(Vec2(260 + _hpRecoverCurrent * gap, 978));
-            _hpLose->setVisible(_hpRecoverCurrent < _hpRecoverTarget);
+            _hpEmptyBars[_hpRecoverCurrent - 1]->setVisible(false);
         }
         
         _lastDisplayedHP = _hpRecoverCurrent;

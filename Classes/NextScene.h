@@ -137,6 +137,7 @@ private:
     cocos2d::Sprite* _soulBg = nullptr;
     std::vector<cocos2d::Sprite*> _hpBars;
     cocos2d::Sprite* _hpLose = nullptr;
+    std::vector<Sprite*> _hpEmptyBars;  // ¿ÕÑª²ÛÍ¼±êÊý×é
     int _lastDisplayedHP = 0;
     int _lastDisplayedSoul = 0;
     
