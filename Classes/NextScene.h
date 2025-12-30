@@ -134,6 +134,7 @@ private:
     cocos2d::Sprite* _hpBg = nullptr;
     cocos2d::Sprite* _soulBg = nullptr;
     std::vector<cocos2d::Sprite*> _hpBars;
+    std::vector<Sprite*> _hpEmptyBars;
     cocos2d::Sprite* _hpLose = nullptr;
     int _lastDisplayedHP = 0;
     int _lastDisplayedSoul = 0;
@@ -157,6 +158,10 @@ private:
     void updateShade(float dt);
 
     PauseMenu* _pauseMenu = nullptr;
+
+    cocos2d::Node* _exitContainer = nullptr;
+    cocos2d::Sprite* _exitTopImg = nullptr;
+    cocos2d::Sprite* _exitBottomImg = nullptr;
 
     cocos2d::Sprite* _geoIcon = nullptr;
     cocos2d::Label* _geoLabel = nullptr;

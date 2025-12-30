@@ -152,7 +152,7 @@
   <object id="52" type="crash" x="1918.33" y="526.667" width="58.6667" height="522"/>
  </objectgroup>
  <objectgroup id="3" name="Objects">
-  <object id="1" name="PlayerStart" type="Start" x="961.67" y="327" width="52.67" height="70.67"/>
+  <object id="1" name="PlayerStart" type="Start" x="963.003" y="413" width="52.67" height="70.67"/>
   <object id="56" type="Exit" x="951.333" y="943.333" width="79.3333" height="60"/>
   <object id="57" type="Exit" x="934.667" y="304" width="109.333" height="78"/>
   <object id="58" type="Geo" x="829.667" y="1163" width="53.3333" height="47.6667"/>

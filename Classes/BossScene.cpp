@@ -284,7 +284,21 @@ void BossScene::createHPAndSoulUI()
     int maxHp = _knight->getMaxHP();
     float gap = 50;
 
-    // 创建血量图标
+    // 【修改】先创建所有空血槽图标（底层）
+    for (int i = 0; i < maxHp; i++)
+    {
+        auto hpEmpty = Sprite::create("Hp/hp8.png");
+        if (hpEmpty)
+        {
+            hpEmpty->setPosition(Vec2(260 + i * gap, 978));
+            hpEmpty->setScale(0.5f);
+            hpEmpty->setVisible(i >= _lastDisplayedHP);  // 失去的血量位置显示
+            _uiLayer->addChild(hpEmpty);
+            _hpEmptyBars.push_back(hpEmpty);
+        }
+    }
+
+    // 创建满血图标（上层，会覆盖空血槽）
     for (int i = 0; i < maxHp; i++)
     {
         auto hpBar = Sprite::create("Hp/hp1.png");
@@ -296,16 +310,6 @@ void BossScene::createHPAndSoulUI()
             _uiLayer->addChild(hpBar);
             _hpBars.push_back(hpBar);
         }
-    }
-
-    // 失去血量图标
-    _hpLose = Sprite::create("Hp/hp8.png");
-    if (_hpLose)
-    {
-        _hpLose->setPosition(Vec2(260 + _lastDisplayedHP * gap, 978));
-        _hpLose->setScale(0.5f);
-        _hpLose->setVisible(_lastDisplayedHP < maxHp);
-        _uiLayer->addChild(_hpLose);
     }
 }
 
@@ -339,6 +343,11 @@ void BossScene::updateHPAndSoulUI(float dt)
         for (int i = 0; i < (int)_hpBars.size(); i++)
         {
             _hpBars[i]->setVisible(i < currentHP);
+        }
+
+        for (int i = 0; i < (int)_hpEmptyBars.size(); i++)
+        {
+            _hpEmptyBars[i]->setVisible(i >= currentHP);
         }
 
         if (_hpLose)

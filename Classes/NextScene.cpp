@@ -10,6 +10,7 @@
 #include "AudioManager.h"
 #include "PauseMenu.h"
 #include "GeoManager.h"
+#include "KnightStateManager.h"
 
 USING_NS_CC;
 
@@ -202,6 +203,19 @@ bool NextScene::init()
         
         CharmManager::getInstance()->syncToKnight(knight);
         
+        // 【新增】恢复保存的骑士状态（非重生情况）
+        if (!s_isRespawning)
+        {
+            auto stateManager = KnightStateManager::getInstance();
+            if (stateManager->hasState())
+            {
+                knight->setHP(stateManager->getHP());
+                knight->setSoul(stateManager->getSoul());
+                CCLOG("进入 NextScene，恢复状态: HP=%d, Soul=%d",
+                    stateManager->getHP(), stateManager->getSoul());
+            }
+        }
+
         // 【修改】重生逻辑：延迟生成 Shade，确保 _player 已经设置
         if (s_isRespawning)
         {
@@ -260,10 +274,32 @@ bool NextScene::init()
         _uiLayer->addChild(_pauseMenu, 2000);
     }
 
-    _exitLabel = Label::createWithSystemFont(u8"按 W 进入", "Arial", 24);
+    _exitContainer = Node::create();
+    this->addChild(_exitContainer, 100, "ExitContainer");
+    _exitContainer->setVisible(false);
+
+    _exitLabel = Label::createWithSystemFont(u8"按 W 上升", "fonts/NotoSerifCJKsc-Regular.otf", 36);
     _exitLabel->setTextColor(Color4B::WHITE);
-    _exitLabel->setVisible(false);
-    this->addChild(_exitLabel, 100, "ExitLabel");
+    _exitLabel->setPosition(Vec2::ZERO);
+    _exitContainer->addChild(_exitLabel, 1);
+
+    // 添加顶部装饰图片
+    _exitTopImg = Sprite::create("Menu/pausemenu_top.png");
+    if (_exitTopImg)
+    {
+        _exitTopImg->setPosition(Vec2(0, 60));
+        _exitTopImg->setScale(0.6f);
+        _exitContainer->addChild(_exitTopImg, 0);
+    }
+
+    // 添加底部装饰图片
+    _exitBottomImg = Sprite::create("Menu/pausemenu_bottom.png");
+    if (_exitBottomImg)
+    {
+        _exitBottomImg->setPosition(Vec2(0, -50));
+        _exitBottomImg->setScale(0.6f);
+        _exitContainer->addChild(_exitBottomImg, 0);
+    }
 
     _thornLabel = Label::createWithSystemFont(u8"危险！前方有尖刺", "Arial", 24);
     _thornLabel->setTextColor(Color4B::RED);
@@ -524,19 +560,19 @@ void NextScene::checkInteractions()
     
     // 检测出口
     _isNearExit = false;
-    if (_exitLabel) {
+    if (_exitContainer) {
         for (auto& exitObj : _exitObjects)
         {
             float distance = knightPos.distance(exitObj.position);
-            
+
             if (distance < exitObj.radius)
             {
                 _isNearExit = true;
-                _exitLabel->setPosition(Vec2(knightPos.x, knightPos.y + 80));
+                _exitContainer->setPosition(Vec2(knightPos.x, knightPos.y + 200));
                 break;
             }
         }
-        _exitLabel->setVisible(_isNearExit);
+        _exitContainer->setVisible(_isNearExit);
     }
 
     // 检测尖刺（仅用于显示警告标签，实际碰撞检测在update中）`
@@ -1897,8 +1933,22 @@ void NextScene::createHPAndSoulUI()
     
     int maxHp = knight->getMaxHP();
     float gap = 50;
-    
-    // 创建血量图标
+
+    // 【修改】先创建所有空血槽图标（底层）
+    for (int i = 0; i < maxHp; i++)
+    {
+        auto hpEmpty = Sprite::create("Hp/hp8.png");
+        if (hpEmpty)
+        {
+            hpEmpty->setPosition(Vec2(260 + i * gap, 978));
+            hpEmpty->setScale(0.5f);
+            hpEmpty->setVisible(i >= _lastDisplayedHP);  // 失去的血量位置显示
+            _uiLayer->addChild(hpEmpty);
+            _hpEmptyBars.push_back(hpEmpty);  // 需要在头文件中添加此成员变量
+        }
+    }
+
+    // 创建满血图标（上层，会覆盖空血槽）
     for (int i = 0; i < maxHp; i++)
     {
         auto hpBar = Sprite::create("Hp/hp1.png");
@@ -1910,16 +1960,6 @@ void NextScene::createHPAndSoulUI()
             _uiLayer->addChild(hpBar);
             _hpBars.push_back(hpBar);
         }
-    }
-    
-    // 失去血量图标
-    _hpLose = Sprite::create("Hp/hp8.png");
-    if (_hpLose)
-    {
-        _hpLose->setPosition(Vec2(260 + _lastDisplayedHP * gap, 978));
-        _hpLose->setScale(0.5f);
-        _hpLose->setVisible(_lastDisplayedHP < maxHp);
-        _uiLayer->addChild(_hpLose);
     }
 
     {
@@ -2032,6 +2072,11 @@ void NextScene::updateHPAndSoulUI(float dt)
         for (int i = 0; i < (int)_hpBars.size(); i++)
         {
             _hpBars.at(i)->setVisible(i < currentHP);
+        }
+
+        for (int i = 0; i < (int)_hpEmptyBars.size(); i++)
+        {
+            _hpEmptyBars[i]->setVisible(i >= currentHP);
         }
         
         if (_hpLose)

@@ -410,6 +410,66 @@ void CorniferNPC::showDialogue() {
 void CorniferNPC::closeDialogue() {
     if (!_isDialogueActive) return;
 
+    if (_hasPurchasedMap && !_hasShownMapPrompt) {
+
+        auto scene = Director::getInstance()->getRunningScene();
+        if (!scene) return;
+
+        auto visibleSize = Director::getInstance()->getVisibleSize();
+
+        // 获取相机位置，计算屏幕中心的世界坐标
+        Vec2 screenCenter;
+        auto camera = scene->getDefaultCamera();
+        if (camera) {
+            Vec3 camPos = camera->getPosition3D();
+            screenCenter = Vec2(camPos.x, camPos.y);
+        }
+        else {
+            screenCenter = Vec2(visibleSize.width / 2, visibleSize.height / 2);
+        }
+
+        // 创建一个容器节点
+        auto container = Node::create();
+        container->setPosition(Vec2::ZERO);
+        container->setCascadeOpacityEnabled(true);
+        scene->addChild(container, 100, "MapPromptLayer");
+
+        // 使用 Sprite 创建半透明黑色背景（比 LayerColor 更可靠）
+        auto bg = Sprite::create();
+        bg->setTextureRect(Rect(0, 0, visibleSize.width * 2, visibleSize.height * 2));
+        bg->setColor(Color3B::BLACK);
+        bg->setOpacity(180);
+        bg->setPosition(screenCenter);
+        container->addChild(bg, 0);
+
+        // 地图图片
+        auto mapSprite = Sprite::create("Cornifer/Map_prompt.png");
+        if (mapSprite) {
+            mapSprite->setPosition(screenCenter);
+            container->addChild(mapSprite, 1);
+        }
+
+        // "地图已获取"文字
+        auto label = Label::createWithTTF(u8"地图已获取", "fonts/NotoSerifCJKsc-Regular.otf", 48);
+        if (label) {
+            label->setPosition(Vec2(screenCenter.x, screenCenter.y + 200));
+            label->setTextColor(Color4B::WHITE);
+            container->addChild(label, 1);
+        }
+
+        // 淡入淡出效果
+        container->setOpacity(0);
+        container->runAction(Sequence::create(
+            FadeIn::create(0.3f),
+            DelayTime::create(1.5f),
+            FadeOut::create(0.3f),
+            RemoveSelf::create(),
+            nullptr
+        ));
+    }
+
+    _hasShownMapPrompt = true;
+
     _isDialogueActive = false;
     _isChoiceActive = false;
     _showPurchaseSuccess = false;
