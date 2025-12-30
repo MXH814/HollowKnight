@@ -3,6 +3,7 @@
 #include "MainMenuScene.h"
 #include "SimpleAudioEngine.h"
 #include "AudioManager.h"
+#include "PauseMenu.h" 
 
 using namespace CocosDenshion;
 
@@ -118,6 +119,12 @@ bool BossScene::init()
     // 创建HP和Soul UI
     createHPAndSoulUI();
 
+    _pauseMenu = PauseMenu::create();
+    if (_pauseMenu)
+    {
+        _uiLayer->addChild(_pauseMenu, 2000);
+    }
+
     // 创建Boss HP显示标签
     _bossHPLabel = Label::createWithTTF("HORNET", "fonts/Marker Felt.ttf", 28);
     if (_bossHPLabel)
@@ -139,6 +146,29 @@ bool BossScene::init()
     // 添加键盘事件监听
     auto keyboardListener = EventListenerKeyboard::create();
     keyboardListener->onKeyPressed = [this](EventKeyboard::KeyCode keyCode, Event* event) {
+        // 【新增】ESC 键打开/关闭暂停菜单
+        if (keyCode == EventKeyboard::KeyCode::KEY_ESCAPE)
+        {
+            if (_pauseMenu)
+            {
+                if (_pauseMenu->isVisible())
+                {
+                    _pauseMenu->hide();
+                }
+                else
+                {
+                    _pauseMenu->show();
+                }
+            }
+            return;
+        }
+
+        // 【新增】暂停时不处理其他按键
+        if (_pauseMenu && _pauseMenu->isVisible())
+        {
+            return;
+        }
+        
         // 战斗结束后按任意键返回菜单
         if (_isBattleEnded)
         {
@@ -254,7 +284,21 @@ void BossScene::createHPAndSoulUI()
     int maxHp = _knight->getMaxHP();
     float gap = 50;
 
-    // 创建血量图标
+    // 【修改】先创建所有空血槽图标（底层）
+    for (int i = 0; i < maxHp; i++)
+    {
+        auto hpEmpty = Sprite::create("Hp/hp8.png");
+        if (hpEmpty)
+        {
+            hpEmpty->setPosition(Vec2(260 + i * gap, 978));
+            hpEmpty->setScale(0.5f);
+            hpEmpty->setVisible(i >= _lastDisplayedHP);  // 失去的血量位置显示
+            _uiLayer->addChild(hpEmpty);
+            _hpEmptyBars.push_back(hpEmpty);
+        }
+    }
+
+    // 创建满血图标（上层，会覆盖空血槽）
     for (int i = 0; i < maxHp; i++)
     {
         auto hpBar = Sprite::create("Hp/hp1.png");
@@ -266,16 +310,6 @@ void BossScene::createHPAndSoulUI()
             _uiLayer->addChild(hpBar);
             _hpBars.push_back(hpBar);
         }
-    }
-
-    // 失去血量图标
-    _hpLose = Sprite::create("Hp/hp8.png");
-    if (_hpLose)
-    {
-        _hpLose->setPosition(Vec2(260 + _lastDisplayedHP * gap, 978));
-        _hpLose->setScale(0.5f);
-        _hpLose->setVisible(_lastDisplayedHP < maxHp);
-        _uiLayer->addChild(_hpLose);
     }
 }
 
@@ -309,6 +343,11 @@ void BossScene::updateHPAndSoulUI(float dt)
         for (int i = 0; i < (int)_hpBars.size(); i++)
         {
             _hpBars[i]->setVisible(i < currentHP);
+        }
+
+        for (int i = 0; i < (int)_hpEmptyBars.size(); i++)
+        {
+            _hpEmptyBars[i]->setVisible(i >= currentHP);
         }
 
         if (_hpLose)

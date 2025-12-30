@@ -5,6 +5,7 @@
 #include "TheKnight.h"
 #include "CorniferNPC.h"
 #include "ShadowEnemy.h"  // 添加 Shadow 头文件
+#include "PauseMenu.h"
 
 // 【修改】ExitObject 结构体 - 根据 NextScene.cpp 的使用方式定义
 struct ExitObject {
@@ -24,6 +25,13 @@ struct ThornObject {
     int damage;                         // 伤害值
     
     ThornObject() : sprite(nullptr), position(cocos2d::Vec2::ZERO), size(cocos2d::Size::ZERO), damage(1) {}
+};
+
+struct GeoObject {
+    cocos2d::Vec2 position;
+    cocos2d::Size size;
+
+    GeoObject() : position(cocos2d::Vec2::ZERO), size(cocos2d::Size::ZERO) {}
 };
 
 class NextScene : public cocos2d::Layer
@@ -68,6 +76,8 @@ private:
     // 加载前景对象(bg类，显示在角色上层)
     void loadForegroundObjects(cocos2d::TMXTiledMap* map, float scale, const cocos2d::Vec2& mapOffset);
     
+    void loadGeoObjects(cocos2d::TMXTiledMap* map, float scale, const cocos2d::Vec2& mapOffset);
+
     // 检测交互
     void checkInteractions();
     
@@ -91,6 +101,7 @@ private:
     std::vector<Platform> _platforms;         // 碰撞平台列表（使用 TheKnight.h 中的 Platform）
     std::vector<ExitObject> _exitObjects;     // 出口对象列表
     std::vector<ThornObject> _thornObjects;   // 尖刺对象列表
+    std::vector<GeoObject> _geoObjects;     // Geo 对象列表
     
     cocos2d::Label* _exitLabel = nullptr;   // 出口提示标签
     cocos2d::Label* _thornLabel = nullptr;  // 尖刺警告标签
@@ -123,6 +134,7 @@ private:
     cocos2d::Sprite* _hpBg = nullptr;
     cocos2d::Sprite* _soulBg = nullptr;
     std::vector<cocos2d::Sprite*> _hpBars;
+    std::vector<Sprite*> _hpEmptyBars;
     cocos2d::Sprite* _hpLose = nullptr;
     int _lastDisplayedHP = 0;
     int _lastDisplayedSoul = 0;
@@ -144,6 +156,24 @@ private:
     void spawnShade(const cocos2d::Vec2& position);
     void removeShade();
     void updateShade(float dt);
+
+    PauseMenu* _pauseMenu = nullptr;
+
+    cocos2d::Node* _exitContainer = nullptr;
+    cocos2d::Sprite* _exitTopImg = nullptr;
+    cocos2d::Sprite* _exitBottomImg = nullptr;
+
+    cocos2d::Sprite* _geoIcon = nullptr;
+    cocos2d::Label* _geoLabel = nullptr;
+    int _lastDisplayedGeo = 0;
+
+    // 【新增】地图显示相关
+    cocos2d::LayerColor* _mapOverlay = nullptr;    // 半透明遮罩层
+    cocos2d::Sprite* _mapSprite = nullptr;         // 地图图片
+    bool _isMapVisible = false;                     // 地图是否显示中
+
+    void showMap();
+    void hideMap();
 };
 
 #endif // __NEXT_SCENE_H__

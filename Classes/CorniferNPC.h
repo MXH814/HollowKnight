@@ -80,6 +80,7 @@ private:
 
     bool _isDialogueActive;
     bool _isPromptShowing;
+    bool _hasShownMapPrompt;
 
     const float DETECT_RANGE = 200.0f;
 };

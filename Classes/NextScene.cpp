@@ -8,6 +8,9 @@
 #include "Monster/GruzzerMonster.h"
 #include "Monster/VengeflyMonster.h"
 #include "AudioManager.h"
+#include "PauseMenu.h"
+#include "GeoManager.h"
+#include "KnightStateManager.h"
 
 USING_NS_CC;
 
@@ -147,6 +150,7 @@ bool NextScene::init()
         
         if (chunk.file == "Maps/Forgotten Crossroads4.tmx") {
             loadExitObjects(map, scale, mapPos);
+            loadGeoObjects(map, scale, mapPos);
         }
     }
 
@@ -199,6 +203,19 @@ bool NextScene::init()
         
         CharmManager::getInstance()->syncToKnight(knight);
         
+        // 【新增】恢复保存的骑士状态（非重生情况）
+        if (!s_isRespawning)
+        {
+            auto stateManager = KnightStateManager::getInstance();
+            if (stateManager->hasState())
+            {
+                knight->setHP(stateManager->getHP());
+                knight->setSoul(stateManager->getSoul());
+                CCLOG("进入 NextScene，恢复状态: HP=%d, Soul=%d",
+                    stateManager->getHP(), stateManager->getSoul());
+            }
+        }
+
         // 【修改】重生逻辑：延迟生成 Shade，确保 _player 已经设置
         if (s_isRespawning)
         {
@@ -250,10 +267,39 @@ bool NextScene::init()
     
     createHPAndSoulUI();
 
-    _exitLabel = Label::createWithSystemFont(u8"按 W 进入", "Arial", 24);
+    // 【新增】创建暂停菜单
+    _pauseMenu = PauseMenu::create();
+    if (_pauseMenu)
+    {
+        _uiLayer->addChild(_pauseMenu, 2000);
+    }
+
+    _exitContainer = Node::create();
+    this->addChild(_exitContainer, 100, "ExitContainer");
+    _exitContainer->setVisible(false);
+
+    _exitLabel = Label::createWithSystemFont(u8"按 W 上升", "fonts/NotoSerifCJKsc-Regular.otf", 36);
     _exitLabel->setTextColor(Color4B::WHITE);
-    _exitLabel->setVisible(false);
-    this->addChild(_exitLabel, 100, "ExitLabel");
+    _exitLabel->setPosition(Vec2::ZERO);
+    _exitContainer->addChild(_exitLabel, 1);
+
+    // 添加顶部装饰图片
+    _exitTopImg = Sprite::create("Menu/pausemenu_top.png");
+    if (_exitTopImg)
+    {
+        _exitTopImg->setPosition(Vec2(0, 60));
+        _exitTopImg->setScale(0.6f);
+        _exitContainer->addChild(_exitTopImg, 0);
+    }
+
+    // 添加底部装饰图片
+    _exitBottomImg = Sprite::create("Menu/pausemenu_bottom.png");
+    if (_exitBottomImg)
+    {
+        _exitBottomImg->setPosition(Vec2(0, -50));
+        _exitBottomImg->setScale(0.6f);
+        _exitContainer->addChild(_exitBottomImg, 0);
+    }
 
     _thornLabel = Label::createWithSystemFont(u8"危险！前方有尖刺", "Arial", 24);
     _thornLabel->setTextColor(Color4B::RED);
@@ -294,6 +340,34 @@ bool NextScene::init()
                 return;
             }
         }
+
+        if (keyCode == EventKeyboard::KeyCode::KEY_ESCAPE)
+        {
+            if (_pauseMenu)
+            {
+                if (_pauseMenu->isVisible())
+                {
+                    _pauseMenu->hide();
+                }
+                else
+                {
+                    _pauseMenu->show();
+                }
+            }
+            return;
+        }
+
+        // 【新增】暂停时不处理其他按键
+        if (_pauseMenu && _pauseMenu->isVisible())
+        {
+            return;
+        }
+
+        if (keyCode == EventKeyboard::KeyCode::KEY_TAB)
+        {
+            showMap();
+            return;
+        }
         
         if (keyCode == EventKeyboard::KeyCode::KEY_Q)
         {
@@ -315,6 +389,15 @@ bool NextScene::init()
             charmManager->showCharmPanel(scene);
         }
     };
+
+    keyboardListener->onKeyReleased = [this](EventKeyboard::KeyCode keyCode, Event* event) {
+        // TAB 键释放时隐藏地图
+        if (keyCode == EventKeyboard::KeyCode::KEY_TAB)
+        {
+            hideMap();
+        }
+    };
+
     _eventDispatcher->addEventListenerWithSceneGraphPriority(keyboardListener, this);
 
     // 启用 update
@@ -421,6 +504,51 @@ void NextScene::loadThornObjects(TMXTiledMap* map, float scale, const Vec2& mapO
     }
 }
 
+void NextScene::loadGeoObjects(TMXTiledMap* map, float scale, const Vec2& mapOffset)
+{
+    auto objectGroup = map->getObjectGroup("Objects");
+    if (!objectGroup) {
+        CCLOG("警告：地图中没有找到 Objects 对象层");
+        return;
+    }
+
+    auto& objects = objectGroup->getObjects();
+
+    for (auto& obj : objects)
+    {
+        auto& dict = obj.asValueMap();
+
+        std::string objClass = "";
+        if (dict.find("class") != dict.end()) {
+            objClass = dict["class"].asString();
+        }
+        else if (dict.find("type") != dict.end()) {
+            objClass = dict["type"].asString();
+        }
+
+        if (objClass != "Geo") {
+            continue;
+        }
+
+        float x = dict["x"].asFloat() * scale + mapOffset.x;
+        float y = dict["y"].asFloat() * scale + mapOffset.y;
+        float width = dict["width"].asFloat() * scale;
+        float height = dict["height"].asFloat() * scale;
+
+        GeoObject geoObj;
+        geoObj.position = Vec2(x + width / 2, y + height / 2);
+        geoObj.size = Size(width, height);
+
+        _geoObjects.push_back(geoObj);
+
+        CCLOG("加载 Geo 对象: at (%.1f, %.1f), size=(%.1f, %.1f)",
+            geoObj.position.x, geoObj.position.y,
+            geoObj.size.width, geoObj.size.height);
+    }
+
+    CCLOG("共加载 %zu 个 Geo 对象", _geoObjects.size());
+}
+
 void NextScene::checkInteractions()
 {
     if (_isTransitioning) return;
@@ -432,19 +560,19 @@ void NextScene::checkInteractions()
     
     // 检测出口
     _isNearExit = false;
-    if (_exitLabel) {
+    if (_exitContainer) {
         for (auto& exitObj : _exitObjects)
         {
             float distance = knightPos.distance(exitObj.position);
-            
+
             if (distance < exitObj.radius)
             {
                 _isNearExit = true;
-                _exitLabel->setPosition(Vec2(knightPos.x, knightPos.y + 80));
+                _exitContainer->setPosition(Vec2(knightPos.x, knightPos.y + 200));
                 break;
             }
         }
-        _exitLabel->setVisible(_isNearExit);
+        _exitContainer->setVisible(_isNearExit);
     }
 
     // 检测尖刺（仅用于显示警告标签，实际碰撞检测在update中）`
@@ -1278,6 +1406,38 @@ void NextScene::checkCombatCollisions()
             }
         }
     }
+
+    if (_knightAttackCooldown <= 0)
+    {
+        Rect slashRect;
+        if (knight->getSlashEffectBoundingBox(slashRect))
+        {
+            for (auto& geoObj : _geoObjects)
+            {
+                Rect geoRect(
+                    geoObj.position.x - geoObj.size.width / 2,
+                    geoObj.position.y - geoObj.size.height / 2,
+                    geoObj.size.width,
+                    geoObj.size.height
+                );
+
+                if (slashRect.intersectsRect(geoRect))
+                {
+                    // 轻微屏幕震动
+                    shakeScreen(0.1f, 5.0f);
+
+                    // 增加 2 Geo
+                    GeoManager::getInstance()->addGeo(2);
+                    CCLOG("攻击 Geo 对象! 获得 2 Geo, 总计: %d", GeoManager::getInstance()->getGeo());
+
+                    // 【关键】设置攻击冷却，防止同一次攻击重复触发
+                    _knightAttackCooldown = 0.3f;
+
+                    break;  // 每次攻击只触发一个 Geo 对象
+                }
+            }
+        }
+    }
 }
 
 void NextScene::update(float dt)
@@ -1773,8 +1933,22 @@ void NextScene::createHPAndSoulUI()
     
     int maxHp = knight->getMaxHP();
     float gap = 50;
-    
-    // 创建血量图标
+
+    // 【修改】先创建所有空血槽图标（底层）
+    for (int i = 0; i < maxHp; i++)
+    {
+        auto hpEmpty = Sprite::create("Hp/hp8.png");
+        if (hpEmpty)
+        {
+            hpEmpty->setPosition(Vec2(260 + i * gap, 978));
+            hpEmpty->setScale(0.5f);
+            hpEmpty->setVisible(i >= _lastDisplayedHP);  // 失去的血量位置显示
+            _uiLayer->addChild(hpEmpty);
+            _hpEmptyBars.push_back(hpEmpty);  // 需要在头文件中添加此成员变量
+        }
+    }
+
+    // 创建满血图标（上层，会覆盖空血槽）
     for (int i = 0; i < maxHp; i++)
     {
         auto hpBar = Sprite::create("Hp/hp1.png");
@@ -1787,15 +1961,85 @@ void NextScene::createHPAndSoulUI()
             _hpBars.push_back(hpBar);
         }
     }
-    
-    // 失去血量图标
-    _hpLose = Sprite::create("Hp/hp8.png");
-    if (_hpLose)
+
     {
-        _hpLose->setPosition(Vec2(260 + _lastDisplayedHP * gap, 978));
-        _hpLose->setScale(0.5f);
-        _hpLose->setVisible(_lastDisplayedHP < maxHp);
-        _uiLayer->addChild(_hpLose);
+        Size vs = Director::getInstance()->getVisibleSize();
+        Vec2 org = Director::getInstance()->getVisibleOrigin();
+        Vec2 centerLocal = Vec2(vs.width * 0.5f, vs.height * 0.5f);
+
+        // 主标题
+        auto sceneTitle = Label::createWithSystemFont(u8"遗忘十字路", "fonts/NotoSerifCJKsc-Regular.otf", 100);
+        sceneTitle->setTextColor(Color4B::WHITE);
+        sceneTitle->setAnchorPoint(Vec2(0.5f, 0.5f));
+
+        // 两张图片：Maps/toptitle.png 和 Maps/bottomtitle.png
+        Sprite* topImg = Sprite::create("Maps/toptitle.png");
+        Sprite* bottomImg = Sprite::create("Maps/bottomtitle.png");
+
+        // 如果图片未找到，设为 nullptr（安全检查）
+        if (topImg && topImg->getContentSize().width == 0) { topImg = nullptr; }
+        if (bottomImg && bottomImg->getContentSize().width == 0) { bottomImg = nullptr; }
+
+        // 添加到 _uiLayer（若存在），否则添加到场景直接居中
+        Node* parentNode = _uiLayer ? _uiLayer : this;
+        Vec2 parentOffset = Vec2::ZERO;
+        if (!_uiLayer) {
+            parentOffset = org;
+        }
+
+        sceneTitle->setPosition(Vec2(centerLocal.x + parentOffset.x, centerLocal.y + parentOffset.y + 80));
+        parentNode->addChild(sceneTitle, 2000, "SceneTitleLabel");
+
+        if (topImg) {
+            topImg->setAnchorPoint(Vec2(0.5f, 0.5f));
+            topImg->setPosition(Vec2(centerLocal.x - 30, centerLocal.y + parentOffset.y + 270));
+            parentNode->addChild(topImg, 1999, "SceneTopImage");
+        }
+        if (bottomImg) {
+            bottomImg->setAnchorPoint(Vec2(0.5f, 0.5f));
+            bottomImg->setPosition(Vec2(centerLocal.x + 14, centerLocal.y + parentOffset.y - 40));
+            parentNode->addChild(bottomImg, 1999, "SceneBottomImage");
+        }
+
+        // 动作序列：延迟 -> 淡入 -> 保持 -> 淡出 -> 移除
+        auto delay = DelayTime::create(0.1f);
+        auto in = FadeTo::create(1.5f, 255);
+        auto hold = DelayTime::create(1.0f);
+        auto out = FadeTo::create(0.4f, 0);
+        auto remove = RemoveSelf::create();
+
+        sceneTitle->setOpacity(0);
+        if (topImg) topImg->setOpacity(0);
+        if (bottomImg) bottomImg->setOpacity(0);
+
+        // 【修改】所有动画前添加延迟
+        sceneTitle->runAction(Sequence::create(delay, in, hold, out, remove->clone(), nullptr));
+
+        if (topImg) {
+            auto moveInL = MoveBy::create(0.15f, Vec2(20.0f, 0));
+            topImg->runAction(Sequence::create(delay->clone(), Spawn::create(in->clone(), moveInL, nullptr), hold->clone(), out->clone(), remove->clone(), nullptr));
+        }
+        if (bottomImg) {
+            auto moveInR = MoveBy::create(0.15f, Vec2(-20.0f, 0));
+            bottomImg->runAction(Sequence::create(delay->clone(), Spawn::create(in->clone(), moveInR, nullptr), hold->clone(), out->clone(), remove->clone(), nullptr));
+        }
+    }
+
+    _geoIcon = Sprite::create("Hp/Geo.png");
+    if (_geoIcon)
+    {
+        _geoIcon->setPosition(Vec2(260, 900));
+        _uiLayer->addChild(_geoIcon);
+    }
+
+    _lastDisplayedGeo = GeoManager::getInstance()->getGeo();
+    _geoLabel = Label::createWithTTF(std::to_string(_lastDisplayedGeo), "fonts/NotoSerifCJKsc-Regular.otf", 50);
+    if (_geoLabel)
+    {
+        _geoLabel->setTextColor(Color4B::WHITE);
+        _geoLabel->setAnchorPoint(Vec2(0, 0.5f));
+        _geoLabel->setPosition(Vec2(350, 900));
+        _uiLayer->addChild(_geoLabel);
     }
 }
 
@@ -1828,6 +2072,11 @@ void NextScene::updateHPAndSoulUI(float dt)
         for (int i = 0; i < (int)_hpBars.size(); i++)
         {
             _hpBars.at(i)->setVisible(i < currentHP);
+        }
+
+        for (int i = 0; i < (int)_hpEmptyBars.size(); i++)
+        {
+            _hpEmptyBars[i]->setVisible(i >= currentHP);
         }
         
         if (_hpLose)
@@ -1879,4 +2128,72 @@ void NextScene::updateHPAndSoulUI(float dt)
             }
         }
     }
+
+    int currentGeo = GeoManager::getInstance()->getGeo();
+    if (_geoLabel && currentGeo != _lastDisplayedGeo)
+    {
+        _lastDisplayedGeo = currentGeo;
+        _geoLabel->setString(std::to_string(currentGeo));
+
+        // 添加数字跳动效果
+        _geoLabel->stopAllActions();
+        _geoLabel->setScale(1.3f);
+        _geoLabel->runAction(ScaleTo::create(0.15f, 1.0f));
+    }
+}
+
+void NextScene::showMap()
+{
+    if (_isMapVisible) return;
+    _isMapVisible = true;
+
+    Size visibleSize = Director::getInstance()->getVisibleSize();
+
+    // 创建半透明黑色遮罩层
+    _mapOverlay = LayerColor::create(Color4B(0, 0, 0, 180));
+    if (_mapOverlay)
+    {
+        _uiLayer->addChild(_mapOverlay, 3000);
+    }
+
+    // 创建地图图片
+    _mapSprite = Sprite::create("Maps/Forgotten_Crossroads_Map_Clean.png");
+    if (_mapSprite)
+    {
+        _mapSprite->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
+
+        // 根据需要调整地图大小，使其适应屏幕
+        float mapWidth = _mapSprite->getContentSize().width;
+        float mapHeight = _mapSprite->getContentSize().height;
+        float scaleX = (visibleSize.width * 0.75f) / mapWidth;
+        float scaleY = (visibleSize.height * 0.75f) / mapHeight;
+        float mapScale = std::min(scaleX, scaleY);
+        _mapSprite->setScale(mapScale);
+
+        _uiLayer->addChild(_mapSprite, 3001);
+    }
+
+    CCLOG("显示地图: Forgotten_Crossroads_Map_Clean.png");
+}
+
+void NextScene::hideMap()
+{
+    if (!_isMapVisible) return;
+    _isMapVisible = false;
+
+    // 移除地图图片
+    if (_mapSprite)
+    {
+        _mapSprite->removeFromParent();
+        _mapSprite = nullptr;
+    }
+
+    // 移除遮罩层
+    if (_mapOverlay)
+    {
+        _mapOverlay->removeFromParent();
+        _mapOverlay = nullptr;
+    }
+
+    CCLOG("隐藏地图");
 }

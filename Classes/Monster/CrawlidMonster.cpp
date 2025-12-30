@@ -2,6 +2,7 @@
 
 #include "CrawlidMonster.h"
 #include "AudioManager.h"
+#include "GeoManager.h"
 
 USING_NS_CC;
 
@@ -277,6 +278,9 @@ void CrawlidMonster::die(float knockbackPower, int knockbackDirection)
 
     // ²¥·ÅËÀÍöÒôÐ§
     AudioManager::getInstance()->playEnemyDeathSound();
+
+    GeoManager::getInstance()->addGeo(2);
+    CCLOG("Crawlid died! +2 Geo");
 
     CCLOG("Crawlid Monster Died! Starting death animation.");
 

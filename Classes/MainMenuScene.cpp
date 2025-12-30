@@ -3,6 +3,7 @@
 #include <GameScene.h>
 #include <BossScene.h>
 #include "AudioManager.h"
+#include "SettingsPanel.h"
 
 USING_NS_CC;
 
@@ -93,6 +94,13 @@ bool MainMenuScene::init()
 
     // 播放菜单背景音乐（循环）
     AudioManager::getInstance()->playMainMenuBGM();
+
+    // 创建设置面板
+    _settingsPanel = SettingsPanel::create();
+    if (_settingsPanel)
+    {
+        this->addChild(_settingsPanel, 100);  // 高层级确保在最上层显示
+    }
 
     return true;
 }
@@ -260,6 +268,10 @@ void MainMenuScene::openSettings(Ref* sender)
 {
     // 播放点击音效
     AudioManager::getInstance()->playClickSound();
+    if (_settingsPanel)
+    {
+        _settingsPanel->show();
+    }
 
     CCLOG("设置界面");
 }

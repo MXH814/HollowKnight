@@ -5,6 +5,7 @@
 #include "TheKnight.h"
 #include "boss/HornetBoss.h"
 #include "AudioManager.h"
+#include "PauseMenu.h" 
 
 class BossScene : public cocos2d::Scene
 {
@@ -64,6 +65,7 @@ private:
     cocos2d::Sprite* _hpBg = nullptr;
     cocos2d::Sprite* _soulBg = nullptr;
     std::vector<cocos2d::Sprite*> _hpBars;
+    std::vector<cocos2d::Sprite*> _hpEmptyBars;
     cocos2d::Sprite* _hpLose = nullptr;
     int _lastDisplayedHP = 0;
     int _lastDisplayedSoul = 0;
@@ -88,6 +90,7 @@ private:
     
     // Ω·π˚œ‘ æ≤„
     cocos2d::Node* _resultLayer = nullptr;
+    PauseMenu* _pauseMenu = nullptr;
 };
 
 #endif // __BOSS_SCENE_H__

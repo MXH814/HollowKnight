@@ -3,6 +3,7 @@
 
 #include "cocos2d.h"
 #include "TheKnight.h"
+#include "PauseMenu.h" 
 
 class GameScene : public cocos2d::Scene
 {
@@ -74,6 +75,7 @@ private:
     cocos2d::Sprite* _hpBg = nullptr;
     cocos2d::Sprite* _soulBg = nullptr;
     std::vector<cocos2d::Sprite*> _hpBars;
+    std::vector<cocos2d::Sprite*> _hpEmptyBars;
     cocos2d::Sprite* _hpLose = nullptr;
     int _lastDisplayedHP = 0;
     int _lastDisplayedSoul = 0;
@@ -93,6 +95,19 @@ private:
     static cocos2d::Vec2 s_customSpawnPos;
     static bool s_spawnFacingRight;
     static bool s_spawnDoJump;
+
+    PauseMenu* _pauseMenu = nullptr;
+
+    // Geo UI
+    cocos2d::Sprite* _geoIcon = nullptr;
+    cocos2d::Label* _geoLabel = nullptr;
+    int _lastDisplayedGeo = 0;
+
+    void showMap();
+    void hideMap();
+    cocos2d::LayerColor* _mapOverlay = nullptr;    // °ëÍ¸Ã÷ÕÚÕÖ²ã
+    cocos2d::Sprite* _mapSprite = nullptr;         // µØÍ¼Í¼Æ¬
+    bool _isMapVisible = false;
 };
 
 #endif // __GAME_SCENE_H__

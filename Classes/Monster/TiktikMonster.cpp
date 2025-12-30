@@ -3,6 +3,7 @@
 #include "TiktikMonster.h"
 #include "SimpleAudioEngine.h"
 #include "AudioManager.h"
+#include "GeoManager.h"
 
 USING_NS_CC;
 
@@ -345,6 +346,9 @@ void TiktikMonster::die(float knockbackPower, int knockbackDirection)
     _isStunned = true;
     _isPatrolling = false;
     this->stopAllActions();
+
+    GeoManager::getInstance()->addGeo(2);
+    CCLOG("Tiktik died! +2 Geo");
 
     float flyHeight = 150.0f;
     float jumpDuration = 0.8f;
